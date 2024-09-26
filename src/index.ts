@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import { routes } from './routes/index.js';
+import express, { Request, Response } from "express";
+import { routes } from "./routes/index.js";
 
 const app = express();
 const port: number = 3000;
@@ -8,7 +8,7 @@ const port: number = 3000;
 //   res.send('Hi! Chrono placedholder page.');
 // });
 
-app.use('/', routes);
+app.use("/", routes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

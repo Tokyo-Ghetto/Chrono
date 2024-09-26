@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Data Retriever</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+      }
+      #result {
+        margin-top: 20px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stock Data Retriever (via Polygon.io)</h1>
+    <input type="text" id="tickerInput" placeholder="Enter stock ticker" />
+    <button onclick="getStockData()">Get Data</button>
+    <div id="result"></div>
+
+    <script>
+      async function getStockData() {
+        const ticker = document
+          .getElementById("tickerInput")
+          .value.toUpperCase();
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Loading...";
+
+        try {
+          const response = await fetch(`/api/index-data?ticker=${ticker}`);
+          const data = await response.json();
+          resultDiv.innerHTML =
+            `<h2>Previous Close</h2>` + JSON.stringify(data, null, 2);
+        } catch (error) {
+          resultDiv.innerHTML = `Error: ${error.message}`;
+        }
+      }
+    </script>
+  </body>
+</html>
