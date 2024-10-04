@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as dotenv from "dotenv";
 import path from "path";
 
-let __dirname = path.resolve("./src/__tests__");
+// let __dirname = path.resolve("./src/__tests__");
 
 dotenv.config();
 const key = process.env.POLY_API_KEY;
@@ -12,10 +12,6 @@ testRoute.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "test.html"));
 });
 
-// testRoute.get("/test", (req, res) => {
-//   res.send(getData("VOO"));
-// });
-
 testRoute.get("/api/index-data", async (req, res) => {
   const ticker = req.query.ticker as string;
   if (!ticker) {
@@ -23,7 +19,18 @@ testRoute.get("/api/index-data", async (req, res) => {
   }
 
   try {
-    const data = await getData(ticker);
+    // Get previous close
+    // const data = await getData(ticker);
+
+    // Get data for charts
+    const data = await getChartData(
+      ticker,
+      1,
+      "week",
+      "2023-01-01",
+      "2024-01-01",
+      false
+    );
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch ETF data" });
@@ -52,17 +59,47 @@ interface PreviousClose {
   count: number;
 }
 
+//Get the previous day's open, high,
+//low, and close (OHLC) for the specified stock ticker.
 const getData = async (tick: string): Promise<any> => {
   console.log("Retrieving the previous close data for " + tick + ".");
   const response = await fetch(
-    `https://api.polygon.io/v2/aggs/ticker/${tick}/prev?adjusted=true&apiKey=${key}`,
+    `https://api.polygon.io/v2/aggs/ticker/${tick}/prev?adjusted=true&apiKey=${key}`
   );
   const data = await response.json();
   console.log("Data succesfully retrieved!");
   return data;
 };
 
-//Names and tickers of the 10 most traded ETFs in the US:
+const getChartData = async (
+  tick: string,
+  mult: number,
+  timespan: string,
+  datefrom: string | number,
+  dateto: string | number,
+  adj: boolean
+): Promise<any> => {
+  console.log("Retrieving aggregated chart data of " + tick + ".");
+  const response = await fetch(
+    `https://api.polygon.io/v2/aggs/ticker/${tick}/range/${mult}/${timespan}/${datefrom}/${dateto}?adjusted=${adj}&sort=asc&apiKey=${key}`
+  );
+  const data = await response.json();
+  console.log("Data succesfully retrieved!");
+  return data;
+};
+
+// Retrieve ticker information such as name, currency, market, etc.
+// https://api.polygon.io/v3/reference/tickers?ticker=${tick}&active=true&limit=100&apiKey=${key}
+
+// Retrieve aggregate bars for a ticker over a given date range in custom time window sizes.
+// https://api.polygon.io/v2/aggs/ticker/${tick}/range/${mult}/${timespan}/${datefrom}/${dateto}?adjusted=${adj}&sort=asc&apiKey=${key}
+//  Parameters:
+// ${1}: multiplier. If timespan is set to minute, and multiplier is 5, then 5-minute bar will be returned.
+// ${timespan}: specified timespan (hour, day, week, month, quarter year)
+// ${datefrom}, ${dateto}: Can be either a date formatted as YYYY-MM-DD, or ms timestamp
+// ${adj}: Whether or not the results should be split (boolean). True is recommended when dealing with long responses.
+
+// Names and tickers of the 10 most traded ETFs in the US:
 // SPDR S&P 500 ETF Trust (SPY): Tracks the S&P 500 Index.
 // iShares Core S&P 500 ETF (IVV): Tracks the S&P 500 Index.
 // Vanguard S&P 500 ETF (VOO): Tracks the S&P 500 Index.
