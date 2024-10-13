@@ -8,13 +8,14 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import {
   fetchChartData,
-  fetchTickerData,
+  // fetchTickerData,
   TimeframeKey,
   TIMEFRAMES,
 } from "~/services/polygon";
 import { Fragment } from "react/jsx-runtime";
 import { PriceChangeDisplay } from "~/components/chart/PriceChange";
 import { getChartColor } from "~/utils/colors";
+import { getETFByTicker } from "~/models/etf.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
@@ -32,8 +33,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const [chartData, tickerData] = await Promise.all([
     fetchChartData(ticker, apiKey, timeframe),
-    fetchTickerData(ticker, apiKey),
+    // fetchTickerData(ticker, apiKey),
+    getETFByTicker(ticker),
   ]);
+  console.log(tickerData);
 
   return json({ chartData, tickerData, timeframe });
 };
@@ -77,7 +80,7 @@ export default function TickerTest() {
                   {chartData?.ticker}
                 </h2>
                 <h3 className="text-white font-semibold text-m">
-                  {tickerData?.results?.name}
+                  {tickerData?.name}
                 </h3>
                 <PriceChangeDisplay percentage={priceChange.percentage} />
               </div>

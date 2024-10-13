@@ -140,3 +140,4 @@ dist
 
 notes.md
 .prettierrc
+data/ticker_data_old.json
