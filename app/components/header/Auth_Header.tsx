@@ -14,7 +14,7 @@ export function Auth_Header() {
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-4">
           <a href="/" className="text-2xl font-bold">
-            ETF
+            Chrono
           </a>
           <Form onSubmit={handleSubmit}>
             <Input
@@ -27,6 +27,9 @@ export function Auth_Header() {
         </div>
       </div>
       <div className="flex items-center space-x-4">
+        <a href="/overview" className="text-white">
+          Overview
+        </a>
         <a href="/login" className="text-white">
           Login
         </a>

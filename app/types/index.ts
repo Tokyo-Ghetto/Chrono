@@ -1,3 +1,5 @@
+import { ETFCardProps } from "./etf";
+
 export interface Result {
   v: number; // Volume
   vw: number; // Volume-weighted average price
@@ -19,15 +21,6 @@ export interface ChartData {
   request_id: string;
   count: number;
 }
-
-// export interface FormattedData {
-//   id: string;
-//   color: string;
-//   data: Array<{
-//     x: string; // Formatted date
-//     y: number; // Close price
-//   }>;
-// }
 
 export interface FormattedDataPoint {
   x: string;
@@ -81,9 +74,12 @@ export interface TickerData {
   status: string;
 }
 
+// export interface LoaderData {
+//   chartData: ChartData;
+//   tickerData: TickerData;
+// }
 export interface LoaderData {
-  chartData: ChartData;
-  tickerData: TickerData;
+  etfData: ETFCardProps[];
 }
 
 export interface PriceChangeInfo {

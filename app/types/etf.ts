@@ -1,3 +1,5 @@
+import { ChartData, PriceChangeInfo } from "./index";
+
 export interface ETF {
   id: number;
   ticker: string;
@@ -20,4 +22,17 @@ export interface ETFDataResponse {
   request_id?: string;
   count?: number;
   next_url?: string;
+}
+
+// export interface ETFCardProps {
+//   ticker: string;
+//   tickerName: string;
+//   priceChange: PriceChangeInfo;
+// }
+export interface ETFCardProps {
+  ticker: string;
+  name: string;
+  endPrice: number;
+  priceChangePercentage: number;
+  chartLines: any[];
 }

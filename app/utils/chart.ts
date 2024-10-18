@@ -130,7 +130,9 @@ export function calculatePriceChange(
   startPrice: number,
   endPrice: number
 ): PriceChangeInfo {
-  const percentage = ((endPrice - startPrice) / startPrice) * 100;
+  const percentage = parseFloat(
+    (((endPrice - startPrice) / startPrice) * 100).toFixed(2)
+  );
 
   return {
     percentage,

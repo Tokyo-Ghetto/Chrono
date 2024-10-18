@@ -59,7 +59,7 @@ export async function importETFData() {
     console.log("ETF data imported successfully");
   } catch (error) {
     console.error("Error importing ETF data:", error);
-    throw error; // Re-throw to handle in the calling function
+    throw error;
   } finally {
     client.release();
   }

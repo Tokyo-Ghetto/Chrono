@@ -20,6 +20,9 @@ module.exports = {
     es6: true,
   },
   ignorePatterns: ["!**/.server", "!**/.client"],
+  rules: {
+    "react/prop-types": "off",
+  },
 
   // Base config
   extends: ["eslint:recommended"],

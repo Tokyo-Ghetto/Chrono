@@ -13,9 +13,10 @@ import {
   TIMEFRAMES,
 } from "~/services/polygon";
 import { Fragment } from "react/jsx-runtime";
-import { PriceChangeDisplay } from "~/components/chart/PriceChange";
+// import { PriceChangeDisplay } from "~/components/chart/PriceChange";
 import { getChartColor } from "~/utils/colors";
 import { getETFByTicker } from "~/models/etf.server";
+import PriceWithDiff from "~/components/chart/NumberFlow";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
@@ -33,10 +34,8 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const [chartData, tickerData] = await Promise.all([
     fetchChartData(ticker, apiKey, timeframe),
-    // fetchTickerData(ticker, apiKey),
     getETFByTicker(ticker),
   ]);
-  console.log(tickerData);
 
   return json({ chartData, tickerData, timeframe });
 };
@@ -82,7 +81,11 @@ export default function TickerTest() {
                 <h3 className="text-white font-semibold text-m">
                   {tickerData?.name}
                 </h3>
-                <PriceChangeDisplay percentage={priceChange.percentage} />
+                {/* <PriceChangeDisplay percentage={priceChange.percentage} /> */}
+                <PriceWithDiff
+                  value={priceChange.endPrice}
+                  diff={priceChange.percentage / 100}
+                />
               </div>
               <div
                 id="chart_time"

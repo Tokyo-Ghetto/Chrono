@@ -29,3 +29,29 @@ export async function createETFTable() {
     client.release();
   }
 }
+
+export async function createETFCacheTable() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS etf_cache (
+        id SERIAL PRIMARY KEY,
+        ticker VARCHAR(10) NOT NULL UNIQUE,
+        last_price NUMERIC(10, 2),
+        price_change_percentage NUMERIC(5, 2),
+        chart_data JSONB,
+        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_ticker
+          FOREIGN KEY(ticker) 
+          REFERENCES etf_info(ticker)
+          ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_etf_cache_ticker ON etf_cache(ticker);
+    `);
+    console.log("ETF cache table created successfully");
+  } catch (error) {
+    console.error("Error creating ETF cache table:", error);
+  } finally {
+    client.release();
+  }
+}
