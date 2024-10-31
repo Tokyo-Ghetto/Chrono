@@ -1,19 +1,14 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { PassThrough } from "node:stream";
 import { createReadableStreamFromReadable, json } from "@remix-run/node";
-import { RemixServer, useSubmit, Form as Form$1, Outlet, Meta, Links, ScrollRestoration, Scripts, Link, useLoaderData } from "@remix-run/react";
+import { RemixServer, useSubmit, Form, Outlet, Meta, Links, ScrollRestoration, Scripts, useLoaderData } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import * as React from "react";
 import { memo, useRef, useMemo, createContext, useContext, useState, useCallback, useEffect, createElement, Component, cloneElement, forwardRef, Fragment as Fragment$1 } from "react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useFormContext, FormProvider, Controller, useForm } from "react-hook-form";
-import { z as z$4 } from "zod";
-import { Slot } from "@radix-ui/react-slot";
-import { cva } from "class-variance-authority";
-import * as LabelPrimitive from "@radix-ui/react-label";
+import NodeCache from "node-cache";
 import c$3 from "prop-types";
 import { useSpring, animated, config, to, useTransition } from "@react-spring/web";
 import m$2 from "lodash/merge.js";
@@ -34,11 +29,9 @@ import r$1 from "lodash/sortBy.js";
 import a$1 from "lodash/isDate.js";
 import H$2 from "lodash/uniqueId.js";
 import Delaunator from "delaunator";
-import pg from "pg";
+import { Slot } from "@radix-ui/react-slot";
+import { cva } from "class-variance-authority";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
-import { motion } from "framer-motion";
-import NumberFlow, { useCanAnimate } from "@number-flow/react";
-import { ArrowUp } from "lucide-react";
 const ABORT_DELAY = 5e3;
 function handleRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext) {
   return isbot(request.headers.get("user-agent") || "") ? handleBotRequest(
@@ -166,8 +159,8 @@ function Auth_Header() {
   };
   return /* @__PURE__ */ jsxs("header", { className: "flex items-center justify-between p-4 bg-gray-800 text-white", children: [
     /* @__PURE__ */ jsx("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
-      /* @__PURE__ */ jsx("a", { href: "/", className: "text-2xl font-bold", children: "Chrono" }),
-      /* @__PURE__ */ jsx(Form$1, { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx(
+      /* @__PURE__ */ jsx("a", { href: "/", className: "text-2xl font-bold", children: "ETF" }),
+      /* @__PURE__ */ jsx(Form, { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx(
         Input,
         {
           type: "text",
@@ -178,7 +171,6 @@ function Auth_Header() {
       ) })
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
-      /* @__PURE__ */ jsx("a", { href: "/overview", className: "text-white", children: "Overview" }),
       /* @__PURE__ */ jsx("a", { href: "/login", className: "text-white", children: "Login" }),
       /* @__PURE__ */ jsx("a", { href: "/signup", className: "text-white", children: "Sign Up" })
     ] })
@@ -221,260 +213,185 @@ const route0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
   default: App,
   links
 }, Symbol.toStringTag, { value: "Module" }));
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-neutral-300",
-  {
-    variants: {
-      variant: {
-        default: "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
-        destructive: "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
-        outline: "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        secondary: "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50"
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9"
-      }
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default"
+function CacheTest() {
+  const cache = new NodeCache();
+  let stockData;
+  function getStockData(ticker2) {
+    stockData = cache.get(ticker2);
+    console.log(stockData);
+    if (stockData === void 0) {
+      stockData = getStockDataFromAPI(ticker2);
+      cache.set(ticker2, stockData, 10);
     }
+    console.log(stockData);
   }
-);
-const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return /* @__PURE__ */ jsx(
-      Comp,
-      {
-        className: cn$2(buttonVariants({ variant, size, className })),
-        ref,
-        ...props
-      }
-    );
+  function getStockDataFromAPI(ticker2) {
+    console.log("Fetching data from API");
+    return {
+      name: ticker2,
+      price: 100
+    };
   }
-);
-Button.displayName = "Button";
-const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-);
-const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  LabelPrimitive.Root,
-  {
-    ref,
-    className: cn$2(labelVariants(), className),
-    ...props
-  }
-));
-Label.displayName = LabelPrimitive.Root.displayName;
-const Form = FormProvider;
-const FormFieldContext = React.createContext(
-  {}
-);
-const FormField = ({
-  ...props
-}) => {
-  return /* @__PURE__ */ jsx(FormFieldContext.Provider, { value: { name: props.name }, children: /* @__PURE__ */ jsx(Controller, { ...props }) });
-};
-const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext);
-  const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useFormContext();
-  const fieldState = getFieldState(fieldContext.name, formState);
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>");
-  }
-  const { id } = itemContext;
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState
-  };
-};
-const FormItemContext = React.createContext(
-  {}
-);
-const FormItem = React.forwardRef(({ className, ...props }, ref) => {
-  const id = React.useId();
-  return /* @__PURE__ */ jsx(FormItemContext.Provider, { value: { id }, children: /* @__PURE__ */ jsx("div", { ref, className: cn$2("space-y-2", className), ...props }) });
-});
-FormItem.displayName = "FormItem";
-const FormLabel = React.forwardRef(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField();
-  return /* @__PURE__ */ jsx(
-    Label,
-    {
-      ref,
-      className: cn$2(error && "text-red-500 dark:text-red-900", className),
-      htmlFor: formItemId,
-      ...props
-    }
-  );
-});
-FormLabel.displayName = "FormLabel";
-const FormControl = React.forwardRef(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
-  return /* @__PURE__ */ jsx(
-    Slot,
-    {
-      ref,
-      id: formItemId,
-      "aria-describedby": !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`,
-      "aria-invalid": !!error,
-      ...props
-    }
-  );
-});
-FormControl.displayName = "FormControl";
-const FormDescription = React.forwardRef(({ className, ...props }, ref) => {
-  const { formDescriptionId } = useFormField();
-  return /* @__PURE__ */ jsx(
-    "p",
-    {
-      ref,
-      id: formDescriptionId,
-      className: cn$2("text-[0.8rem] text-neutral-500 dark:text-neutral-400", className),
-      ...props
-    }
-  );
-});
-FormDescription.displayName = "FormDescription";
-const FormMessage = React.forwardRef(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField();
-  const body = error ? String(error == null ? void 0 : error.message) : children;
-  if (!body) {
-    return null;
-  }
-  return /* @__PURE__ */ jsx(
-    "p",
-    {
-      ref,
-      id: formMessageId,
-      className: cn$2("text-[0.8rem] font-medium text-red-500 dark:text-red-900", className),
-      ...props,
-      children: body
-    }
-  );
-});
-FormMessage.displayName = "FormMessage";
-const formSchema = z$4.object({
-  initialDeposit: z$4.number().positive({
-    message: "Amount must be greater than 0."
-  }),
-  monthlyDeposit: z$4.number().nonnegative({
-    message: "Amount cannot be negative."
-  })
-});
-function Compound() {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      initialDeposit: 1e4,
-      monthlyDeposit: 0
-    }
-  });
-  function onSubmit(values) {
-    console.log(values);
-  }
-  return /* @__PURE__ */ jsx(Form, { ...form, children: /* @__PURE__ */ jsxs(
-    "form",
-    {
-      onSubmit: form.handleSubmit(onSubmit),
-      className: "m-8 space-y-8 bg-slate-800",
-      children: [
-        /* @__PURE__ */ jsx(
-          FormField,
-          {
-            control: form.control,
-            name: "initialDeposit",
-            render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
-              /* @__PURE__ */ jsx(FormLabel, { children: "Initial deposit" }),
-              /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(Input, { placeholder: "shadcn", ...field, className: "max-w-36" }) }),
-              /* @__PURE__ */ jsx(FormDescription, { children: "Placeholder description." }),
-              /* @__PURE__ */ jsx(FormMessage, {})
-            ] })
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          FormField,
-          {
-            control: form.control,
-            name: "monthlyDeposit",
-            render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
-              /* @__PURE__ */ jsx(FormLabel, { children: "Monthly deposit amount" }),
-              /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(Input, { placeholder: "shadcn", ...field, className: "max-w-36" }) }),
-              /* @__PURE__ */ jsx(FormDescription, { children: "Placeholder description." }),
-              /* @__PURE__ */ jsx(FormMessage, {})
-            ] })
-          }
-        ),
-        /* @__PURE__ */ jsx(Button, { type: "submit", children: "Submit" })
-      ]
-    }
-  ) });
+  return /* @__PURE__ */ jsxs("div", { children: [
+    /* @__PURE__ */ jsx("h1", { children: "Cache Test" }),
+    /* @__PURE__ */ jsx("button", { onClick: () => getStockData("AAPL"), children: "Get Stock Data" }),
+    /* @__PURE__ */ jsx("p", { children: stockData })
+  ] });
 }
 const route1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: Compound
+  default: CacheTest
 }, Symbol.toStringTag, { value: "Module" }));
-const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "div",
+const meta = () => {
+  return [
+    { title: "Remix" },
+    { name: "description", content: "Remix description" }
+  ];
+};
+function Index() {
+  return /* @__PURE__ */ jsx("div", { className: "flex h-screen items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center gap-16", children: [
+    /* @__PURE__ */ jsxs("header", { className: "flex flex-col items-center gap-9", children: [
+      /* @__PURE__ */ jsxs("h1", { className: "leading text-2xl font-bold text-gray-800 dark:text-gray-100", children: [
+        "Weldsdse to ",
+        /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Remix" })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "h-[144px] w-[434px]", children: [
+        /* @__PURE__ */ jsx(
+          "img",
+          {
+            src: "/logo-light.png",
+            alt: "Remix",
+            className: "block w-full dark:hidden"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "img",
+          {
+            src: "/logo-dark.png",
+            alt: "Remix",
+            className: "hidden w-full dark:block"
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("nav", { className: "flex flex-col items-center justify-center gap-4 rounded-3xl border border-gray-200 p-6 dark:border-gray-700", children: [
+      /* @__PURE__ */ jsx("p", { className: "leading-6 text-gray-700 dark:text-gray-200", children: "What's next?" }),
+      /* @__PURE__ */ jsx("ul", { children: resources.map(({ href, text, icon }) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs(
+        "a",
+        {
+          className: "group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500",
+          href,
+          target: "_blank",
+          rel: "noreferrer",
+          children: [
+            icon,
+            text
+          ]
+        }
+      ) }, href)) })
+    ] })
+  ] }) });
+}
+const resources = [
   {
-    ref,
-    className: cn$2(
-      "rounded-xl border border-neutral-200 bg-white text-neutral-950 shadow dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
-      className
-    ),
-    ...props
-  }
-));
-Card.displayName = "Card";
-const CardHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "div",
+    href: "https://remix.run/start/quickstart",
+    text: "Quick Start (5 min)",
+    icon: /* @__PURE__ */ jsx(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: "24",
+        height: "20",
+        viewBox: "0 0 20 20",
+        fill: "none",
+        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
+        children: /* @__PURE__ */ jsx(
+          "path",
+          {
+            d: "M8.51851 12.0741L7.92592 18L15.6296 9.7037L11.4815 7.33333L12.0741 2L4.37036 10.2963L8.51851 12.0741Z",
+            strokeWidth: "1.5",
+            strokeLinecap: "round",
+            strokeLinejoin: "round"
+          }
+        )
+      }
+    )
+  },
   {
-    ref,
-    className: cn$2("flex flex-col space-y-1.5 p-6", className),
-    ...props
-  }
-));
-CardHeader.displayName = "CardHeader";
-const CardTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "h3",
+    href: "https://remix.run/start/tutorial",
+    text: "Tutorial (30 min)",
+    icon: /* @__PURE__ */ jsx(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: "24",
+        height: "20",
+        viewBox: "0 0 20 20",
+        fill: "none",
+        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
+        children: /* @__PURE__ */ jsx(
+          "path",
+          {
+            d: "M4.561 12.749L3.15503 14.1549M3.00811 8.99944H1.01978M3.15503 3.84489L4.561 5.2508M8.3107 1.70923L8.3107 3.69749M13.4655 3.84489L12.0595 5.2508M18.1868 17.0974L16.635 18.6491C16.4636 18.8205 16.1858 18.8205 16.0144 18.6491L13.568 16.2028C13.383 16.0178 13.0784 16.0347 12.915 16.239L11.2697 18.2956C11.047 18.5739 10.6029 18.4847 10.505 18.142L7.85215 8.85711C7.75756 8.52603 8.06365 8.21994 8.39472 8.31453L17.6796 10.9673C18.0223 11.0653 18.1115 11.5094 17.8332 11.7321L15.7766 13.3773C15.5723 13.5408 15.5554 13.8454 15.7404 14.0304L18.1868 16.4767C18.3582 16.6481 18.3582 16.926 18.1868 17.0974Z",
+            strokeWidth: "1.5",
+            strokeLinecap: "round",
+            strokeLinejoin: "round"
+          }
+        )
+      }
+    )
+  },
   {
-    ref,
-    className: cn$2("font-semibold leading-none tracking-tight", className),
-    ...props
-  }
-));
-CardTitle.displayName = "CardTitle";
-const CardDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "p",
+    href: "https://remix.run/docs",
+    text: "Remix Docs",
+    icon: /* @__PURE__ */ jsx(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: "24",
+        height: "20",
+        viewBox: "0 0 20 20",
+        fill: "none",
+        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
+        children: /* @__PURE__ */ jsx(
+          "path",
+          {
+            d: "M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z",
+            strokeWidth: "1.5",
+            strokeLinecap: "round"
+          }
+        )
+      }
+    )
+  },
   {
-    ref,
-    className: cn$2("text-sm text-neutral-500 dark:text-neutral-400", className),
-    ...props
+    href: "https://rmx.as/discord",
+    text: "Join Discord",
+    icon: /* @__PURE__ */ jsx(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: "24",
+        height: "20",
+        viewBox: "0 0 24 20",
+        fill: "none",
+        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
+        children: /* @__PURE__ */ jsx(
+          "path",
+          {
+            d: "M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z",
+            strokeWidth: "1.5"
+          }
+        )
+      }
+    )
   }
-));
-CardDescription.displayName = "CardDescription";
-const CardContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn$2("p-6 pt-0", className), ...props }));
-CardContent.displayName = "CardContent";
-const CardFooter = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "div",
-  {
-    ref,
-    className: cn$2("flex items-center p-6 pt-0", className),
-    ...props
-  }
-));
-CardFooter.displayName = "CardFooter";
+];
+const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Index,
+  meta
+}, Symbol.toStringTag, { value: "Module" }));
 function v$2() {
   return v$2 = Object.assign ? Object.assign.bind() : function(t2) {
     for (var i2 = 1; i2 < arguments.length; i2++) {
@@ -6315,580 +6232,6 @@ forwardRef(function(e3, o2) {
     return jsx(ge, Q({ width: t2, height: n2 }, e3, { ref: o2 }));
   } });
 });
-const CHART_COLORS = {
-  POSITIVE: "#22c55e",
-  // Tailwind green-500
-  NEGATIVE: "#ef4444"
-  // Tailwind red-500
-};
-function getChartColor(percentage) {
-  return percentage >= 0 ? CHART_COLORS.POSITIVE : CHART_COLORS.NEGATIVE;
-}
-const ETFCard = ({
-  ticker: ticker2,
-  name,
-  endPrice,
-  priceChangePercentage,
-  chartLines
-}) => {
-  const lineColor = getChartColor(priceChangePercentage);
-  return /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx(Link, { to: `/test?ticker=${ticker2}`, children: /* @__PURE__ */ jsxs(Card, { className: "w-[350px] !bg-zinc-800 cursor-pointer", children: [
-    /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row justify-between align-items: flex-start", children: [
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx(CardTitle, { children: ticker2 }),
-        /* @__PURE__ */ jsx(CardDescription, { children: name })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "!mt-0", children: [
-        /* @__PURE__ */ jsx(CardTitle, { children: endPrice }),
-        /* @__PURE__ */ jsxs(CardDescription, { className: "text-neutral-500 dark:text-neutral-400", children: [
-          priceChangePercentage,
-          "%"
-        ] })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { id: "card_chart", className: "h-20", children: /* @__PURE__ */ jsx(
-      pe,
-      {
-        data: chartLines,
-        margin: { top: 0, right: 0, bottom: 0, left: 0 },
-        xScale: { type: "point" },
-        yScale: {
-          type: "linear",
-          min: "auto",
-          max: "auto",
-          stacked: true,
-          reverse: false
-        },
-        yFormat: " >-.2f",
-        axisTop: null,
-        axisRight: null,
-        axisBottom: null,
-        axisLeft: null,
-        isInteractive: false,
-        colors: [lineColor],
-        enablePoints: false,
-        enableGridX: false,
-        enableGridY: false
-      }
-    ) }) })
-  ] }) }) });
-};
-const TIMEFRAMES = {
-  "1D": {
-    multiplier: 5,
-    timespan: "minute",
-    fromDate: (date2) => {
-      const adjustedDate = adjustForWeekend(date2);
-      const yesterday = new Date(adjustedDate);
-      yesterday.setDate(yesterday.getDate() - 1);
-      return formatDate(yesterday);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  "1W": {
-    multiplier: 1,
-    timespan: "hour",
-    fromDate: (date2) => {
-      const weekAgo = new Date(date2);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return formatDate(weekAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  "1M": {
-    multiplier: 6,
-    timespan: "hour",
-    fromDate: (date2) => {
-      const monthAgo = new Date(date2);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return formatDate(monthAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  // Disabled due to API limitations
-  // "3M": {
-  //   multiplier: 1,
-  //   timespan: "day",
-  //   fromDate: (date: Date) => {
-  //     const threeMonthsAgo = new Date(date);
-  //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  //     return formatDate(threeMonthsAgo);
-  //   },
-  //   toDate: (date: Date) => formatDate(date),
-  // },
-  YTD: {
-    multiplier: 1,
-    timespan: "day",
-    fromDate: (date2) => `${date2.getFullYear()}-01-01`,
-    toDate: (date2) => formatDate(date2)
-  },
-  "1Y": {
-    multiplier: 1,
-    timespan: "day",
-    fromDate: (date2) => {
-      const yearAgo = new Date(date2);
-      yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-      return formatDate(yearAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  }
-  // Supposed to be 5Y, but API has a 2-year limit
-  // Disabled due to API limitations
-  // "2Y": {
-  //   multiplier: 1,
-  //   timespan: "week",
-  //   fromDate: (date: Date) => {
-  //     const fiveYearsAgo = new Date(date);
-  //     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 2);
-  //     return formatDate(fiveYearsAgo);
-  //   },
-  //   toDate: (date: Date) => formatDate(date),
-  // },
-};
-function formatDate(date2) {
-  return date2.toISOString().split("T")[0];
-}
-function adjustForWeekend(date2) {
-  const estDate = new Date(
-    date2.toLocaleString("en-US", { timeZone: "America/New_York" })
-  );
-  const day2 = estDate.getDay();
-  const hours = estDate.getHours();
-  const minutes = estDate.getMinutes();
-  if (day2 === 1 && (hours < 9 || hours === 9 && minutes < 30)) {
-    estDate.setDate(estDate.getDate() - 2);
-  } else if (day2 === 0) {
-    estDate.setDate(estDate.getDate() - 2);
-  } else if (day2 === 6) {
-    estDate.setDate(estDate.getDate() - 1);
-  }
-  return estDate;
-}
-function getTimeframeConfig(timeframe) {
-  const config2 = TIMEFRAMES[timeframe];
-  const currentDate = /* @__PURE__ */ new Date();
-  return {
-    multiplier: config2.multiplier,
-    timespan: config2.timespan,
-    fromDate: config2.fromDate(currentDate),
-    toDate: config2.toDate(currentDate)
-  };
-}
-async function fetchChartData(ticker2, apiKey, timeframe = "1D") {
-  const config2 = getTimeframeConfig(timeframe);
-  const url = new URL(
-    `https://api.polygon.io/v2/aggs/ticker/${ticker2}/range/${config2.multiplier}/${config2.timespan}/${config2.fromDate}/${config2.toDate}`
-  );
-  url.searchParams.append("adjusted", "false");
-  url.searchParams.append("sort", "asc");
-  url.searchParams.append("apiKey", apiKey);
-  const response = await fetch(url.toString());
-  return response.json();
-}
-function transformData(chartData, timeframe) {
-  if (!chartData || !chartData.results || chartData.results.length === 0) {
-    return {
-      chartLines: [],
-      priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
-    };
-  }
-  const results = chartData.results;
-  const startPrice = results[0].c;
-  const endPrice = results[results.length - 1].c;
-  const priceChange = calculatePriceChange(startPrice, endPrice);
-  const transformedData = [
-    {
-      id: chartData.ticker || "unknown",
-      data: results.map((result) => ({
-        x: formatDateChart(result.t, timeframe),
-        y: result.c
-      }))
-    }
-  ];
-  return {
-    chartLines: transformedData,
-    priceChange
-  };
-}
-function formatDateChart(timestamp, timeframe) {
-  const date2 = new Date(timestamp);
-  const timeOnly = {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true
-  };
-  const dayAndTime = {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true
-  };
-  const dateOnly = {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  };
-  switch (timeframe) {
-    case "1D":
-      return date2.toLocaleString("en-US", timeOnly);
-    case "1W":
-    case "1M":
-      return date2.toLocaleString("en-US", dayAndTime);
-    case "3M":
-    case "YTD":
-    case "1Y":
-    case "2Y":
-      return date2.toLocaleString("en-US", dateOnly);
-    default:
-      throw new Error(`Unsupported timeframe: ${timeframe}`);
-  }
-}
-function calculatePriceChange(startPrice, endPrice) {
-  const percentage = parseFloat(
-    ((endPrice - startPrice) / startPrice * 100).toFixed(2)
-  );
-  return {
-    percentage,
-    startPrice,
-    endPrice
-  };
-}
-let pool = new pg.Pool();
-if (process.env.NODE_ENV === "production") {
-  pool = new pg.Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_DATABASE,
-    password: process.env.DB_PASSWORD,
-    port: parseInt(process.env.DB_PORT || "5432")
-  });
-} else {
-  if (!global.__db__) {
-    global.__db__ = new pg.Pool({
-      user: process.env.DB_USER,
-      host: process.env.DB_HOST,
-      database: process.env.DB_DATABASE,
-      password: process.env.DB_PASSWORD,
-      port: parseInt(process.env.DB_PORT || "5432")
-    });
-  }
-  pool = global.__db__;
-}
-async function getETFByTicker(ticker2) {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(
-      `SELECT etf_cache_price.*, etf_info.name 
-      FROM etf_cache_price 
-      INNER JOIN etf_info on etf_cache_price.ticker = etf_info.ticker 
-      WHERE etf_cache_price.ticker = $1`,
-      [ticker2]
-    );
-    return result.rows[0] || null;
-  } finally {
-    client.release();
-  }
-}
-async function getCachedETFData(ticker2, timeframe = "1W") {
-  var _a;
-  const client = await pool.connect();
-  try {
-    const priceResult = await client.query(
-      `SELECT etf_cache_price.*, etf_info.name 
-      FROM etf_cache_price 
-      INNER JOIN etf_info on etf_cache_price.ticker = etf_info.ticker 
-      WHERE etf_cache_price.ticker = $1`,
-      [ticker2]
-    );
-    const chartResult = await client.query(
-      `SELECT chart_data 
-      FROM etf_cache_chart 
-      WHERE ticker = $1 AND timeframe = $2`,
-      [ticker2, timeframe]
-    );
-    if (priceResult.rows[0]) {
-      console.log(`Data for ${ticker2} retrieved from cache`);
-    } else {
-      console.log(`No cached data found for ${ticker2}`);
-    }
-    return {
-      ...priceResult.rows[0],
-      chart_data: ((_a = chartResult.rows[0]) == null ? void 0 : _a.chart_data) || null
-    };
-  } finally {
-    client.release();
-  }
-}
-async function isCacheStale(ticker2, timeframe = "1W") {
-  const client = await pool.connect();
-  try {
-    const priceResult = await client.query(
-      "SELECT last_updated FROM etf_cache_price WHERE ticker = $1",
-      [ticker2]
-    );
-    const chartResult = await client.query(
-      "SELECT last_updated FROM etf_cache_chart WHERE ticker = $1 AND timeframe = $2",
-      [ticker2, timeframe]
-    );
-    if (priceResult.rows.length === 0 || chartResult.rows.length === 0)
-      return true;
-    const priceLastUpdated = new Date(priceResult.rows[0].last_updated);
-    const chartLastUpdated = new Date(chartResult.rows[0].last_updated);
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1e3);
-    return priceLastUpdated < fiveMinutesAgo || chartLastUpdated < fiveMinutesAgo;
-  } finally {
-    client.release();
-  }
-}
-async function upsertETFCacheData(ticker2, lastPrice, priceChangePercentage, chartData, timeframe = "1W") {
-  const client = await pool.connect();
-  try {
-    const priceQuery = `
-      INSERT INTO etf_cache_price (ticker, last_price, price_change_percentage, last_updated)
-      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-      ON CONFLICT (ticker) 
-      DO UPDATE SET 
-        last_price = EXCLUDED.last_price,
-        price_change_percentage = EXCLUDED.price_change_percentage,
-        last_updated = CURRENT_TIMESTAMP;
-    `;
-    await client.query(priceQuery, [ticker2, lastPrice, priceChangePercentage]);
-    const chartQuery = `
-      INSERT INTO etf_cache_chart (ticker, timeframe, chart_data, last_updated)
-      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-      ON CONFLICT (ticker, timeframe) 
-      DO UPDATE SET 
-        chart_data = EXCLUDED.chart_data,
-        last_updated = CURRENT_TIMESTAMP;
-    `;
-    await client.query(chartQuery, [
-      ticker2,
-      timeframe,
-      JSON.stringify(chartData)
-    ]);
-    console.log(`Cache generated/updated for ${ticker2}`);
-  } catch (error) {
-    console.error(`Error updating cache for ${ticker2}:`, error);
-  } finally {
-    client.release();
-  }
-}
-const loader$1 = async ({ req }) => {
-  const tickers = ["SPY", "VOO", "QQQ", "VAW"];
-  const timeframe = "1W";
-  const apiKey = process.env.POLY_API_KEY;
-  if (!apiKey) {
-    throw new Error("API key is not configured");
-  }
-  const etfDataPromises = tickers.map(async (ticker2) => {
-    let cachedData = await getCachedETFData(ticker2, timeframe);
-    const isStale = await isCacheStale(ticker2, timeframe);
-    if (!cachedData || isStale) {
-      console.log(`Making API query for ${ticker2}`);
-      const [chartData, tickerData] = await Promise.all([
-        fetchChartData(ticker2, apiKey, timeframe),
-        getETFByTicker(ticker2)
-      ]);
-      const { chartLines, priceChange } = chartData ? transformData(chartData, timeframe) : {
-        chartLines: [],
-        priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
-      };
-      await upsertETFCacheData(
-        ticker2,
-        priceChange.endPrice,
-        priceChange.percentage,
-        chartLines,
-        timeframe
-      );
-      cachedData = {
-        ticker: ticker2,
-        name: tickerData == null ? void 0 : tickerData.name,
-        last_price: priceChange.endPrice,
-        price_change_percentage: priceChange.percentage,
-        chart_data: chartLines
-      };
-    }
-    return {
-      ticker: cachedData.ticker,
-      name: cachedData.name,
-      endPrice: cachedData.last_price,
-      priceChangePercentage: cachedData.price_change_percentage,
-      chartLines: cachedData.chart_data
-    };
-  });
-  const etfData = await Promise.all(etfDataPromises);
-  return { etfData };
-};
-function Overview() {
-  const { etfData } = useLoaderData();
-  return /* @__PURE__ */ jsx("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", children: etfData.map((etf) => /* @__PURE__ */ jsx(
-    ETFCard,
-    {
-      ticker: etf.ticker,
-      name: etf.name,
-      endPrice: etf.endPrice,
-      priceChangePercentage: etf.priceChangePercentage,
-      chartLines: etf.chartLines
-    },
-    etf.ticker
-  )) });
-}
-const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: Overview,
-  loader: loader$1
-}, Symbol.toStringTag, { value: "Module" }));
-const meta = () => {
-  return [
-    { title: "Remix" },
-    { name: "description", content: "Remix description" }
-  ];
-};
-function Index() {
-  return /* @__PURE__ */ jsx("div", { className: "flex h-screen items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center gap-16", children: [
-    /* @__PURE__ */ jsxs("header", { className: "flex flex-col items-center gap-9", children: [
-      /* @__PURE__ */ jsxs("h1", { className: "leading text-2xl font-bold text-gray-800 dark:text-gray-100", children: [
-        "Weldsdse to ",
-        /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Remix" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "h-[144px] w-[434px]", children: [
-        /* @__PURE__ */ jsx(
-          "img",
-          {
-            src: "/logo-light.png",
-            alt: "Remix",
-            className: "block w-full dark:hidden"
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          "img",
-          {
-            src: "/logo-dark.png",
-            alt: "Remix",
-            className: "hidden w-full dark:block"
-          }
-        )
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("nav", { className: "flex flex-col items-center justify-center gap-4 rounded-3xl border border-gray-200 p-6 dark:border-gray-700", children: [
-      /* @__PURE__ */ jsx("p", { className: "leading-6 text-gray-700 dark:text-gray-200", children: "What's next?" }),
-      /* @__PURE__ */ jsx("ul", { children: resources.map(({ href, text, icon }) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs(
-        "a",
-        {
-          className: "group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500",
-          href,
-          target: "_blank",
-          rel: "noreferrer",
-          children: [
-            icon,
-            text
-          ]
-        }
-      ) }, href)) })
-    ] })
-  ] }) });
-}
-const resources = [
-  {
-    href: "https://remix.run/start/quickstart",
-    text: "Quick Start (5 min)",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M8.51851 12.0741L7.92592 18L15.6296 9.7037L11.4815 7.33333L12.0741 2L4.37036 10.2963L8.51851 12.0741Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://remix.run/start/tutorial",
-    text: "Tutorial (30 min)",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M4.561 12.749L3.15503 14.1549M3.00811 8.99944H1.01978M3.15503 3.84489L4.561 5.2508M8.3107 1.70923L8.3107 3.69749M13.4655 3.84489L12.0595 5.2508M18.1868 17.0974L16.635 18.6491C16.4636 18.8205 16.1858 18.8205 16.0144 18.6491L13.568 16.2028C13.383 16.0178 13.0784 16.0347 12.915 16.239L11.2697 18.2956C11.047 18.5739 10.6029 18.4847 10.505 18.142L7.85215 8.85711C7.75756 8.52603 8.06365 8.21994 8.39472 8.31453L17.6796 10.9673C18.0223 11.0653 18.1115 11.5094 17.8332 11.7321L15.7766 13.3773C15.5723 13.5408 15.5554 13.8454 15.7404 14.0304L18.1868 16.4767C18.3582 16.6481 18.3582 16.926 18.1868 17.0974Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://remix.run/docs",
-    text: "Remix Docs",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://rmx.as/discord",
-    text: "Join Discord",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 24 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z",
-            strokeWidth: "1.5"
-          }
-        )
-      }
-    )
-  }
-];
-const route3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: Index,
-  meta
-}, Symbol.toStringTag, { value: "Module" }));
 function ActivePoint({
   currentSlice,
   ...props
@@ -7030,6 +6373,112 @@ const nivoTheme = {
     }
   }
 };
+function transformData(chartData, timeframe) {
+  if (!chartData || !chartData.results || chartData.results.length === 0) {
+    return {
+      chartLines: [],
+      priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
+    };
+  }
+  const results = chartData.results;
+  const startPrice = results[0].c;
+  const endPrice = results[results.length - 1].c;
+  const priceChange = calculatePriceChange(startPrice, endPrice);
+  const transformedData = [
+    {
+      id: chartData.ticker || "unknown",
+      data: results.map((result) => ({
+        x: formatDateChart(result.t, timeframe),
+        y: result.c
+      }))
+    }
+  ];
+  return {
+    chartLines: transformedData,
+    priceChange
+  };
+}
+function formatDateChart(timestamp, timeframe) {
+  const date2 = new Date(timestamp);
+  const timeOnly = {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true
+  };
+  const dayAndTime = {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true
+  };
+  const dateOnly = {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  };
+  switch (timeframe) {
+    case "1D":
+      return date2.toLocaleString("en-US", timeOnly);
+    case "1W":
+    case "1M":
+      return date2.toLocaleString("en-US", dayAndTime);
+    case "3M":
+    case "YTD":
+    case "1Y":
+    case "2Y":
+      return date2.toLocaleString("en-US", dateOnly);
+    default:
+      throw new Error(`Unsupported timeframe: ${timeframe}`);
+  }
+}
+function calculatePriceChange(startPrice, endPrice) {
+  const percentage = (endPrice - startPrice) / startPrice * 100;
+  return {
+    percentage,
+    startPrice,
+    endPrice
+  };
+}
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-neutral-300",
+  {
+    variants: {
+      variant: {
+        default: "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
+        destructive: "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
+        outline: "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+        secondary: "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
+        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50"
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9"
+      }
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default"
+    }
+  }
+);
+const Button = React.forwardRef(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return /* @__PURE__ */ jsx(
+      Comp,
+      {
+        className: cn$2(buttonVariants({ variant, size, className })),
+        ref,
+        ...props
+      }
+    );
+  }
+);
+Button.displayName = "Button";
 const Separator = React.forwardRef(
   ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
     SeparatorPrimitive.Root,
@@ -7047,119 +6496,178 @@ const Separator = React.forwardRef(
   )
 );
 Separator.displayName = SeparatorPrimitive.Root.displayName;
-const MotionNumberFlow = motion.create(NumberFlow);
-const MotionArrowUp = motion.create(ArrowUp);
-function PriceWithDiff({ value, diff }) {
-  const canAnimate = useCanAnimate();
-  return /* @__PURE__ */ jsxs(
-    "span",
-    {
-      style: { "--number-flow-char-height": "0.85em" },
-      className: "flex items-center gap-2",
-      children: [
-        /* @__PURE__ */ jsx(
-          NumberFlow,
-          {
-            value,
-            className: "~text-xl/4xl font-semibold",
-            format: { style: "currency", currency: "USD" }
-          }
-        ),
-        /* @__PURE__ */ jsxs(
-          motion.span,
-          {
-            animate: { backgroundColor: diff > 0 ? "#34d399" : "#ef4444" },
-            initial: false,
-            className: "~text-base/2xl inline-flex items-center px-[0.3em] text-white",
-            style: { borderRadius: 999 },
-            layout: canAnimate,
-            transition: { layout: { duration: 0.9, bounce: 0, type: "spring" } },
-            children: [
-              /* @__PURE__ */ jsx(
-                MotionArrowUp,
-                {
-                  className: "mr-0.5 size-[0.75em]",
-                  absoluteStrokeWidth: true,
-                  strokeWidth: 3,
-                  transition: { rotate: { type: "spring", duration: 0.5, bounce: 0 } },
-                  animate: { rotate: diff > 0 ? 0 : -180 },
-                  initial: false
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                MotionNumberFlow,
-                {
-                  value: diff,
-                  className: "font-semibold",
-                  format: { style: "percent", maximumFractionDigits: 2 },
-                  style: { "--number-flow-mask-height": "0.3em" },
-                  layout: canAnimate,
-                  layoutRoot: canAnimate
-                }
-              )
-            ]
-          }
-        )
-      ]
-    }
+const TIMEFRAMES = {
+  "1D": {
+    multiplier: 5,
+    timespan: "minute",
+    fromDate: (date2) => {
+      const adjustedDate = adjustForWeekend(date2);
+      const yesterday = new Date(adjustedDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return formatDate(yesterday);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  "1W": {
+    multiplier: 1,
+    timespan: "hour",
+    fromDate: (date2) => {
+      const weekAgo = new Date(date2);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return formatDate(weekAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  "1M": {
+    multiplier: 6,
+    timespan: "hour",
+    fromDate: (date2) => {
+      const monthAgo = new Date(date2);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return formatDate(monthAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  // Disabled due to API limitations
+  // "3M": {
+  //   multiplier: 1,
+  //   timespan: "day",
+  //   fromDate: (date: Date) => {
+  //     const threeMonthsAgo = new Date(date);
+  //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  //     return formatDate(threeMonthsAgo);
+  //   },
+  //   toDate: (date: Date) => formatDate(date),
+  // },
+  YTD: {
+    multiplier: 1,
+    timespan: "day",
+    fromDate: (date2) => `${date2.getFullYear()}-01-01`,
+    toDate: (date2) => formatDate(date2)
+  },
+  "1Y": {
+    multiplier: 1,
+    timespan: "day",
+    fromDate: (date2) => {
+      const yearAgo = new Date(date2);
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+      return formatDate(yearAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  }
+  // Supposed to be 5Y, but API has a 2-year limit
+  // Disabled due to API limitations
+  // "2Y": {
+  //   multiplier: 1,
+  //   timespan: "week",
+  //   fromDate: (date: Date) => {
+  //     const fiveYearsAgo = new Date(date);
+  //     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 2);
+  //     return formatDate(fiveYearsAgo);
+  //   },
+  //   toDate: (date: Date) => formatDate(date),
+  // },
+};
+function formatDate(date2) {
+  return date2.toISOString().split("T")[0];
+}
+function adjustForWeekend(date2) {
+  const estDate = new Date(
+    date2.toLocaleString("en-US", { timeZone: "America/New_York" })
   );
+  const day2 = estDate.getDay();
+  const hours = estDate.getHours();
+  const minutes = estDate.getMinutes();
+  if (day2 === 1 && (hours < 9 || hours === 9 && minutes < 30)) {
+    estDate.setDate(estDate.getDate() - 2);
+  } else if (day2 === 0) {
+    estDate.setDate(estDate.getDate() - 2);
+  } else if (day2 === 6) {
+    estDate.setDate(estDate.getDate() - 1);
+  }
+  return estDate;
+}
+function getTimeframeConfig(timeframe) {
+  const config2 = TIMEFRAMES[timeframe];
+  const currentDate = /* @__PURE__ */ new Date();
+  return {
+    multiplier: config2.multiplier,
+    timespan: config2.timespan,
+    fromDate: config2.fromDate(currentDate),
+    toDate: config2.toDate(currentDate)
+  };
+}
+async function fetchChartData(ticker2, apiKey, timeframe = "1D") {
+  const config2 = getTimeframeConfig(timeframe);
+  const url = new URL(
+    `https://api.polygon.io/v2/aggs/ticker/${ticker2}/range/${config2.multiplier}/${config2.timespan}/${config2.fromDate}/${config2.toDate}`
+  );
+  url.searchParams.append("adjusted", "false");
+  url.searchParams.append("sort", "asc");
+  url.searchParams.append("apiKey", apiKey);
+  const response = await fetch(url.toString());
+  return response.json();
+}
+async function fetchTickerData(ticker2, apiKey) {
+  const url = new URL(`https://api.polygon.io/v3/reference/tickers/${ticker2}`);
+  url.searchParams.append("apiKey", apiKey);
+  const response = await fetch(url.toString());
+  return response.json();
+}
+const CHART_COLORS = {
+  POSITIVE: "#22c55e",
+  // Tailwind green-500
+  NEGATIVE: "#ef4444"
+  // Tailwind red-500
+};
+function getChartColor(percentage) {
+  return percentage >= 0 ? CHART_COLORS.POSITIVE : CHART_COLORS.NEGATIVE;
+}
+function getChartColorClass(percentage) {
+  return percentage >= 0 ? "text-green-500" : "text-red-500";
+}
+function PriceChangeDisplay({ percentage }) {
+  const formattedPercentage = percentage.toFixed(2);
+  const isPositive = percentage >= 0;
+  const colorClass = getChartColorClass(percentage);
+  const sign2 = isPositive ? "+" : "";
+  return /* @__PURE__ */ jsxs("span", { className: `${colorClass} font-semibold ml-2`, children: [
+    sign2,
+    formattedPercentage,
+    "%"
+  ] });
 }
 const loader = async ({ request }) => {
   const url = new URL(request.url);
-  const ticker2 = url.searchParams.get("ticker") || "SPY";
+  const ticker2 = url.searchParams.get("ticker");
   const timeframe = url.searchParams.get("timeframe") || "1D";
+  if (!ticker2) {
+    return json({ chartData: null, tickerData: null });
+  }
   const apiKey = process.env.POLY_API_KEY;
   if (!apiKey) {
     throw new Error("API key is not configured");
   }
-  let cachedData = await getCachedETFData(ticker2, timeframe);
-  const isStale = await isCacheStale(ticker2, timeframe);
-  let chartData, tickerData;
-  if (!cachedData || isStale) {
-    console.log(`Making API query for ${ticker2}`);
-    [chartData, tickerData] = await Promise.all([
-      fetchChartData(ticker2, apiKey, timeframe),
-      getETFByTicker(ticker2)
-    ]);
-    const { chartLines, priceChange } = transformData(chartData, timeframe);
-    await upsertETFCacheData(
-      ticker2,
-      priceChange.endPrice,
-      priceChange.percentage,
-      chartLines,
-      timeframe
-    );
-    cachedData = {
-      ticker: ticker2,
-      name: tickerData == null ? void 0 : tickerData.name,
-      last_price: priceChange.endPrice,
-      price_change_percentage: priceChange.percentage,
-      chart_data: chartLines
-    };
-  }
-  return json({
-    ticker: cachedData.ticker,
-    name: cachedData.name,
-    endPrice: cachedData.last_price,
-    priceChangePercentage: cachedData.price_change_percentage,
-    chartLines: cachedData.chart_data,
-    timeframe
-  });
+  const [chartData, tickerData] = await Promise.all([
+    fetchChartData(ticker2, apiKey, timeframe),
+    fetchTickerData(ticker2, apiKey)
+  ]);
+  return json({ chartData, tickerData, timeframe });
 };
 function TickerTest() {
-  const {
-    ticker: ticker2,
-    name,
-    endPrice,
-    priceChangePercentage,
-    chartLines,
-    timeframe
-  } = useLoaderData();
+  var _a;
+  const { chartData, tickerData, timeframe } = useLoaderData();
   const submit = useSubmit();
-  const lineColor = getChartColor(priceChangePercentage);
+  const { chartLines, priceChange } = chartData ? transformData(chartData, timeframe) : {
+    chartLines: [],
+    priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
+  };
+  const lineColor = getChartColor(priceChange.percentage);
   const handleTimeframeChange = (newTimeframe) => {
     const formData = new FormData();
-    formData.append("ticker", ticker2);
+    if (chartData == null ? void 0 : chartData.ticker) {
+      formData.append("ticker", chartData.ticker);
+    }
     formData.append("timeframe", newTimeframe);
     submit(formData, { method: "get" });
   };
@@ -7173,15 +6681,9 @@ function TickerTest() {
           className: "flex flex-row justify-between items-end my-3",
           children: [
             /* @__PURE__ */ jsxs("div", { id: "titles", className: "", children: [
-              /* @__PURE__ */ jsx("h2", { className: "text-white font-semibold text-xl", children: ticker2 }),
-              /* @__PURE__ */ jsx("h3", { className: "text-white font-semibold text-m", children: name }),
-              /* @__PURE__ */ jsx(
-                PriceWithDiff,
-                {
-                  value: endPrice,
-                  diff: priceChangePercentage / 100
-                }
-              )
+              /* @__PURE__ */ jsx("h2", { className: "text-white font-semibold text-xl", children: chartData == null ? void 0 : chartData.ticker }),
+              /* @__PURE__ */ jsx("h3", { className: "text-white font-semibold text-m", children: (_a = tickerData == null ? void 0 : tickerData.results) == null ? void 0 : _a.name }),
+              /* @__PURE__ */ jsx(PriceChangeDisplay, { percentage: priceChange.percentage })
             ] }),
             /* @__PURE__ */ jsx(
               "div",
@@ -7279,12 +6781,12 @@ function TickerTest() {
     ] }) : /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("p", { className: "text-center", children: "Please use the search field above to retrieve ETF information." }) }) })
   ] });
 }
-const route4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const route3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: TickerTest,
   loader
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-8oX1sRIf.js", "imports": ["/assets/jsx-runtime-DXziN93k.js", "/assets/index-dk-FTb3I.js", "/assets/components-CnWzuVUc.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-DLNO2M2w.js", "imports": ["/assets/jsx-runtime-DXziN93k.js", "/assets/index-dk-FTb3I.js", "/assets/components-CnWzuVUc.js", "/assets/input-DpNY1jk_.js", "/assets/utils-BM_CldAA.js"], "css": ["/assets/root-BPkxC518.css"] }, "routes/compound": { "id": "routes/compound", "parentId": "root", "path": "compound", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/compound-mJFdafc9.js", "imports": ["/assets/jsx-runtime-DXziN93k.js", "/assets/index-DpNyIZ_-.js", "/assets/utils-BM_CldAA.js", "/assets/input-DpNY1jk_.js", "/assets/index-dk-FTb3I.js"], "css": [] }, "routes/overview": { "id": "routes/overview", "parentId": "root", "path": "overview", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/overview-mckNA8mu.js", "imports": ["/assets/jsx-runtime-DXziN93k.js", "/assets/utils-BM_CldAA.js", "/assets/colors-DY4LgTcV.js", "/assets/components-CnWzuVUc.js", "/assets/index-dk-FTb3I.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-CTt-7ZGf.js", "imports": ["/assets/jsx-runtime-DXziN93k.js"], "css": [] }, "routes/test": { "id": "routes/test", "parentId": "root", "path": "test", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/test-DJCo_Zz4.js", "imports": ["/assets/jsx-runtime-DXziN93k.js", "/assets/colors-DY4LgTcV.js", "/assets/index-DpNyIZ_-.js", "/assets/utils-BM_CldAA.js", "/assets/components-CnWzuVUc.js", "/assets/index-dk-FTb3I.js"], "css": [] } }, "url": "/assets/manifest-bec871be.js", "version": "bec871be" };
+const serverManifest = { "entry": { "module": "/assets/entry.client-2zmrzn99.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-DhufAra7.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js", "/assets/utils-BM_CldAA.js"], "css": ["/assets/root-DSX_0Mrb.css"] }, "routes/cache_test": { "id": "routes/cache_test", "parentId": "root", "path": "cache_test", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/cache_test-DTwDIdJv.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-Ca6-kmAs.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js"], "css": [] }, "routes/test": { "id": "routes/test", "parentId": "root", "path": "test", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/test-DJk-sE4A.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js", "/assets/utils-BM_CldAA.js"], "css": [] } }, "url": "/assets/manifest-81906982.js", "version": "81906982" };
 const mode = "production";
 const assetsBuildDirectory = "build\\client";
 const basename = "/";
@@ -7301,21 +6803,13 @@ const routes = {
     caseSensitive: void 0,
     module: route0
   },
-  "routes/compound": {
-    id: "routes/compound",
+  "routes/cache_test": {
+    id: "routes/cache_test",
     parentId: "root",
-    path: "compound",
+    path: "cache_test",
     index: void 0,
     caseSensitive: void 0,
     module: route1
-  },
-  "routes/overview": {
-    id: "routes/overview",
-    parentId: "root",
-    path: "overview",
-    index: void 0,
-    caseSensitive: void 0,
-    module: route2
   },
   "routes/_index": {
     id: "routes/_index",
@@ -7323,7 +6817,7 @@ const routes = {
     path: void 0,
     index: true,
     caseSensitive: void 0,
-    module: route3
+    module: route2
   },
   "routes/test": {
     id: "routes/test",
@@ -7331,7 +6825,7 @@ const routes = {
     path: "test",
     index: void 0,
     caseSensitive: void 0,
-    module: route4
+    module: route3
   }
 };
 export {
