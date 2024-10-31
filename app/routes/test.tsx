@@ -1,3 +1,5 @@
+// Update ticker prices, as different timeframes have different prices
+
 import { LoaderFunction, json } from "@remix-run/node";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import { ResponsiveLine, Layer } from "@nivo/line";
@@ -6,57 +8,85 @@ import { nivoTheme } from "~/components/chart/ChartTheme";
 import { transformData } from "~/utils/chart";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
-import {
-  fetchChartData,
-  // fetchTickerData,
-  TimeframeKey,
-  TIMEFRAMES,
-} from "~/services/polygon";
+import { fetchChartData, TimeframeKey, TIMEFRAMES } from "~/services/polygon";
 import { Fragment } from "react/jsx-runtime";
-// import { PriceChangeDisplay } from "~/components/chart/PriceChange";
 import { getChartColor } from "~/utils/colors";
-import { getETFByTicker } from "~/models/etf.server";
+import {
+  getCachedETFData,
+  getETFByTicker,
+  isCacheStale,
+} from "~/models/etf.server";
 import PriceWithDiff from "~/components/chart/NumberFlow";
+import { upsertETFCacheData } from "~/db/migrations/etf-cache.server";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
-  const ticker = url.searchParams.get("ticker");
+  const ticker = url.searchParams.get("ticker") || "SPY"; // Default to SPY if no ticker provided
   const timeframe = (url.searchParams.get("timeframe") as TimeframeKey) || "1D";
-
-  if (!ticker) {
-    return json({ chartData: null, tickerData: null });
-  }
 
   const apiKey = process.env.POLY_API_KEY;
   if (!apiKey) {
     throw new Error("API key is not configured");
   }
 
-  const [chartData, tickerData] = await Promise.all([
-    fetchChartData(ticker, apiKey, timeframe),
-    getETFByTicker(ticker),
-  ]);
+  let cachedData = await getCachedETFData(ticker, timeframe);
+  const isStale = await isCacheStale(ticker, timeframe);
 
-  return json({ chartData, tickerData, timeframe });
+  let chartData, tickerData;
+
+  if (!cachedData || isStale) {
+    console.log(`Making API query for ${ticker}`);
+    [chartData, tickerData] = await Promise.all([
+      fetchChartData(ticker, apiKey, timeframe),
+      getETFByTicker(ticker),
+    ]);
+
+    const { chartLines, priceChange } = transformData(chartData, timeframe);
+
+    // Update cache
+    await upsertETFCacheData(
+      ticker,
+      priceChange.endPrice,
+      priceChange.percentage,
+      chartLines,
+      timeframe
+    );
+
+    cachedData = {
+      ticker,
+      name: tickerData?.name,
+      last_price: priceChange.endPrice,
+      price_change_percentage: priceChange.percentage,
+      chart_data: chartLines,
+    };
+  }
+
+  return json({
+    ticker: cachedData.ticker,
+    name: cachedData.name,
+    endPrice: cachedData.last_price,
+    priceChangePercentage: cachedData.price_change_percentage,
+    chartLines: cachedData.chart_data,
+    timeframe,
+  });
 };
 
 export default function TickerTest() {
-  const { chartData, tickerData, timeframe } = useLoaderData<typeof loader>();
+  const {
+    ticker,
+    name,
+    endPrice,
+    priceChangePercentage,
+    chartLines,
+    timeframe,
+  } = useLoaderData<typeof loader>();
   const submit = useSubmit();
-  const { chartLines, priceChange } = chartData
-    ? transformData(chartData, timeframe as TimeframeKey)
-    : {
-        chartLines: [],
-        priceChange: { percentage: 0, startPrice: 0, endPrice: 0 },
-      };
 
-  const lineColor = getChartColor(priceChange.percentage);
+  const lineColor = getChartColor(priceChangePercentage);
 
   const handleTimeframeChange = (newTimeframe: TimeframeKey) => {
     const formData = new FormData();
-    if (chartData?.ticker) {
-      formData.append("ticker", chartData.ticker);
-    }
+    formData.append("ticker", ticker);
     formData.append("timeframe", newTimeframe);
     submit(formData, { method: "get" });
   };
@@ -75,16 +105,11 @@ export default function TickerTest() {
               className="flex flex-row justify-between items-end my-3"
             >
               <div id="titles" className="">
-                <h2 className="text-white font-semibold text-xl">
-                  {chartData?.ticker}
-                </h2>
-                <h3 className="text-white font-semibold text-m">
-                  {tickerData?.name}
-                </h3>
-                {/* <PriceChangeDisplay percentage={priceChange.percentage} /> */}
+                <h2 className="text-white font-semibold text-xl">{ticker}</h2>
+                <h3 className="text-white font-semibold text-m">{name}</h3>
                 <PriceWithDiff
-                  value={priceChange.endPrice}
-                  diff={priceChange.percentage / 100}
+                  value={endPrice}
+                  diff={priceChangePercentage / 100}
                 />
               </div>
               <div
@@ -99,7 +124,6 @@ export default function TickerTest() {
                     >
                       {key}
                     </Button>
-                    {/* Key should be the largest timeframe available */}
                     {key !== "1Y" && <Separator orientation="vertical" />}
                   </Fragment>
                 ))}
@@ -141,7 +165,6 @@ export default function TickerTest() {
                 enablePoints={false}
                 enableGridX={false}
                 enableGridY={false}
-                // Interactivity
                 isInteractive={true}
                 enableSlices="x"
                 enableCrosshair={true}

@@ -43,7 +43,10 @@ export default function Compound() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="m-8 space-y-8 bg-slate-800"
+      >
         <FormField
           control={form.control}
           name="initialDeposit"
@@ -51,11 +54,9 @@ export default function Compound() {
             <FormItem>
               <FormLabel>Initial deposit</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="shadcn" {...field} className="max-w-36" />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              <FormDescription>Placeholder description.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -67,11 +68,9 @@ export default function Compound() {
             <FormItem>
               <FormLabel>Monthly deposit amount</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="shadcn" {...field} className="max-w-36" />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              <FormDescription>Placeholder description.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
