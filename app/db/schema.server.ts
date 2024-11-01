@@ -30,53 +30,27 @@ export async function createETFTable() {
   }
 }
 
-export async function createETFCachePrice() {
+export async function createETFCacheTable() {
   const client = await pool.connect();
   try {
     await client.query(`
-      CREATE TABLE IF NOT EXISTS etf_cache_price (
+      CREATE TABLE IF NOT EXISTS etf_cache (
         id SERIAL PRIMARY KEY,
         ticker VARCHAR(10) NOT NULL UNIQUE,
         last_price NUMERIC(10, 2),
         price_change_percentage NUMERIC(5, 2),
-        -- chart_data JSONB,
-        last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_ticker
-          FOREIGN KEY(ticker) 
-          REFERENCES etf_info(ticker)
-          ON DELETE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS idx_etf_cache_price_ticker ON etf_cache_price(ticker);
-    `);
-    console.log("ETF price cache table created successfully");
-  } catch (error) {
-    console.error("Error creating ETF price cache table:", error);
-  } finally {
-    client.release();
-  }
-}
-
-export async function createETFCacheChart() {
-  const client = await pool.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS etf_cache_chart (
-        id SERIAL PRIMARY KEY,
-        ticker VARCHAR(10) NOT NULL,
-        timeframe VARCHAR(5) NOT NULL, 
         chart_data JSONB,
         last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (ticker, timeframe),
         CONSTRAINT fk_ticker
           FOREIGN KEY(ticker) 
           REFERENCES etf_info(ticker)
           ON DELETE CASCADE
       );
-      CREATE INDEX IF NOT EXISTS idx_etf_cache_chart_ticker ON etf_cache_chart(ticker);
+      CREATE INDEX IF NOT EXISTS idx_etf_cache_ticker ON etf_cache(ticker);
     `);
-    console.log("ETF chart data cache table created successfully");
+    console.log("ETF cache table created successfully");
   } catch (error) {
-    console.error("Error creating ETF chart data cache table:", error);
+    console.error("Error creating ETF cache table:", error);
   } finally {
     client.release();
   }

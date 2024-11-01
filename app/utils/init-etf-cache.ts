@@ -1,9 +1,8 @@
-import { createETFCachePrice, createETFCacheChart } from "../db/schema.server";
+import { createETFCacheTable } from "../db/schema.server";
 
 async function main() {
   try {
-    await createETFCachePrice();
-    await createETFCacheChart();
+    await createETFCacheTable();
     process.exit(0);
   } catch (error) {
     console.error("Error in main execution:", error);
