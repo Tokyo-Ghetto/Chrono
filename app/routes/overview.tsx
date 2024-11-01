@@ -1,5 +1,4 @@
 import ETFCard from "~/components/card/ETFCard";
-import { Button } from "~/components/ui/button";
 import { useLoaderData } from "@remix-run/react";
 import { fetchChartData } from "~/services/polygon";
 import { transformData } from "~/utils/chart";
@@ -21,8 +20,8 @@ export const loader = async ({ req }) => {
   }
 
   const etfDataPromises = tickers.map(async (ticker) => {
-    let cachedData = await getCachedETFData(ticker);
-    const isStale = await isCacheStale(ticker);
+    let cachedData = await getCachedETFData(ticker, timeframe);
+    const isStale = await isCacheStale(ticker, timeframe);
 
     if (!cachedData || isStale) {
       console.log(`Making API query for ${ticker}`);
@@ -43,12 +42,13 @@ export const loader = async ({ req }) => {
         ticker,
         priceChange.endPrice,
         priceChange.percentage,
-        chartLines
+        chartLines,
+        timeframe
       );
 
       cachedData = {
         ticker,
-        etf_name: tickerData?.name,
+        name: tickerData?.name,
         last_price: priceChange.endPrice,
         price_change_percentage: priceChange.percentage,
         chart_data: chartLines,

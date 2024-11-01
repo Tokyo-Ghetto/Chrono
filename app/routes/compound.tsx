@@ -1,4 +1,3 @@
-//Split this file into multiple components/files
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -37,13 +36,15 @@ export default function Compound() {
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
-    // ✅ This will be type-safe and validated.
     console.log(values);
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="m-8 space-y-8 bg-slate-800"
+      >
         <FormField
           control={form.control}
           name="initialDeposit"
@@ -51,11 +52,9 @@ export default function Compound() {
             <FormItem>
               <FormLabel>Initial deposit</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="shadcn" {...field} className="max-w-36" />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              <FormDescription>Placeholder description.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -67,11 +66,9 @@ export default function Compound() {
             <FormItem>
               <FormLabel>Monthly deposit amount</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="shadcn" {...field} className="max-w-36" />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              <FormDescription>Placeholder description.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
