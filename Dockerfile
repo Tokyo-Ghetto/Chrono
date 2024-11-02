@@ -1,13 +1,16 @@
 FROM node:alpine
 
 WORKDIR /app
-COPY package*.json ./
+
+COPY . /app/
+
 RUN npm install
-COPY . .
 RUN npm run build
 
-COPY init-db.sh ./init-db.sh
-RUN chmod +x ./init-db.sh
+RUN chmod +x /app/init-db.sh
+CMD [/app/init-db.sh]
 
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "./init-db.sh && npm run start"]
+
+ENTRYPOINT npm run start
+# CMD ["/bin/sh", "-c", "./init-db.sh && npm run start"]
