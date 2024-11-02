@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-          sudo screen -r Chrono
+            sudo screen -r Chrono
             cd /home/ubuntu/chrono
             git pull
             docker compose down
