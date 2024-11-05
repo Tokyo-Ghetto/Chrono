@@ -1,6 +1,5 @@
 import pg from "pg";
 
-// let pool: Pool;
 let pool = new pg.Pool();
 
 declare global {

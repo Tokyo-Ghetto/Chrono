@@ -9,6 +9,7 @@ import { ResponsiveLine } from "@nivo/line";
 import { getChartColor } from "~/utils/colors";
 import { ETFCardProps } from "~/types/etf";
 import { Link } from "@remix-run/react";
+import { formatPrice } from "~/utils/format";
 
 const ETFCard: React.FC<ETFCardProps> = ({
   ticker,
@@ -29,7 +30,7 @@ const ETFCard: React.FC<ETFCardProps> = ({
               <CardDescription>{name}</CardDescription>
             </div>
             <div className="!mt-0">
-              <CardTitle>{endPrice}</CardTitle>
+              <CardTitle>{formatPrice(endPrice)}</CardTitle>
               <CardDescription className="text-neutral-500 dark:text-neutral-400">
                 {priceChangePercentage}%
               </CardDescription>

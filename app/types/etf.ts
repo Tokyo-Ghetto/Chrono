@@ -1,5 +1,3 @@
-import { ChartData, PriceChangeInfo } from "./index";
-
 export interface ETF {
   id: number;
   ticker: string;

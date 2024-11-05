@@ -64,7 +64,6 @@ export const TIMEFRAMES = {
     },
     toDate: (date: Date) => formatDate(date),
   },
-  // Supposed to be 5Y, but API has a 2-year limit
   // Disabled due to API limitations
   // "2Y": {
   //   multiplier: 1,
@@ -130,6 +129,11 @@ export async function fetchChartData(
   url.searchParams.append("adjusted", "false");
   url.searchParams.append("sort", "asc");
   url.searchParams.append("apiKey", apiKey);
+
+  // Add limit parameter for 1M timeframe
+  if (timeframe === "1M") {
+    url.searchParams.append("limit", "50000");
+  }
 
   const response = await fetch(url.toString());
   return response.json();

@@ -36,7 +36,7 @@ export async function upsertETFCacheData(
       JSON.stringify(chartData),
     ]);
 
-    console.log(`Cache generated/updated for ${ticker}`);
+    console.log(`Cache generated/updated for ${ticker}: ${timeframe}`);
   } catch (error) {
     console.error(`Error updating cache for ${ticker}:`, error);
   } finally {

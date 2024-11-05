@@ -1,6 +1,8 @@
 import { Input } from "~/components/ui/input";
 import { Form, useSubmit } from "@remix-run/react";
 
+// Add shadcn/ui navigation menu to the header
+
 export function Auth_Header() {
   const submit = useSubmit();
 
@@ -13,7 +15,7 @@ export function Auth_Header() {
     <header className="flex items-center justify-between p-4 bg-gray-800 text-white">
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-4">
-          <a href="/" className="text-2xl font-bold">
+          <a href="/overview" className="text-2xl font-bold">
             Chrono
           </a>
           <Form onSubmit={handleSubmit}>
@@ -26,7 +28,7 @@ export function Auth_Header() {
           </Form>
         </div>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-8">
         <a href="/overview" className="text-white">
           Overview
         </a>

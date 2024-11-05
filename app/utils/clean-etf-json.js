@@ -7,7 +7,6 @@ console.log(jsonData);
 
 const uniqueTickers = {};
 
-// Loop through the JSON array
 jsonData.forEach((entry) => {
   const ticker = entry.ticker;
 
@@ -21,7 +20,6 @@ jsonData.forEach((entry) => {
     const currentProperties = Object.keys(currentEntry).length;
     const newProperties = Object.keys(entry).length;
 
-    // You can modify this logic to prefer entries with specific fields like 'cik'
     if (newProperties < currentProperties) {
       uniqueTickers[ticker] = entry;
     }

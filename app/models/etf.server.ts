@@ -1,5 +1,6 @@
 import { pool } from "~/db/index.server";
 import type { ETF } from "~/types/etf";
+import { TIMEFRAMES, type TimeframeKey } from "~/services/polygon";
 
 export async function getETFByTicker(ticker: string): Promise<ETF | null> {
   const client = await pool.connect();
@@ -39,7 +40,7 @@ export async function getCachedETFData(
     );
 
     if (priceResult.rows[0]) {
-      console.log(`Data for ${ticker} retrieved from cache`);
+      console.log(`Data for ${ticker} retrieved from cache: ${timeframe}`);
     } else {
       console.log(`No cached data found for ${ticker}`);
     }
@@ -53,9 +54,25 @@ export async function getCachedETFData(
   }
 }
 
+function getStalenessThreshold(timeframe: TimeframeKey): number {
+  const config = TIMEFRAMES[timeframe as TimeframeKey];
+
+  // Convert timespan and multiplier to milliseconds
+  switch (config.timespan) {
+    case "minute":
+      return config.multiplier * 60 * 1000;
+    case "hour":
+      return config.multiplier * 60 * 60 * 1000;
+    case "day":
+      return config.multiplier * 24 * 60 * 60 * 1000;
+    default:
+      return 5 * 60 * 1000; // 5 min default if unknown timeframe
+  }
+}
+
 export async function isCacheStale(
   ticker: string,
-  timeframe: string = "1W"
+  timeframe: TimeframeKey = "1W"
 ): Promise<boolean> {
   const client = await pool.connect();
   try {
@@ -73,11 +90,12 @@ export async function isCacheStale(
 
     const priceLastUpdated = new Date(priceResult.rows[0].last_updated);
     const chartLastUpdated = new Date(chartResult.rows[0].last_updated);
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    return (
-      priceLastUpdated < fiveMinutesAgo || chartLastUpdated < fiveMinutesAgo
-    );
+    // Get staleness threshold based on timeframe
+    const threshold = getStalenessThreshold(timeframe);
+    const thresholdDate = new Date(Date.now() - threshold);
+
+    return priceLastUpdated < thresholdDate || chartLastUpdated < thresholdDate;
   } finally {
     client.release();
   }

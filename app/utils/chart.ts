@@ -72,10 +72,8 @@ export function formatDateChart(
     case "1M":
       return date.toLocaleString("en-US", dayAndTime);
 
-    case "3M":
     case "YTD":
     case "1Y":
-    case "2Y":
       return date.toLocaleString("en-US", dateOnly);
 
     default:

@@ -11,6 +11,7 @@ import { Separator } from "~/components/ui/separator";
 import { fetchChartData, TimeframeKey, TIMEFRAMES } from "~/services/polygon";
 import { Fragment } from "react/jsx-runtime";
 import { getChartColor } from "~/utils/colors";
+import { formatPrice } from "~/utils/format";
 import {
   getCachedETFData,
   getETFByTicker,
@@ -93,10 +94,6 @@ export default function TickerTest() {
 
   return (
     <div className="bg-slate-900 p-5">
-      <div className="flex flex-col items-center">
-        <h1 className="my-5 text-2xl font-bold">Index data retriever</h1>
-      </div>
-
       <div className="mt-5">
         {chartLines.length > 0 ? (
           <div id="container" className="h-auto">
@@ -187,7 +184,7 @@ export default function TickerTest() {
                       </div>
                       <div>
                         <strong style={{ fontSize: "1rem", color: "white" }}>
-                          {slice.points[0].data.yFormatted}
+                          {formatPrice(slice.points[0].data.yFormatted)}
                         </strong>
                       </div>
                     </div>
