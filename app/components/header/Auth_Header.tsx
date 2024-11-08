@@ -29,6 +29,9 @@ export function Auth_Header() {
         </div>
       </div>
       <div className="flex items-center space-x-8">
+        <a href="/compound" className="text-white">
+          Calculator
+        </a>
         <a href="/overview" className="text-white">
           Overview
         </a>

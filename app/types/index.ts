@@ -92,3 +92,9 @@ export interface TransformedChartData {
   chartLines: FormattedData[];
   priceChange: PriceChangeInfo;
 }
+
+export interface CompoundResult {
+  year: number;
+  totalContributions: number;
+  futureValue: number;
+}
