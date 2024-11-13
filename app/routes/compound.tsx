@@ -1,17 +1,32 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, ControllerRenderProps } from "react-hook-form";
-import { z } from "zod";
-import { X } from "lucide-react";
-import { useState } from "react";
-import { Button } from "~/components/ui/button";
+import { json, type LoaderFunction } from "@remix-run/node";
+import { getETFByTicker } from "~/models/etf.server";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { ResponsiveLine } from "@nivo/line";
+import { nivoTheme } from "~/components/chart/ChartTheme";
+import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useState, useCallback, useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ETFList } from "~/components/compound/ETFList";
+import { FocusableInput } from "~/components/compound/FocusableInput";
+import { formSchema, CompoundFormValues, TickerReturn } from "~/types/compound";
+import { defaultValues, calculateCompoundInterest } from "~/utils/compound";
+import {
+  formatCurrency,
+  parseCurrencyInput,
+  formatPercentage,
+  parsePercentageInput,
+} from "~/utils/format";
+import { useForm } from "react-hook-form";
 import {
   Select,
   SelectContent,
@@ -19,148 +34,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Input } from "~/components/ui/input";
-import {
-  formatCurrency,
-  parseCurrencyInput,
-  formatPercentage,
-  parsePercentageInput,
-} from "~/utils/format";
-import { Card } from "~/components/ui/card";
 
-const formSchema = z.object({
-  initialDeposit: z
-    .number()
-    .positive({ message: "Amount must be greater than 0." }),
-  monthlyDeposit: z
-    .number()
-    .nonnegative({ message: "Amount cannot be negative." }),
-  timePeriod: z
-    .number()
-    .positive({ message: "Time period must be at least 1 year." }),
-  userInterest: z
-    .number()
-    .positive({ message: "Interest rate must be greater than 0." }),
-  compFrequency: z.string(),
-  etfTickers: z.array(z.string()).default([]),
-});
-
-type CompoundFormValues = z.infer<typeof formSchema>;
-
-const defaultValues: CompoundFormValues = {
-  initialDeposit: 15000,
-  monthlyDeposit: 0,
-  timePeriod: 1,
-  userInterest: 0,
-  compFrequency: "annual",
-  etfTickers: [],
-};
-
-interface ETFListProps {
-  tickers: string[];
-  onRemove: (index: number) => void;
+interface LoaderData {
+  etfData: Record<string, string>;
 }
 
-const ETFList = ({ tickers, onRemove }: ETFListProps) => (
-  <div className="space-y-2">
-    {tickers.map((ticker, index) => (
-      <div
-        key={index}
-        className="flex items-center justify-between bg-stone-700 p-4 rounded-lg w-full"
-      >
-        <div className="space-y-1">
-          <div className="font-medium text-white">{ticker}</div>
-          <div className="text-sm text-stone-300">Placeholder</div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-stone-300">
-            Avg. Interest Rate: 5.67%
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-stone-400 hover:text-white"
-            onClick={() => onRemove(index)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    ))}
-  </div>
-);
+export const loader: LoaderFunction = async ({ request }) => {
+  const url = new URL(request.url);
+  const tickers =
+    url.searchParams.get("tickers")?.split(",").filter(Boolean) || [];
 
-interface FocusableInputProps {
-  field: ControllerRenderProps<
-    CompoundFormValues,
-    keyof Pick<
-      CompoundFormValues,
-      "initialDeposit" | "monthlyDeposit" | "userInterest"
-    >
-  >;
-  isFocused: boolean;
-  setIsFocused: (focused: boolean) => void;
-  formatter: (value: number) => string;
-  parser: (value: string) => string;
-}
+  if (tickers.length === 0) {
+    return json<LoaderData>({ etfData: {} });
+  }
 
-const FocusableInput = ({
-  field,
-  isFocused,
-  setIsFocused,
-  formatter,
-  parser,
-}: FocusableInputProps) => {
-  const [inputValue, setInputValue] = useState(field.value.toString());
+  const etfDataPromises = tickers.map(async (ticker) => {
+    const data = await getETFByTicker(ticker);
+    return {
+      ticker,
+      name: data?.name || null,
+    };
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    setInputValue(rawValue);
-
-    const parsedValue = parser(rawValue);
-    if (parsedValue === "") {
-      field.onChange(0);
-      return;
+  const etfDataResults = await Promise.all(etfDataPromises);
+  const etfData = etfDataResults.reduce((acc, { ticker, name }) => {
+    if (name) {
+      acc[ticker] = name;
     }
+    return acc;
+  }, {} as Record<string, string>);
 
-    const numberValue = parseFloat(parsedValue);
-    if (!isNaN(numberValue)) {
-      field.onChange(numberValue);
-    }
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    // Reset the input value to the formatted version
-    setInputValue(field.value.toString());
-  };
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    setIsFocused(true);
-    setInputValue(field.value.toString());
-    e.target.select();
-  };
-
-  return (
-    <Input
-      {...field}
-      type="text"
-      inputMode="decimal"
-      value={isFocused ? inputValue : formatter(field.value as number)}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-        }
-      }}
-    />
-  );
+  return json<LoaderData>({ etfData });
 };
 
 export default function Compound() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showEtfInput, setShowEtfInput] = useState(false);
   const [currentEtf, setCurrentEtf] = useState("");
   const [isInitialDepositFocused, setIsInitialDepositFocused] = useState(false);
@@ -172,11 +81,23 @@ export default function Compound() {
   const [monthlyContribution, setMonthlyContribution] = useState(0);
   const [annualInterestRate, setAnnualInterestRate] = useState(0);
   const [numberOfYears, setNumberOfYears] = useState(0);
+  const [etfReturns, setEtfReturns] = useState<TickerReturn[]>([]);
 
   const form = useForm<CompoundFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      etfTickers: searchParams.get("tickers")?.split(",").filter(Boolean) || [],
+    },
   });
+
+  const handleEtfReturnsUpdate = useCallback((returns: TickerReturn[]) => {
+    setEtfReturns((prev) => {
+      const existingTickers = new Set(prev.map((p) => p.ticker));
+      const newReturns = returns.filter((r) => !existingTickers.has(r.ticker));
+      return [...prev, ...newReturns];
+    });
+  }, []);
 
   function onSubmit(data: CompoundFormValues) {
     setInitialInvestment(data.initialDeposit);
@@ -184,66 +105,56 @@ export default function Compound() {
     setAnnualInterestRate(data.userInterest);
     setNumberOfYears(data.timePeriod);
     setSubmitted(true);
-
-    // Optional: Scroll to results
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
 
-  interface CompoundInterestParams {
-    principal: number;
-    monthlyContribution: number;
-    annualRate: number;
-    years: number;
-    frequency: string;
-  }
+  function generateChartData() {
+    const data = [];
+    const futureValueData = [];
 
-  interface CompoundInterestResult {
-    futureValue: number;
-    totalContributions: number;
-    initialAmount: number;
-  }
+    // Calculate future value with user-provided interest rate
+    for (let year = 0; year <= numberOfYears; year++) {
+      const result = calculateCompoundInterest({
+        principal: initialInvestment,
+        monthlyContribution: monthlyContribution,
+        annualRate: annualInterestRate,
+        years: year,
+        frequency: form.getValues("compFrequency"),
+      });
 
-  function calculateCompoundInterest({
-    principal,
-    monthlyContribution,
-    annualRate,
-    years,
-    frequency,
-  }: CompoundInterestParams): CompoundInterestResult {
-    const frequencyMap: Record<string, number> = {
-      annual: 1,
-      semiannual: 2,
-      quarter: 4,
-      month: 12,
-      day: 365,
-    };
-
-    const n = frequencyMap[frequency];
-    const r = annualRate / 100;
-
-    // Calculate future value of initial principal
-    const principalFV = principal * Math.pow(1 + r / n, n * years);
-
-    // Calculate future value of monthly contributions
-    let contributionFV = 0;
-    if (monthlyContribution > 0) {
-      contributionFV =
-        monthlyContribution *
-        12 *
-        ((Math.pow(1 + r / n, n * years) - 1) / (r / n));
+      futureValueData.push({ x: year, y: result.futureValue });
     }
 
-    // Calculate total contributions
-    const totalContributions = principal + monthlyContribution * 12 * years;
+    data.push({
+      id: `User (${annualInterestRate.toFixed(2)}%)`,
+      color: "#3b82f6",
+      data: futureValueData,
+    });
 
-    return {
-      futureValue: principalFV + contributionFV,
-      totalContributions,
-      initialAmount: principal,
-    };
+    // Add lines for each ETF using their 5-year returns
+    etfReturns.forEach((etf) => {
+      if (etf.returns !== null) {
+        const etfData = [];
+        for (let year = 0; year <= numberOfYears; year++) {
+          const result = calculateCompoundInterest({
+            principal: initialInvestment,
+            monthlyContribution: monthlyContribution,
+            annualRate: etf.returns,
+            years: year,
+            frequency: form.getValues("compFrequency"),
+          });
+
+          etfData.push({ x: year, y: result.futureValue });
+        }
+
+        data.push({
+          id: `${etf.ticker} (${etf.returns.toFixed(2)}%)`,
+          data: etfData,
+        });
+      }
+    });
+
+    return data;
   }
 
   const addEtf = () => {
@@ -260,18 +171,31 @@ export default function Compound() {
 
   const removeEtf = (index: number) => {
     const currentTickers = form.getValues("etfTickers");
+    const deletedTicker = currentTickers[index];
     form.setValue(
       "etfTickers",
       currentTickers.filter((_, i) => i !== index)
     );
+    setEtfReturns((prev) => prev.filter((etf) => etf.ticker !== deletedTicker));
   };
 
+  const etfTickers = form.watch("etfTickers");
+
+  useEffect(() => {
+    const tickers = etfTickers;
+    if (tickers.length > 0) {
+      navigate(`?tickers=${tickers.join(",")}`, { replace: true });
+    } else {
+      navigate("", { replace: true });
+    }
+  }, [etfTickers, navigate]);
+
   return (
-    <div>
+    <div className="flex m-8 p-4">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="m-8 space-y-8 bg-stone-600 p-4 rounded-xl"
+          className="bg-stone-600 rounded-xl w-2/5 space-y-8 p-4"
         >
           <FormField
             control={form.control}
@@ -324,11 +248,6 @@ export default function Compound() {
                     {...field}
                     type="number"
                     onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                      }
-                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -389,6 +308,7 @@ export default function Compound() {
               <ETFList
                 tickers={form.watch("etfTickers")}
                 onRemove={removeEtf}
+                onReturnsUpdate={handleEtfReturnsUpdate}
               />
             )}
 
@@ -431,8 +351,9 @@ export default function Compound() {
           <Button type="submit">Submit</Button>
         </form>
       </Form>
+
       {submitted && (
-        <div className="flex flex-col items-center justify-start h-96">
+        <div className="flex flex-col items-center justify-center h-96 w-full">
           <div className="text-2xl font-bold text-white">
             Compound Calculator
           </div>
@@ -441,48 +362,84 @@ export default function Compound() {
             below.
           </div>
 
-          <Card className="w-full p-4 mt-4 max-w-64">
-            <div className="text-2xl font-bold text-white">Year 0</div>
-            <div className="text-stone-300">
-              Total Contributions: {formatCurrency(initialInvestment)}
+          <Card className="w-full p-4 mt-4">
+            <div className="h-[400px]">
+              <ResponsiveLine
+                data={generateChartData()}
+                margin={{ top: 50, right: 110, bottom: 50, left: 80 }}
+                xScale={{ type: "point" }}
+                yScale={{
+                  type: "linear",
+                  min: "auto",
+                  max: "auto",
+                  stacked: false,
+                  reverse: false,
+                }}
+                yFormat={(value) =>
+                  `$${Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                }
+                axisTop={null}
+                axisRight={null}
+                axisBottom={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: "Years",
+                  legendOffset: 36,
+                  legendPosition: "middle",
+                }}
+                axisLeft={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: "US Dollars ($)",
+                  legendOffset: -70,
+                  legendPosition: "middle",
+                  format: (value) =>
+                    `$${Number(value).toLocaleString(undefined, {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}`,
+                }}
+                enablePoints={true}
+                pointSize={10}
+                pointColor={{ theme: "background" }}
+                pointBorderWidth={2}
+                pointBorderColor={{ from: "serieColor" }}
+                pointLabelYOffset={-12}
+                useMesh={true}
+                theme={nivoTheme}
+                legends={[
+                  {
+                    anchor: "bottom-right",
+                    direction: "column",
+                    justify: false,
+                    translateX: 195,
+                    translateY: 0,
+                    itemsSpacing: 0,
+                    itemDirection: "left-to-right",
+                    itemWidth: 180,
+                    itemHeight: 20,
+                    itemOpacity: 0.75,
+                    symbolSize: 12,
+                    symbolShape: "circle",
+                    symbolBorderColor: "rgba(0, 0, 0, .5)",
+                    effects: [
+                      {
+                        on: "hover",
+                        style: {
+                          itemBackground: "rgba(0, 0, 0, .03)",
+                          itemOpacity: 1,
+                        },
+                      },
+                    ],
+                  },
+                ]}
+              />
             </div>
-            <div className="text-stone-300">
-              Future Value: {formatCurrency(initialInvestment)}
-            </div>
-          </Card>
-
-          <Card className="w-full p-4 mt-4 max-w-64">
-            {/* Use the calculation function for final year */}
-            {(() => {
-              const result = calculateCompoundInterest({
-                principal: initialInvestment,
-                monthlyContribution: monthlyContribution,
-                annualRate: annualInterestRate,
-                years: numberOfYears,
-                frequency: form.getValues("compFrequency"),
-              });
-
-              return (
-                <>
-                  <div className="text-2xl font-bold text-white">
-                    Year {numberOfYears}
-                  </div>
-                  <div className="text-stone-300">
-                    Total Contributions:{" "}
-                    {formatCurrency(result.totalContributions)}
-                  </div>
-                  <div className="text-stone-300">
-                    Future Value: {formatCurrency(result.futureValue)}
-                  </div>
-                  <div className="text-stone-300 mt-2 text-sm">
-                    Total Earnings:{" "}
-                    {formatCurrency(
-                      result.futureValue - result.totalContributions
-                    )}
-                  </div>
-                </>
-              );
-            })()}
           </Card>
         </div>
       )}

@@ -17,7 +17,7 @@ export const nivoTheme = {
     legend: {
       text: {
         fontSize: 12,
-        fill: "#333333",
+        fill: "#ffffff",
         outlineWidth: 0,
         outlineColor: "transparent",
       },
@@ -39,13 +39,14 @@ export const nivoTheme = {
     line: {
       stroke: "#dddddd",
       strokeWidth: 1,
+      strokeOpacity: 0.5,
     },
   },
   legends: {
     title: {
       text: {
         fontSize: 11,
-        fill: "#333333",
+        fill: "#ffffff",
         outlineWidth: 0,
         outlineColor: "transparent",
       },

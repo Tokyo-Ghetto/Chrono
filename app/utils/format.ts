@@ -18,7 +18,16 @@ export const formatCurrency = (value: number): string => {
 };
 
 export const parseCurrencyInput = (value: string): string => {
-  return value.replace(/[$,]/g, "");
+  // Remove all non-numeric characters except decimal point and minus sign
+  const sanitized = value.replace(/[^0-9.-]/g, "");
+
+  // Handle multiple decimal points - keep only the first one
+  const parts = sanitized.split(".");
+  if (parts.length > 2) {
+    return parts[0] + "." + parts.slice(1).join("");
+  }
+
+  return sanitized;
 };
 
 export const formatPercentage = (value: number): string => {

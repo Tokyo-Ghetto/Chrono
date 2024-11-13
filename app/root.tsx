@@ -5,12 +5,13 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 
 import "./tailwind.css";
-import { Auth_Header } from "./components/header/Auth_Header";
+import { Header } from "./components/Header";
 import { Toaster } from "./components/ui/toaster";
-// import styles from "./tailwind.css?url";
+import { rootAuthLoader } from "@clerk/remix/ssr.server";
+import { ClerkApp } from "@clerk/remix";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +26,9 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export const loader: LoaderFunction = (args) => rootAuthLoader(args);
+
+function App() {
   return (
     <html lang="en">
       <head>
@@ -35,16 +38,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Auth_Header />
-        {children}
+        <Header />
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
-        <Toaster />
       </body>
     </html>
   );
 }
+// Import your publishable key
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-export default function App() {
-  return <Outlet />;
-}
+export default ClerkApp(App, {
+  publishableKey: PUBLISHABLE_KEY,
+  signInFallbackRedirectUrl: "/",
+  signUpFallbackRedirectUrl: "/",
+});
