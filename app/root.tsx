@@ -9,7 +9,6 @@ import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 
 import "./tailwind.css";
 import { Header } from "./components/Header";
-import { Toaster } from "./components/ui/toaster";
 import { rootAuthLoader } from "@clerk/remix/ssr.server";
 import { ClerkApp } from "@clerk/remix";
 

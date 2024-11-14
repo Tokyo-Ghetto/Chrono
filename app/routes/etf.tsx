@@ -72,7 +72,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   });
 };
 
-export default function TickerTest() {
+export default function ETF() {
   const {
     ticker,
     name,

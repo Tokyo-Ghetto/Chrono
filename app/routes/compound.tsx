@@ -191,7 +191,7 @@ export default function Compound() {
   }, [etfTickers, navigate]);
 
   return (
-    <div className="flex m-8 p-4">
+    <div className="flex m-8 p-4 space-x-4">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -352,97 +352,99 @@ export default function Compound() {
         </form>
       </Form>
 
-      {submitted && (
-        <div className="flex flex-col items-center justify-center h-96 w-full">
-          <div className="text-2xl font-bold text-white">
-            Compound Calculator
-          </div>
-          <div className="text-stone-300">
-            You can find the results of your compound interest calculation
-            below.
-          </div>
-
-          <Card className="w-full p-4 mt-4">
-            <div className="h-[400px]">
-              <ResponsiveLine
-                data={generateChartData()}
-                margin={{ top: 50, right: 110, bottom: 50, left: 80 }}
-                xScale={{ type: "point" }}
-                yScale={{
-                  type: "linear",
-                  min: "auto",
-                  max: "auto",
-                  stacked: false,
-                  reverse: false,
-                }}
-                yFormat={(value) =>
-                  `$${Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
-                }
-                axisTop={null}
-                axisRight={null}
-                axisBottom={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: "Years",
-                  legendOffset: 36,
-                  legendPosition: "middle",
-                }}
-                axisLeft={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: "US Dollars ($)",
-                  legendOffset: -70,
-                  legendPosition: "middle",
-                  format: (value) =>
-                    `$${Number(value).toLocaleString(undefined, {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}`,
-                }}
-                enablePoints={true}
-                pointSize={10}
-                pointColor={{ theme: "background" }}
-                pointBorderWidth={2}
-                pointBorderColor={{ from: "serieColor" }}
-                pointLabelYOffset={-12}
-                useMesh={true}
-                theme={nivoTheme}
-                legends={[
-                  {
-                    anchor: "bottom-right",
-                    direction: "column",
-                    justify: false,
-                    translateX: 195,
-                    translateY: 0,
-                    itemsSpacing: 0,
-                    itemDirection: "left-to-right",
-                    itemWidth: 180,
-                    itemHeight: 20,
-                    itemOpacity: 0.75,
-                    symbolSize: 12,
-                    symbolShape: "circle",
-                    symbolBorderColor: "rgba(0, 0, 0, .5)",
-                    effects: [
-                      {
-                        on: "hover",
-                        style: {
-                          itemBackground: "rgba(0, 0, 0, .03)",
-                          itemOpacity: 1,
-                        },
-                      },
-                    ],
-                  },
-                ]}
-              />
+      <div className="flex flex-col items-center justify-start h-96 w-3/5">
+        {submitted && (
+          <>
+            <div className="text-2xl font-bold text-white">
+              Compound Calculator
             </div>
-          </Card>
-        </div>
-      )}
+            <div className="text-stone-300">
+              You can find the results of your compound interest calculation
+              below.
+            </div>
+
+            <Card className="w-full p-4 mt-4">
+              <div className="h-[400px]">
+                <ResponsiveLine
+                  data={generateChartData()}
+                  margin={{ top: 50, right: 110, bottom: 50, left: 80 }}
+                  xScale={{ type: "point" }}
+                  yScale={{
+                    type: "linear",
+                    min: "auto",
+                    max: "auto",
+                    stacked: false,
+                    reverse: false,
+                  }}
+                  yFormat={(value) =>
+                    `$${Number(value).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  }
+                  axisTop={null}
+                  axisRight={null}
+                  axisBottom={{
+                    tickSize: 5,
+                    tickPadding: 5,
+                    tickRotation: 0,
+                    legend: "Years",
+                    legendOffset: 36,
+                    legendPosition: "middle",
+                  }}
+                  axisLeft={{
+                    tickSize: 5,
+                    tickPadding: 5,
+                    tickRotation: 0,
+                    legend: "US Dollars ($)",
+                    legendOffset: -70,
+                    legendPosition: "middle",
+                    format: (value) =>
+                      `$${Number(value).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}`,
+                  }}
+                  enablePoints={true}
+                  pointSize={10}
+                  pointColor={{ theme: "background" }}
+                  pointBorderWidth={2}
+                  pointBorderColor={{ from: "serieColor" }}
+                  pointLabelYOffset={-12}
+                  useMesh={true}
+                  theme={nivoTheme}
+                  legends={[
+                    {
+                      anchor: "bottom-right",
+                      direction: "column",
+                      justify: false,
+                      translateX: 195,
+                      translateY: 0,
+                      itemsSpacing: 0,
+                      itemDirection: "left-to-right",
+                      itemWidth: 180,
+                      itemHeight: 20,
+                      itemOpacity: 0.75,
+                      symbolSize: 12,
+                      symbolShape: "circle",
+                      symbolBorderColor: "rgba(0, 0, 0, .5)",
+                      effects: [
+                        {
+                          on: "hover",
+                          style: {
+                            itemBackground: "rgba(0, 0, 0, .03)",
+                            itemOpacity: 1,
+                          },
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              </div>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   );
 }

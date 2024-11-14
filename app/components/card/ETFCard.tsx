@@ -11,6 +11,8 @@ import { ETFCardProps } from "~/types/etf";
 import { Link } from "@remix-run/react";
 import { formatPrice } from "~/utils/format";
 
+import PropTypes from "prop-types";
+
 const ETFCard: React.FC<ETFCardProps> = ({
   ticker,
   name,
@@ -22,7 +24,7 @@ const ETFCard: React.FC<ETFCardProps> = ({
 
   return (
     <div>
-      <Link to={`/test?ticker=${ticker}`}>
+      <Link to={`/etf?ticker=${ticker}`}>
         <Card className="w-[350px] !bg-zinc-800 cursor-pointer">
           <CardHeader className="flex flex-row justify-between align-items: flex-start">
             <div>
@@ -66,6 +68,14 @@ const ETFCard: React.FC<ETFCardProps> = ({
       </Link>
     </div>
   );
+};
+
+ETFCard.propTypes = {
+  ticker: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  endPrice: PropTypes.number.isRequired,
+  priceChangePercentage: PropTypes.number.isRequired,
+  chartLines: PropTypes.array.isRequired,
 };
 
 export default ETFCard;

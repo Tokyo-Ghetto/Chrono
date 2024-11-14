@@ -75,7 +75,7 @@ export const loader = async () => {
   }
 
   const etfDataPromises = allTickers.map(async (ticker) => {
-    let cachedData = await getCachedETFData(ticker, timeframe);
+    const cachedData = await getCachedETFData(ticker, timeframe);
     const isStale = await isCacheStale(ticker, timeframe);
 
     if (!cachedData) {

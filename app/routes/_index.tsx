@@ -12,18 +12,21 @@ export const loader: LoaderFunction = async (args) => {
 };
 
 export default function Index() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
 
   if (!isLoaded) {
     return <p>Loading...</p>;
   }
 
+  if (isSignedIn) {
+    window.location.href = "/overview"; // Redirect to /overview
+    return null; // Prevent rendering the rest of the component
+  }
+
   return (
     <div>
       <UserButton />
-      <div className="text-2xl font-bold text-white">
-        Welcome back, {user?.firstName}!
-      </div>
+      <div className="text-2xl font-bold text-white">Welcome back!</div>
     </div>
   );
 }
