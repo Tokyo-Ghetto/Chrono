@@ -16,4 +16,8 @@ export default defineConfig({
   ssr: {
     noExternal: [/^d3.*$/, /^@nivo.*$/],
   },
+  define: {
+    'process.env.CLERK_SECRET_KEY': JSON.stringify(process.env.CLERK_SECRET_KEY),
+    'process.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(process.env.VITE_CLERK_PUBLISHABLE_KEY),
+  },
 });
