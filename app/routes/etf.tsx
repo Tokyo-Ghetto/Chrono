@@ -19,6 +19,7 @@ import {
 } from "~/models/etf.server";
 import PriceWithDiff from "~/components/chart/NumberFlow";
 import { upsertETFCacheData } from "~/db/migrations/etf-cache.server";
+import { EtfTransactionPanel } from "~/components/EtfTransactionPanel";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
@@ -96,115 +97,118 @@ export default function ETF() {
     <div className="bg-slate-900 p-5">
       <div className="mt-5">
         {chartLines.length > 0 ? (
-          <div id="container" className="h-auto">
-            <div
-              id="chart_header"
-              className="flex flex-row justify-between items-end my-3"
-            >
-              <div id="titles" className="">
-                <h2 className="text-white font-semibold text-xl">{ticker}</h2>
-                <h3 className="text-white font-semibold text-m">{name}</h3>
-                <PriceWithDiff
-                  value={endPrice}
-                  diff={priceChangePercentage / 100}
+          <div id="container" className="h-auto flex flex-row justify-between">
+            <div id="etf_info">
+              <div
+                id="chart_header"
+                className="flex flex-row justify-between items-end my-3"
+              >
+                <div id="titles" className="">
+                  <h2 className="text-white font-semibold text-xl">{ticker}</h2>
+                  <h3 className="text-white font-semibold text-m">{name}</h3>
+                  <PriceWithDiff
+                    value={endPrice}
+                    diff={priceChangePercentage / 100}
+                  />
+                </div>
+                <div
+                  id="chart_time"
+                  className="flex items-center space-x-1 text-sm"
+                >
+                  {(Object.keys(TIMEFRAMES) as TimeframeKey[]).map((key) => (
+                    <Fragment key={key}>
+                      <Button
+                        variant={timeframe === key ? "default" : "outline"}
+                        onClick={() => handleTimeframeChange(key)}
+                      >
+                        {key}
+                      </Button>
+                      {key !== "1Y" && <Separator orientation="vertical" />}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+              <div id="chart" style={{ height: "35vh" }}>
+                <ResponsiveLine
+                  data={chartLines}
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  xScale={{ type: "point" }}
+                  yScale={{
+                    type: "linear",
+                    min: "auto",
+                    max: "auto",
+                    stacked: true,
+                    reverse: false,
+                  }}
+                  axisTop={null}
+                  axisRight={null}
+                  axisBottom={null}
+                  axisLeft={null}
+                  colors={[lineColor]}
+                  theme={{
+                    ...nivoTheme,
+                    crosshair: {
+                      line: {
+                        stroke: lineColor,
+                        strokeWidth: 1,
+                        strokeOpacity: 0.35,
+                      },
+                    },
+                  }}
+                  pointSize={10}
+                  pointColor={{ theme: "background" }}
+                  pointBorderWidth={2}
+                  pointBorderColor={{ from: "serieColor" }}
+                  pointLabelYOffset={-12}
+                  useMesh={true}
+                  enablePoints={false}
+                  enableGridX={false}
+                  enableGridY={false}
+                  isInteractive={true}
+                  enableSlices="x"
+                  enableCrosshair={true}
+                  enableTouchCrosshair={true}
+                  animate={false}
+                  sliceTooltip={({ slice }) => {
+                    return (
+                      <div
+                        style={{
+                          background: "transparent",
+                          color: "#333333",
+                          padding: "5px",
+                          border: "1px solid #ccc",
+                        }}
+                      >
+                        <div>
+                          <p style={{ fontSize: "0.8rem", color: "white" }}>
+                            {slice.points[0].data.xFormatted}
+                          </p>
+                        </div>
+                        <div>
+                          <strong style={{ fontSize: "1rem", color: "white" }}>
+                            {formatPrice(slice.points[0].data.yFormatted)}
+                          </strong>
+                        </div>
+                      </div>
+                    );
+                  }}
+                  layers={
+                    [
+                      "grid",
+                      "axes",
+                      "areas",
+                      "lines",
+                      "crosshair",
+                      "slices",
+                      "mesh",
+                      "legends",
+                      ActivePoint,
+                    ] as Layer[]
+                  }
                 />
               </div>
-              <div
-                id="chart_time"
-                className="flex items-center space-x-1 text-sm"
-              >
-                {(Object.keys(TIMEFRAMES) as TimeframeKey[]).map((key) => (
-                  <Fragment key={key}>
-                    <Button
-                      variant={timeframe === key ? "default" : "outline"}
-                      onClick={() => handleTimeframeChange(key)}
-                    >
-                      {key}
-                    </Button>
-                    {key !== "1Y" && <Separator orientation="vertical" />}
-                  </Fragment>
-                ))}
-              </div>
             </div>
-            <div id="chart" style={{ height: "35vh" }}>
-              <ResponsiveLine
-                data={chartLines}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                xScale={{ type: "point" }}
-                yScale={{
-                  type: "linear",
-                  min: "auto",
-                  max: "auto",
-                  stacked: true,
-                  reverse: false,
-                }}
-                axisTop={null}
-                axisRight={null}
-                axisBottom={null}
-                axisLeft={null}
-                colors={[lineColor]}
-                theme={{
-                  ...nivoTheme,
-                  crosshair: {
-                    line: {
-                      stroke: lineColor,
-                      strokeWidth: 1,
-                      strokeOpacity: 0.35,
-                    },
-                  },
-                }}
-                pointSize={10}
-                pointColor={{ theme: "background" }}
-                pointBorderWidth={2}
-                pointBorderColor={{ from: "serieColor" }}
-                pointLabelYOffset={-12}
-                useMesh={true}
-                enablePoints={false}
-                enableGridX={false}
-                enableGridY={false}
-                isInteractive={true}
-                enableSlices="x"
-                enableCrosshair={true}
-                enableTouchCrosshair={true}
-                animate={false}
-                sliceTooltip={({ slice }) => {
-                  return (
-                    <div
-                      style={{
-                        background: "transparent",
-                        color: "#333333",
-                        padding: "5px",
-                        border: "1px solid #ccc",
-                      }}
-                    >
-                      <div>
-                        <p style={{ fontSize: "0.8rem", color: "white" }}>
-                          {slice.points[0].data.xFormatted}
-                        </p>
-                      </div>
-                      <div>
-                        <strong style={{ fontSize: "1rem", color: "white" }}>
-                          {formatPrice(slice.points[0].data.yFormatted)}
-                        </strong>
-                      </div>
-                    </div>
-                  );
-                }}
-                layers={
-                  [
-                    "grid",
-                    "axes",
-                    "areas",
-                    "lines",
-                    "crosshair",
-                    "slices",
-                    "mesh",
-                    "legends",
-                    ActivePoint,
-                  ] as Layer[]
-                }
-              />
-            </div>
+            <EtfTransactionPanel symbol={ticker} price={Number(endPrice)} />
           </div>
         ) : (
           <div>

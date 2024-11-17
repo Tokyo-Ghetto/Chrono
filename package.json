@@ -10,7 +10,8 @@
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc",
     "import-etf_data": "npx tsx ./app/utils/import-etf-data.ts",
-    "init-etf-cache": "npx tsx ./app/utils/init-etf-cache.ts"
+    "init-etf-cache": "npx tsx ./app/utils/init-etf-cache.ts",
+    "init-user-tables": "npx tsx ./app/utils/init-user-tables.ts"
   },
   "dependencies": {
     "@clerk/remix": "^4.2.47",
@@ -31,6 +32,7 @@
     "@remix-run/serve": "^2.12.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.36.2",
     "framer-motion": "^11.11.9",
     "isbot": "^4.1.0",
     "lucide-react": "^0.447.0",
@@ -62,7 +64,8 @@
     "tailwindcss": "^3.4.4",
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
-    "vite-tsconfig-paths": "^4.2.1"
+    "vite-tsconfig-paths": "^4.2.1",
+    "vitest": "^2.1.5"
   },
   "engines": {
     "node": ">=20.0.0"

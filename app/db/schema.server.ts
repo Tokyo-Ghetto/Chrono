@@ -81,3 +81,48 @@ export async function createETFCacheChart() {
     client.release();
   }
 }
+
+export async function createUserTables() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        user_id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        settings JSONB DEFAULT '{"currency": "USD", "notifications": true}'::jsonb
+      );
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        transaction_id SERIAL PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(user_id),
+        ticker VARCHAR(10) NOT NULL,
+        type VARCHAR(4) NOT NULL CHECK (type IN ('BUY', 'SELL')),
+        shares DECIMAL(20,8) NOT NULL,
+        price_per_share DECIMAL(20,2) NOT NULL,
+        total_amount DECIMAL(20,2) NOT NULL,
+        commission DECIMAL(10,2) DEFAULT 0,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS portfolio_holdings (
+        holding_id SERIAL PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(user_id),
+        ticker VARCHAR(10) NOT NULL,
+        total_shares DECIMAL(20,8) NOT NULL DEFAULT 0,
+        average_cost DECIMAL(20,2) NOT NULL,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, ticker)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_portfolio_holdings_user_id ON portfolio_holdings(user_id);
+    `);
+    console.log("User tables created successfully");
+  } catch (error) {
+    console.error("Error creating user tables:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}

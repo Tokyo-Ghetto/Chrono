@@ -2,6 +2,8 @@ import pg from "pg";
 
 let pool = new pg.Pool();
 
+// There seems to be an issue when creating a pool in development mode, leading to an error with the user's password.
+
 declare global {
   // eslint-disable-next-line no-var
   var __db__: pg.Pool | undefined;
