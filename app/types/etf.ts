@@ -1,3 +1,5 @@
+import { FormattedData } from ".";
+
 export interface ETF {
   id: number;
   ticker: string;
@@ -32,5 +34,5 @@ export interface ETFCardProps {
   name: string;
   endPrice: number;
   priceChangePercentage: number;
-  chartLines: any[];
+  chartLines: FormattedData[];
 }

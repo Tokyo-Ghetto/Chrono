@@ -34,6 +34,9 @@ export function Header() {
         <a href="/overview" className="text-white">
           Overview
         </a>
+        <a href="/portfolio" className="text-white">
+          Portfolio
+        </a>
 
         <div className="flex items-center space-x-4">
           {!isLoaded ? (
@@ -44,7 +47,10 @@ export function Header() {
           ) : (
             <>
               <SignedIn>
-                <UserButton />
+                <UserButton
+                  userProfileMode="navigation"
+                  userProfileUrl="/profile"
+                />
               </SignedIn>
               <SignedOut>
                 <Link to="/sign-in" className="text-white">

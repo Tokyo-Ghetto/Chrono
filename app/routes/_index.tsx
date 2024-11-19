@@ -19,7 +19,7 @@ export default function Index() {
   }
 
   if (isSignedIn) {
-    window.location.href = "/overview"; // Redirect to /overview
+    window.location.href = "/overview";
     return null; // Prevent rendering the rest of the component
   }
 

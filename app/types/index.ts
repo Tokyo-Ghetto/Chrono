@@ -74,12 +74,17 @@ export interface TickerData {
   status: string;
 }
 
-// export interface LoaderData {
-//   chartData: ChartData;
-//   tickerData: TickerData;
-// }
+export interface Category {
+  title: string;
+  etfs: ETFCardProps[];
+}
+
 export interface LoaderData {
-  etfData: ETFCardProps[];
+  categories: {
+    overall: Category;
+    sp500: Category;
+    nasdaq: Category;
+  };
 }
 
 export interface PriceChangeInfo {

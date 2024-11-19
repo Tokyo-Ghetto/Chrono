@@ -1,13 +1,14 @@
 export function formatPrice(price: number | string): string {
-  // Convert to number if it's a string, then format
   const numericPrice = typeof price === "string" ? parseFloat(price) : price;
 
-  // Check if number is valid
   if (isNaN(numericPrice)) {
     return "0.00";
   }
 
-  return numericPrice.toFixed(2);
+  return numericPrice.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export const formatCurrency = (value: number): string => {
@@ -18,10 +19,8 @@ export const formatCurrency = (value: number): string => {
 };
 
 export const parseCurrencyInput = (value: string): string => {
-  // Remove all non-numeric characters except decimal point and minus sign
   const sanitized = value.replace(/[^0-9.-]/g, "");
 
-  // Handle multiple decimal points - keep only the first one
   const parts = sanitized.split(".");
   if (parts.length > 2) {
     return parts[0] + "." + parts.slice(1).join("");
@@ -40,7 +39,6 @@ export const formatPercentage = (value: number): string => {
 export const parsePercentageInput = (value: string): string => {
   const sanitized = value.replace(/[^0-9.-]/g, "");
 
-  // Handle multiple decimal points - keep only the first one
   const parts = sanitized.split(".");
   if (parts.length > 2) {
     return parts[0] + "." + parts.slice(1).join("");

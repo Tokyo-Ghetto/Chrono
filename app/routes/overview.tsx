@@ -10,6 +10,7 @@ import {
 } from "~/models/etf.server";
 import { upsertETFCacheData } from "~/db/migrations/etf-cache.server";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
+import { ETFCardProps } from "~/types/etf";
 
 const ETF_CATEGORIES = {
   overall: {
@@ -185,10 +186,10 @@ export const loader = async () => {
   const etfDataResults = await Promise.all(etfDataPromises);
   const etfDataMap = etfDataResults.reduce((acc, data) => {
     if (data) {
-      acc[data.ticker] = data;
+      acc[data.ticker] = data as ETFCardProps;
     }
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, ETFCardProps>);
 
   return {
     categories: {
@@ -226,13 +227,13 @@ export default function Overview() {
           </div>
           <ScrollArea className="w-full whitespace-nowrap pb-1">
             <div className="flex w-max space-x-4 p-4">
-              {category.etfs.map((etf) => (
+              {category.etfs?.map((etf) => (
                 <ETFCard
                   key={etf.ticker}
                   ticker={etf.ticker}
                   name={etf.name}
-                  endPrice={etf.endPrice}
-                  priceChangePercentage={etf.priceChangePercentage}
+                  endPrice={Number(etf.endPrice)}
+                  priceChangePercentage={Number(etf.priceChangePercentage)}
                   chartLines={etf.chartLines}
                 />
               ))}

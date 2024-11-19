@@ -1,7 +1,7 @@
 import * as React from "react";
 import { DollarSign, Share2 } from "lucide-react";
-import { Link } from "@remix-run/react";
-import { Button } from "~/components/ui/button";
+import { Link, useFetcher } from "@remix-run/react";
+import { Button, buttonVariants } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,33 +20,34 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { useUser } from "@clerk/remix";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { formatPrice } from "~/utils/format";
 
 interface TransactionPanelProps {
   symbol: string;
   price: number;
-  onTransaction?: (details: {
-    type: "dollars" | "shares";
-    amount: number;
-    estimatedQuantity?: number;
-    estimatedCost?: number;
-  }) => void;
 }
 
-export function EtfTransactionPanel({
-  symbol,
-  price,
-  onTransaction,
-}: TransactionPanelProps) {
+export function EtfTransactionPanel({ symbol, price }: TransactionPanelProps) {
   const { isLoaded, user } = useUser();
   const [investType, setInvestType] = React.useState<"dollars" | "shares">(
     "shares"
   );
   const [amount, setAmount] = React.useState("");
-
-  const handleInvestTypeChange = (value: "dollars" | "shares") => {
-    setInvestType(value);
-    setAmount("");
-  };
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
+  const [transactionStatus, setTransactionStatus] = React.useState<
+    "pending" | "success" | null
+  >(null);
+  const fetcher = useFetcher();
 
   const estimatedCost = React.useMemo(() => {
     if (!amount) return 0;
@@ -58,18 +59,38 @@ export function EtfTransactionPanel({
     return investType === "shares" ? Number(amount) : Number(amount) / price;
   }, [amount, investType, price]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onTransaction?.({
-      type: investType,
-      amount: Number(amount),
-      estimatedQuantity: estimatedShares,
-      estimatedCost: estimatedCost,
-    });
+  const handleInvestTypeChange = (value: "dollars" | "shares") => {
+    setInvestType(value);
+    setAmount("");
   };
 
+  const handleBuyClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmTransaction = () => {
+    setTransactionStatus("pending");
+    fetcher.submit(
+      {
+        ticker: symbol,
+        type: "BUY",
+        shares: estimatedShares,
+        pricePerShare: price,
+        totalAmount: estimatedCost,
+      },
+      { method: "POST", action: "/api/transaction" }
+    );
+  };
+
+  React.useEffect(() => {
+    if (fetcher.data && fetcher.state === "idle") {
+      setTransactionStatus("success");
+    }
+  }, [fetcher.data, fetcher.state]);
+
   return (
-    <Card className="w-[380px] bg-zinc-900 text-white border-zinc-800">
+    <Card className="w-[450px] bg-zinc-900 text-white border-zinc-800">
       <CardHeader className="border-b border-zinc-800">
         <CardTitle className="flex items-center justify-between">
           <span>Buy {symbol}</span>
@@ -78,7 +99,7 @@ export function EtfTransactionPanel({
           </Button>
         </CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => e.preventDefault()}>
         <CardContent className="space-y-4 pt-6">
           <div className="space-y-2">
             <Label htmlFor="investType">Invest In</Label>
@@ -133,10 +154,7 @@ export function EtfTransactionPanel({
             </span>
             <span>
               {investType === "shares"
-                ? `$${estimatedCost.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
+                ? `$${formatPrice(estimatedCost)}`
                 : estimatedShares.toFixed(4)}
             </span>
           </div>
@@ -145,16 +163,14 @@ export function EtfTransactionPanel({
             <Button
               className="w-full bg-neutral-900 hover:bg-neutral-900/90 dark:bg-neutral-50 dark:hover:bg-neutral-50/90"
               size="lg"
-              onClick={() =>
-                onTransaction?.({ type: investType, amount: Number(amount) })
-              }
+              onClick={handleBuyClick}
             >
               Buy
             </Button>
           ) : (
             <div className="text-sm text-zinc-400">
               Sign up for a Chrono brokerage account to buy or sell {symbol}{" "}
-              shares commission-free. Other fees may apply. See our {""}
+              shares commission-free. Other fees may apply. See our{" "}
               <Button
                 variant="link"
                 className="h-auto p-0 text-sm text-neutral-900 dark:text-neutral-50"
@@ -187,6 +203,52 @@ export function EtfTransactionPanel({
           ) : null}
         </CardFooter>
       </form>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          {transactionStatus === "success" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Transaction Successful!</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your purchase of {estimatedShares.toFixed(4)} shares of{" "}
+                  {symbol} has been completed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+                  Close
+                </AlertDialogCancel>
+                <Link to="/portfolio" className={buttonVariants()}>
+                  View Portfolio
+                </Link>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Transaction</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You are about to purchase {estimatedShares.toFixed(4)} shares
+                  of {symbol} for ${formatPrice(estimatedCost)}. This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmTransaction}
+                  disabled={transactionStatus === "pending"}
+                >
+                  {transactionStatus === "pending"
+                    ? "Processing..."
+                    : "Confirm Purchase"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

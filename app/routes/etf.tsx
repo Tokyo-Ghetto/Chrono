@@ -1,5 +1,3 @@
-// Update ticker prices, as different timeframes have different prices
-
 import { LoaderFunction, json } from "@remix-run/node";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import { ResponsiveLine, Layer } from "@nivo/line";
@@ -97,8 +95,13 @@ export default function ETF() {
     <div className="bg-slate-900 p-5">
       <div className="mt-5">
         {chartLines.length > 0 ? (
-          <div id="container" className="h-auto flex flex-row justify-between">
-            <div id="etf_info">
+          <div
+            id="container"
+            className="
+          h-auto flex flex-row justify-between space-x-8
+          "
+          >
+            <div id="etf_info" className="w-full">
               <div
                 id="chart_header"
                 className="flex flex-row justify-between items-end my-3"
