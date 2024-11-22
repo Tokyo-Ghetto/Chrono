@@ -34,21 +34,17 @@ export const action: ActionFunction = async ({ request }) => {
 
   try {
     const rawBody = await request.text();
-    console.log("Webhook payload:", rawBody);
-    console.log("Webhook secret:", WEBHOOK_SECRET);
 
     const payloadHeaders = {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     };
-    console.log("Verification headers:", payloadHeaders);
 
     const wh = new Webhook(WEBHOOK_SECRET);
 
     // Verify the payload
     const evt = wh.verify(rawBody, payloadHeaders) as WebhookEvent;
-    console.log("Verified event:", evt);
 
     // Handle the webhook
     const { type } = evt;
@@ -62,6 +58,8 @@ export const action: ActionFunction = async ({ request }) => {
         ) {
           await createUser(
             eventData.id,
+            eventData.first_name || "",
+            eventData.last_name || "",
             eventData.email_addresses[0]?.email_address || ""
           );
           console.log("User created successfully:", eventData.id);

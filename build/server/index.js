@@ -1,21 +1,29 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { PassThrough } from "node:stream";
-import { createReadableStreamFromReadable, json } from "@remix-run/node";
-import { RemixServer, useSubmit, Form, Outlet, Meta, Links, ScrollRestoration, Scripts, useLoaderData } from "@remix-run/react";
+import { createReadableStreamFromReadable, json, redirect } from "@remix-run/node";
+import { RemixServer, useSubmit, Form as Form$1, Link, Meta, Links, Outlet, ScrollRestoration, Scripts, useLoaderData, useNavigate, useSearchParams, useFetcher } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import * as React from "react";
-import { memo, useRef, useMemo, createContext, useContext, useState, useCallback, useEffect, createElement, Component, cloneElement, forwardRef, Fragment as Fragment$1 } from "react";
+import { memo, useRef, useMemo, createContext, useState, useCallback, useContext, useEffect, createElement, cloneElement, Fragment as Fragment$1, Component, forwardRef } from "react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import NodeCache from "node-cache";
+import { useUser, SignedIn, UserButton, SignedOut, ClerkApp, SignIn, SignUp, UserProfile } from "@clerk/remix";
+import { rootAuthLoader, getAuth } from "@clerk/remix/ssr.server";
+import pg from "pg";
+import { Webhook } from "svix";
+import { Slot } from "@radix-ui/react-slot";
+import { cva } from "class-variance-authority";
+import { LineChart, ArrowUpRight, ArrowDownRight, TrendingUp, FileDown, X as X$6, Settings, ArrowUp, Share2, DollarSign } from "lucide-react";
+import { StyleSheet, View, Text, Svg, Line, Document, Page, pdf } from "@react-pdf/renderer";
+import ReactPDFChart from "react-pdf-charts";
 import c$3 from "prop-types";
-import { useSpring, animated, config, to, useTransition } from "@react-spring/web";
-import m$2 from "lodash/merge.js";
-import y$1 from "lodash/get.js";
-import v$3 from "lodash/set.js";
-import O$4 from "lodash/isString.js";
-import W$4 from "lodash/last.js";
+import { useSpring, animated, config, useTransition, to } from "@react-spring/web";
+import m$7 from "lodash/merge.js";
+import y$2 from "lodash/get.js";
+import v$8 from "lodash/set.js";
+import O$6 from "lodash/isString.js";
+import W$5 from "lodash/last.js";
 import "lodash/isArray.js";
 import Qe from "lodash/isFunction.js";
 import Ze from "lodash/without.js";
@@ -23,15 +31,24 @@ import je from "lodash/isPlainObject.js";
 import Tr from "lodash/pick.js";
 import Mr from "lodash/isEqual.js";
 import { InternMap } from "internmap";
+import { useFormContext, FormProvider, Controller, useForm } from "react-hook-form";
+import * as LabelPrimitive from "@radix-ui/react-label";
 import n$1 from "lodash/uniq.js";
 import t$1 from "lodash/uniqBy.js";
 import r$1 from "lodash/sortBy.js";
 import a$1 from "lodash/isDate.js";
-import H$2 from "lodash/uniqueId.js";
+import A$5 from "lodash/uniqueId.js";
 import Delaunator from "delaunator";
-import { Slot } from "@radix-ui/react-slot";
-import { cva } from "class-variance-authority";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z as z$6 } from "zod";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { ChevronDownIcon, ChevronUpIcon, CheckIcon } from "@radix-ui/react-icons";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+import * as SwitchPrimitives from "@radix-ui/react-switch";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
+import { motion } from "framer-motion";
+import NumberFlow, { useCanAnimate } from "@number-flow/react";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 const ABORT_DELAY = 5e3;
 function handleRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext) {
   return isbot(request.headers.get("user-agent") || "") ? handleBotRequest(
@@ -130,7 +147,7 @@ const entryServer = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineP
   __proto__: null,
   default: handleRequest
 }, Symbol.toStringTag, { value: "Module" }));
-function cn$2(...inputs) {
+function cn$4(...inputs) {
   return twMerge(clsx(inputs));
 }
 const Input = React.forwardRef(
@@ -139,7 +156,7 @@ const Input = React.forwardRef(
       "input",
       {
         type,
-        className: cn$2(
+        className: cn$4(
           "flex h-9 w-full rounded-md border border-neutral-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-neutral-950 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:file:text-neutral-50 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300",
           className
         ),
@@ -150,17 +167,18 @@ const Input = React.forwardRef(
   }
 );
 Input.displayName = "Input";
-function Auth_Header() {
+function Header() {
   const submit = useSubmit();
+  const { isLoaded } = useUser();
   const handleSubmit = (e3) => {
     e3.preventDefault();
     const formData = new FormData(e3.currentTarget);
-    submit(formData, { method: "get", action: "/test" });
+    submit(formData, { method: "get", action: "/etf" });
   };
   return /* @__PURE__ */ jsxs("header", { className: "flex items-center justify-between p-4 bg-gray-800 text-white", children: [
-    /* @__PURE__ */ jsx("div", { className: "flex items-center space-x-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
-      /* @__PURE__ */ jsx("a", { href: "/", className: "text-2xl font-bold", children: "ETF" }),
-      /* @__PURE__ */ jsx(Form, { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx(
+    /* @__PURE__ */ jsxs("nav", { className: "flex items-center space-x-4", children: [
+      /* @__PURE__ */ jsx("a", { href: "/overview", className: "text-2xl font-bold", children: "Chrono" }),
+      /* @__PURE__ */ jsx(Form$1, { onSubmit: handleSubmit, children: /* @__PURE__ */ jsx(
         Input,
         {
           type: "text",
@@ -169,10 +187,27 @@ function Auth_Header() {
           className: "dark:border-neutral-500"
         }
       ) })
-    ] }) }),
-    /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
-      /* @__PURE__ */ jsx("a", { href: "/login", className: "text-white", children: "Login" }),
-      /* @__PURE__ */ jsx("a", { href: "/signup", className: "text-white", children: "Sign Up" })
+    ] }),
+    /* @__PURE__ */ jsxs("nav", { className: "flex items-center space-x-4", children: [
+      /* @__PURE__ */ jsx("a", { href: "/compound", className: "text-white", children: "Calculator" }),
+      /* @__PURE__ */ jsx("a", { href: "/overview", className: "text-white", children: "Overview" }),
+      /* @__PURE__ */ jsx("a", { href: "/portfolio", className: "text-white", children: "Portfolio" }),
+      /* @__PURE__ */ jsx("div", { className: "flex items-center space-x-4", children: !isLoaded ? /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
+        /* @__PURE__ */ jsx("div", { className: "w-16 h-8 bg-gray-700 rounded animate-pulse" }),
+        /* @__PURE__ */ jsx("div", { className: "w-16 h-8 bg-gray-700 rounded animate-pulse" })
+      ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(SignedIn, { children: /* @__PURE__ */ jsx(
+          UserButton,
+          {
+            userProfileMode: "navigation",
+            userProfileUrl: "/profile"
+          }
+        ) }),
+        /* @__PURE__ */ jsxs(SignedOut, { children: [
+          /* @__PURE__ */ jsx(Link, { to: "/sign-in", className: "text-white", children: "Login" }),
+          /* @__PURE__ */ jsx(Link, { to: "/sign-up", className: "text-white", children: "Sign Up" })
+        ] })
+      ] }) })
     ] })
   ] });
 }
@@ -188,7 +223,10 @@ const links = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
   }
 ];
-function Layout({ children }) {
+const loader$9 = (args) => rootAuthLoader(args, {
+  secretKey: void 0
+});
+function App() {
   return /* @__PURE__ */ jsxs("html", { lang: "en", children: [
     /* @__PURE__ */ jsxs("head", { children: [
       /* @__PURE__ */ jsx("meta", { charSet: "utf-8" }),
@@ -197,256 +235,626 @@ function Layout({ children }) {
       /* @__PURE__ */ jsx(Links, {})
     ] }),
     /* @__PURE__ */ jsxs("body", { children: [
-      /* @__PURE__ */ jsx(Auth_Header, {}),
-      children,
+      /* @__PURE__ */ jsx(Header, {}),
+      /* @__PURE__ */ jsx(Outlet, {}),
       /* @__PURE__ */ jsx(ScrollRestoration, {}),
       /* @__PURE__ */ jsx(Scripts, {})
     ] })
   ] });
 }
-function App() {
-  return /* @__PURE__ */ jsx(Outlet, {});
-}
+const PUBLISHABLE_KEY = "pk_test_Z3Jvd24tYm9hci0yOS5jbGVyay5hY2NvdW50cy5kZXYk";
+const root = ClerkApp(App, {
+  publishableKey: PUBLISHABLE_KEY,
+  signInFallbackRedirectUrl: "/",
+  signUpFallbackRedirectUrl: "/"
+});
 const route0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  Layout,
-  default: App,
-  links
+  default: root,
+  links,
+  loader: loader$9
 }, Symbol.toStringTag, { value: "Module" }));
-function CacheTest() {
-  const cache = new NodeCache();
-  let stockData;
-  function getStockData(ticker2) {
-    stockData = cache.get(ticker2);
-    console.log(stockData);
-    if (stockData === void 0) {
-      stockData = getStockDataFromAPI(ticker2);
-      cache.set(ticker2, stockData, 10);
-    }
-    console.log(stockData);
+let pool = new pg.Pool();
+if (process.env.NODE_ENV === "production") {
+  pool = new pg.Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_DATABASE,
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT || "5432")
+  });
+} else {
+  if (!global.__db__) {
+    global.__db__ = new pg.Pool({
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
+      database: process.env.DB_DATABASE,
+      password: process.env.DB_PASSWORD,
+      port: parseInt(process.env.DB_PORT || "5432")
+    });
   }
-  function getStockDataFromAPI(ticker2) {
-    console.log("Fetching data from API");
-    return {
-      name: ticker2,
-      price: 100
-    };
-  }
-  return /* @__PURE__ */ jsxs("div", { children: [
-    /* @__PURE__ */ jsx("h1", { children: "Cache Test" }),
-    /* @__PURE__ */ jsx("button", { onClick: () => getStockData("AAPL"), children: "Get Stock Data" }),
-    /* @__PURE__ */ jsx("p", { children: stockData })
-  ] });
+  pool = global.__db__;
 }
+async function createUser(userId, firstName, lastName, email) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      INSERT INTO users (user_id, first_name, last_name, email)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (user_id) 
+      DO UPDATE SET
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        email = EXCLUDED.email
+      RETURNING *;
+    `;
+    const result = await client.query(query, [
+      userId,
+      firstName,
+      lastName,
+      email
+    ]);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error creating user:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+async function getUser(userId) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT * FROM users
+      WHERE user_id = $1;
+    `;
+    const result = await client.query(query, [userId]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error("Error getting user:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+async function getPortfolioHoldings(userId) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT 
+        ph.ticker,
+        ph.total_shares,
+        ph.average_cost,
+        ph.last_updated,
+        ecp.last_price as current_price,
+        ei.name,
+        (ph.total_shares * ecp.last_price) as total_value,
+        (ph.total_shares * ecp.last_price) - (ph.total_shares * ph.average_cost) as total_gain_loss,
+        ((ecp.last_price - ph.average_cost) / ph.average_cost * 100) as gain_loss_percentage
+      FROM portfolio_holdings ph
+      JOIN etf_info ei ON ph.ticker = ei.ticker
+      JOIN etf_cache_price ecp ON ph.ticker = ecp.ticker
+      WHERE ph.user_id = $1 AND ph.total_shares > 0
+      ORDER BY total_value DESC;
+    `;
+    const result = await client.query(query, [userId]);
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching portfolio holdings:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+async function getPortfolioSummary(userId) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT 
+        SUM(ph.total_shares * ecp.last_price) as total_portfolio_value,
+        SUM((ph.total_shares * ecp.last_price) - (ph.total_shares * ph.average_cost)) as total_gain_loss,
+        CASE 
+          WHEN SUM(ph.total_shares * ph.average_cost) > 0 
+          THEN (SUM((ph.total_shares * ecp.last_price) - (ph.total_shares * ph.average_cost)) / 
+                SUM(ph.total_shares * ph.average_cost)) * 100
+          ELSE 0 
+        END as total_gain_loss_percentage
+      FROM portfolio_holdings ph
+      JOIN etf_cache_price ecp ON ph.ticker = ecp.ticker
+      WHERE ph.user_id = $1 AND ph.total_shares > 0;
+    `;
+    const result = await client.query(query, [userId]);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error fetching portfolio summary:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+const generateReportData = async (userId) => {
+  const [user, holdings, summary] = await Promise.all([
+    getUser(userId),
+    getPortfolioHoldings(userId),
+    getPortfolioSummary(userId)
+  ]);
+  return {
+    userName: `${user == null ? void 0 : user.first_name} ${user == null ? void 0 : user.last_name}` || "User",
+    reportDate: (/* @__PURE__ */ new Date()).toISOString(),
+    portfolioSummary: {
+      totalValue: summary.total_portfolio_value,
+      totalGainLoss: summary.total_gain_loss,
+      totalGainLossPercentage: summary.total_gain_loss_percentage,
+      numberOfHoldings: holdings.length
+    },
+    holdings: holdings.map((holding) => ({
+      symbol: holding.ticker,
+      name: holding.name,
+      shares: Number(holding.total_shares),
+      averageCost: holding.average_cost,
+      currentPrice: holding.current_price,
+      totalValue: holding.total_value,
+      gainLoss: holding.total_gain_loss,
+      gainLossPercentage: Number(holding.gain_loss_percentage)
+    })),
+    performanceMetrics: {
+      // These could be fetched from another service if available
+      dailyReturn: 0.5,
+      weeklyReturn: 1.2,
+      monthlyReturn: 2.8,
+      yearlyReturn: 12.5,
+      volatility: 15.3,
+      sharpeRatio: 1.8
+    }
+  };
+};
+const loader$8 = async (args) => {
+  const { userId: currentUser } = await getAuth(args);
+  const { userId } = args.params;
+  if (!currentUser || currentUser !== userId) {
+    return json({ message: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const reportData = await generateReportData(userId);
+    return json(reportData);
+  } catch (error) {
+    console.error("Error generating report data:", error);
+    return json({ message: "Error generating report" }, { status: 500 });
+  }
+};
 const route1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: CacheTest
+  loader: loader$8
 }, Symbol.toStringTag, { value: "Module" }));
-const meta = () => {
-  return [
-    { title: "Remix" },
-    { name: "description", content: "Remix description" }
-  ];
+const loader$7 = async () => {
+  return new Response("Webhook endpoint is working", { status: 200 });
 };
-function Index() {
-  return /* @__PURE__ */ jsx("div", { className: "flex h-screen items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center gap-16", children: [
-    /* @__PURE__ */ jsxs("header", { className: "flex flex-col items-center gap-9", children: [
-      /* @__PURE__ */ jsxs("h1", { className: "leading text-2xl font-bold text-gray-800 dark:text-gray-100", children: [
-        "Weldsdse to ",
-        /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Remix" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "h-[144px] w-[434px]", children: [
-        /* @__PURE__ */ jsx(
-          "img",
-          {
-            src: "/logo-light.png",
-            alt: "Remix",
-            className: "block w-full dark:hidden"
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          "img",
-          {
-            src: "/logo-dark.png",
-            alt: "Remix",
-            className: "hidden w-full dark:block"
-          }
-        )
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("nav", { className: "flex flex-col items-center justify-center gap-4 rounded-3xl border border-gray-200 p-6 dark:border-gray-700", children: [
-      /* @__PURE__ */ jsx("p", { className: "leading-6 text-gray-700 dark:text-gray-200", children: "What's next?" }),
-      /* @__PURE__ */ jsx("ul", { children: resources.map(({ href, text, icon }) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs(
-        "a",
-        {
-          className: "group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500",
-          href,
-          target: "_blank",
-          rel: "noreferrer",
-          children: [
-            icon,
-            text
-          ]
-        }
-      ) }, href)) })
-    ] })
-  ] }) });
-}
-const resources = [
-  {
-    href: "https://remix.run/start/quickstart",
-    text: "Quick Start (5 min)",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M8.51851 12.0741L7.92592 18L15.6296 9.7037L11.4815 7.33333L12.0741 2L4.37036 10.2963L8.51851 12.0741Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://remix.run/start/tutorial",
-    text: "Tutorial (30 min)",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M4.561 12.749L3.15503 14.1549M3.00811 8.99944H1.01978M3.15503 3.84489L4.561 5.2508M8.3107 1.70923L8.3107 3.69749M13.4655 3.84489L12.0595 5.2508M18.1868 17.0974L16.635 18.6491C16.4636 18.8205 16.1858 18.8205 16.0144 18.6491L13.568 16.2028C13.383 16.0178 13.0784 16.0347 12.915 16.239L11.2697 18.2956C11.047 18.5739 10.6029 18.4847 10.505 18.142L7.85215 8.85711C7.75756 8.52603 8.06365 8.21994 8.39472 8.31453L17.6796 10.9673C18.0223 11.0653 18.1115 11.5094 17.8332 11.7321L15.7766 13.3773C15.5723 13.5408 15.5554 13.8454 15.7404 14.0304L18.1868 16.4767C18.3582 16.6481 18.3582 16.926 18.1868 17.0974Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round",
-            strokeLinejoin: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://remix.run/docs",
-    text: "Remix Docs",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 20 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z",
-            strokeWidth: "1.5",
-            strokeLinecap: "round"
-          }
-        )
-      }
-    )
-  },
-  {
-    href: "https://rmx.as/discord",
-    text: "Join Discord",
-    icon: /* @__PURE__ */ jsx(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "20",
-        viewBox: "0 0 24 20",
-        fill: "none",
-        className: "stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300",
-        children: /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: "M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z",
-            strokeWidth: "1.5"
-          }
-        )
-      }
-    )
+const action$1 = async ({ request }) => {
+  var _a, _b;
+  console.log("Received webhook:", {
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries())
+  });
+  if (request.method !== "POST") {
+    return json({ message: "Method not allowed" }, 405);
   }
-];
+  const WEBHOOK_SECRET = (_a = process.env.VITE_CLERK_WEBHOOK_SECRET) == null ? void 0 : _a.trim();
+  if (!WEBHOOK_SECRET) {
+    throw new Error("Missing CLERK_WEBHOOK_SECRET");
+  }
+  const svix_id = request.headers.get("svix-id") ?? "";
+  const svix_timestamp = request.headers.get("svix-timestamp") ?? "";
+  const svix_signature = request.headers.get("svix-signature") ?? "";
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return json({ message: "Error occurred -- no svix headers" }, 400);
+  }
+  try {
+    const rawBody = await request.text();
+    const payloadHeaders = {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature
+    };
+    const wh = new Webhook(WEBHOOK_SECRET);
+    const evt = wh.verify(rawBody, payloadHeaders);
+    const { type } = evt;
+    const eventData = evt.data;
+    switch (type) {
+      case "user.created":
+        if ("email_addresses" in eventData && Array.isArray(eventData.email_addresses)) {
+          await createUser(
+            eventData.id,
+            eventData.first_name || "",
+            eventData.last_name || "",
+            ((_b = eventData.email_addresses[0]) == null ? void 0 : _b.email_address) || ""
+          );
+          console.log("User created successfully:", eventData.id);
+        }
+        break;
+      default:
+        console.log("Unhandled webhook type:", type);
+    }
+    return json({ message: "Webhook processed successfully" }, 200);
+  } catch (error) {
+    console.error("Webhook verification error:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    return json(
+      {
+        message: "Error processing webhook",
+        error: error instanceof Error ? error.message : "Unknown error"
+      },
+      400
+    );
+  }
+};
 const route2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: Index,
-  meta
+  action: action$1,
+  loader: loader$7
 }, Symbol.toStringTag, { value: "Module" }));
-function v$2() {
-  return v$2 = Object.assign ? Object.assign.bind() : function(t2) {
+const loader$6 = async (args) => {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return json({ message: "Unauthorized" }, 401);
+  }
+  if (userId !== args.params.userId) {
+    return json({ message: "Forbidden" }, 403);
+  }
+  const user = await getUser(userId);
+  return json({ user });
+};
+const route3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  loader: loader$6
+}, Symbol.toStringTag, { value: "Module" }));
+async function createTransaction(details) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const transactionQuery = `
+      INSERT INTO transactions 
+        (user_id, ticker, type, shares, price_per_share, total_amount, commission)
+      VALUES 
+        ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+    const transactionResult = await client.query(transactionQuery, [
+      details.userId,
+      details.ticker,
+      details.type,
+      details.shares,
+      details.pricePerShare,
+      details.totalAmount,
+      details.commission || 0
+    ]);
+    const holdingQuery = `
+      INSERT INTO portfolio_holdings 
+        (user_id, ticker, total_shares, average_cost)
+      VALUES 
+        ($1, $2, $3, $4)
+      ON CONFLICT (user_id, ticker) 
+      DO UPDATE SET
+        total_shares = CASE
+          WHEN portfolio_holdings.total_shares = 0 
+          THEN EXCLUDED.total_shares
+          ELSE portfolio_holdings.total_shares + EXCLUDED.total_shares
+        END,
+        average_cost = CASE
+          WHEN portfolio_holdings.total_shares = 0 
+          THEN EXCLUDED.average_cost
+          ELSE (portfolio_holdings.average_cost * portfolio_holdings.total_shares + $4 * $3) 
+               / (portfolio_holdings.total_shares + $3)
+        END,
+        last_updated = CURRENT_TIMESTAMP
+      RETURNING *;
+    `;
+    const holdingResult = await client.query(holdingQuery, [
+      details.userId,
+      details.ticker,
+      details.shares,
+      details.pricePerShare
+    ]);
+    await client.query("COMMIT");
+    return {
+      transaction: transactionResult.rows[0],
+      holding: holdingResult.rows[0]
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error creating transaction:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+const action = async (args) => {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const formData = await args.request.formData();
+    const transaction = await createTransaction({
+      userId,
+      ticker: formData.get("ticker"),
+      type: formData.get("type"),
+      shares: Number(formData.get("shares")),
+      pricePerShare: Number(formData.get("pricePerShare")),
+      totalAmount: Number(formData.get("totalAmount"))
+    });
+    return json({ success: true, transaction });
+  } catch (error) {
+    console.error("Transaction error:", error);
+    return json({ error: "Failed to process transaction" }, { status: 500 });
+  }
+};
+const route4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  action
+}, Symbol.toStringTag, { value: "Module" }));
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-neutral-300",
+  {
+    variants: {
+      variant: {
+        default: "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
+        destructive: "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
+        outline: "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+        secondary: "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
+        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
+        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50"
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9"
+      }
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default"
+    }
+  }
+);
+const Button = React.forwardRef(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return /* @__PURE__ */ jsx(
+      Comp,
+      {
+        className: cn$4(buttonVariants({ variant, size, className })),
+        ref,
+        ...props
+      }
+    );
+  }
+);
+Button.displayName = "Button";
+const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    ref,
+    className: cn$4(
+      "rounded-xl border border-neutral-200 bg-white text-neutral-950 shadow dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
+      className
+    ),
+    ...props
+  }
+));
+Card.displayName = "Card";
+const CardHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    ref,
+    className: cn$4("flex flex-col space-y-1.5 p-6", className),
+    ...props
+  }
+));
+CardHeader.displayName = "CardHeader";
+const CardTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "h3",
+  {
+    ref,
+    className: cn$4("font-semibold leading-none tracking-tight", className),
+    ...props
+  }
+));
+CardTitle.displayName = "CardTitle";
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "p",
+  {
+    ref,
+    className: cn$4("text-sm text-neutral-500 dark:text-neutral-400", className),
+    ...props
+  }
+));
+CardDescription.displayName = "CardDescription";
+const CardContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn$4("p-6 pt-0", className), ...props }));
+CardContent.displayName = "CardContent";
+const CardFooter = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    ref,
+    className: cn$4("flex items-center p-6 pt-0", className),
+    ...props
+  }
+));
+CardFooter.displayName = "CardFooter";
+const Table = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { className: "relative w-full overflow-auto", children: /* @__PURE__ */ jsx(
+  "table",
+  {
+    ref,
+    className: cn$4("w-full caption-bottom text-sm", className),
+    ...props
+  }
+) }));
+Table.displayName = "Table";
+const TableHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("thead", { ref, className: cn$4("[&_tr]:border-b", className), ...props }));
+TableHeader.displayName = "TableHeader";
+const TableBody = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "tbody",
+  {
+    ref,
+    className: cn$4("[&_tr:last-child]:border-0", className),
+    ...props
+  }
+));
+TableBody.displayName = "TableBody";
+const TableFooter = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "tfoot",
+  {
+    ref,
+    className: cn$4(
+      "border-t bg-neutral-100/50 font-medium [&>tr]:last:border-b-0 dark:bg-neutral-800/50",
+      className
+    ),
+    ...props
+  }
+));
+TableFooter.displayName = "TableFooter";
+const TableRow = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "tr",
+  {
+    ref,
+    className: cn$4(
+      "border-b transition-colors hover:bg-neutral-100/50 data-[state=selected]:bg-neutral-100 dark:hover:bg-neutral-800/50 dark:data-[state=selected]:bg-neutral-800",
+      className
+    ),
+    ...props
+  }
+));
+TableRow.displayName = "TableRow";
+const TableHead = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "th",
+  {
+    ref,
+    className: cn$4(
+      "h-10 px-2 text-left align-middle font-medium text-neutral-500 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] dark:text-neutral-400",
+      className
+    ),
+    ...props
+  }
+));
+TableHead.displayName = "TableHead";
+const TableCell = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "td",
+  {
+    ref,
+    className: cn$4(
+      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      className
+    ),
+    ...props
+  }
+));
+TableCell.displayName = "TableCell";
+const TableCaption = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "caption",
+  {
+    ref,
+    className: cn$4("mt-4 text-sm text-neutral-500 dark:text-neutral-400", className),
+    ...props
+  }
+));
+TableCaption.displayName = "TableCaption";
+function formatPrice(price) {
+  const numericPrice = typeof price === "string" ? parseFloat(price) : price;
+  if (isNaN(numericPrice)) {
+    return "0.00";
+  }
+  return numericPrice.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+const formatCurrency = (value) => {
+  return `$${value.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0
+  })}`;
+};
+const parseCurrencyInput = (value) => {
+  const sanitized = value.replace(/[^0-9.-]/g, "");
+  const parts = sanitized.split(".");
+  if (parts.length > 2) {
+    return parts[0] + "." + parts.slice(1).join("");
+  }
+  return sanitized;
+};
+const formatPercentage = (value) => {
+  return value.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0
+  });
+};
+const parsePercentageInput = (value) => {
+  const sanitized = value.replace(/[^0-9.-]/g, "");
+  const parts = sanitized.split(".");
+  if (parts.length > 2) {
+    return parts[0] + "." + parts.slice(1).join("");
+  }
+  return sanitized;
+};
+function v$7() {
+  return v$7 = Object.assign ? Object.assign.bind() : function(t2) {
     for (var i2 = 1; i2 < arguments.length; i2++) {
       var o2 = arguments[i2];
       for (var n2 in o2) Object.prototype.hasOwnProperty.call(o2, n2) && (t2[n2] = o2[n2]);
     }
     return t2;
-  }, v$2.apply(this, arguments);
+  }, v$7.apply(this, arguments);
 }
-var x$2 = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m$1 = function(t2, i2) {
+var x$7 = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m$6 = function(t2, i2) {
   return "translate(" + t2 + "px, " + i2 + "px)";
-}, b$2 = memo(function(t2) {
-  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt(), d = Ur(), y2 = d.animate, f2 = d.config, b2 = kt(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
-  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m$1(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
-  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v$2({}, x$2, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m$1(j2, N2), opacity: O2.transform ? 1 : 0 });
+}, b$8 = memo(function(t2) {
+  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt$2(), d = Ur$2(), y2 = d.animate, f2 = d.config, b2 = kt$2(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
+  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m$6(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
+  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v$7({}, x$7, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m$6(j2, N2), opacity: O2.transform ? 1 : 0 });
   return jsx(animated.div, { ref: g2, style: V2, children: e3 });
 });
-b$2.displayName = "TooltipWrapper";
-var g = memo(function(t2) {
+b$8.displayName = "TooltipWrapper";
+var g$4 = memo(function(t2) {
   var i2 = t2.size, o2 = void 0 === i2 ? 12 : i2, n2 = t2.color, r2 = t2.style;
-  return jsx("span", { style: v$2({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
-}), w$4 = memo(function(t2) {
-  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt(), u2 = Ot(r2);
+  return jsx("span", { style: v$7({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
+}), w$6 = memo(function(t2) {
+  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt$2(), u2 = Ot$2(r2);
   if ("function" == typeof c2) i2 = c2();
   else {
     var f2 = n2;
-    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
+    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g$4, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
   }
   return jsx("div", { style: h.tooltip.container, children: i2 });
-}), T$2 = { width: "100%", borderCollapse: "collapse" }, C$3 = memo(function(t2) {
-  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt();
-  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v$2({}, T$2, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
+}), T$8 = { width: "100%", borderCollapse: "collapse" }, C$8 = memo(function(t2) {
+  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt$2();
+  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v$7({}, T$8, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
     return jsx("tr", { children: t3.map(function(t4, i4) {
       return jsx("td", { style: l2.tooltip.tableCell, children: t4 }, i4);
     }) }, i3);
   }) }) })] }), jsx("div", { style: l2.tooltip.container, children: i2 })) : null;
 });
-C$3.displayName = "TableTooltip";
-var E$3 = memo(function(t2) {
-  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt(), u2 = Ur(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
-    return v$2({}, l2.crosshair.line, { pointerEvents: "none" });
+C$8.displayName = "TableTooltip";
+var E$9 = memo(function(t2) {
+  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt$2(), u2 = Ur$2(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
+    return v$7({}, l2.crosshair.line, { pointerEvents: "none" });
   }, [l2.crosshair.line]), x2 = useSpring({ x1: i2, x2: n2, y1: r2, y2: e3, config: y2, immediate: !d });
-  return jsx(animated.line, v$2({}, x2, { fill: "none", style: f2 }));
+  return jsx(animated.line, v$7({}, x2, { fill: "none", style: f2 }));
 });
-E$3.displayName = "CrosshairLine";
-var P$2 = memo(function(t2) {
+E$9.displayName = "CrosshairLine";
+var P$7 = memo(function(t2) {
   var i2, o2, n2 = t2.width, r2 = t2.height, e3 = t2.type, l2 = t2.x, a2 = t2.y;
-  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$3, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$3, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
+  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$9, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$9, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
 });
-P$2.displayName = "Crosshair";
-var j$2 = createContext({ showTooltipAt: function() {
+P$7.displayName = "Crosshair";
+var j$7 = createContext({ showTooltipAt: function() {
 }, showTooltipFromEvent: function() {
 }, hideTooltip: function() {
-} }), N$1 = { isVisible: false, position: [null, null], content: null, anchor: null }, O$3 = createContext(N$1), V = function(t2) {
-  var i2 = useState(N$1), n2 = i2[0], l2 = i2[1], a2 = useCallback(function(t3, i3, o2) {
+} }), N$7 = { isVisible: false, position: [null, null], content: null, anchor: null }, O$5 = createContext(N$7), V$1 = function(t2) {
+  var i2 = useState(N$7), n2 = i2[0], l2 = i2[1], a2 = useCallback(function(t3, i3, o2) {
     var n3 = i3[0], r2 = i3[1];
     void 0 === o2 && (o2 = "top"), l2({ isVisible: true, position: [n3, r2], anchor: o2, content: t3 });
   }, [l2]), c2 = useCallback(function(i3, o2, n3) {
@@ -454,27 +862,27 @@ var j$2 = createContext({ showTooltipAt: function() {
     var r2 = t2.current.getBoundingClientRect(), e3 = t2.current.offsetWidth, a3 = e3 === r2.width ? 1 : e3 / r2.width, c3 = "touches" in o2 ? o2.touches[0] : o2, s2 = c3.clientX, h = c3.clientY, u2 = (s2 - r2.left) * a3, d = (h - r2.top) * a3;
     "left" !== n3 && "right" !== n3 || (n3 = u2 < r2.width / 2 ? "right" : "left"), l2({ isVisible: true, position: [u2, d], anchor: n3, content: i3 });
   }, [t2, l2]), s = useCallback(function() {
-    l2(N$1);
+    l2(N$7);
   }, [l2]);
   return { actions: useMemo(function() {
     return { showTooltipAt: a2, showTooltipFromEvent: c2, hideTooltip: s };
   }, [a2, c2, s]), state: n2 };
-}, k$2 = function() {
-  var t2 = useContext(j$2);
+}, k$6 = function() {
+  var t2 = useContext(j$7);
   if (void 0 === t2) throw new Error("useTooltip must be used within a TooltipProvider");
   return t2;
-}, z$3 = function() {
-  var t2 = useContext(O$3);
+}, z$5 = function() {
+  var t2 = useContext(O$5);
   if (void 0 === t2) throw new Error("useTooltipState must be used within a TooltipProvider");
   return t2;
-}, A$3 = function(t2) {
+}, A$4 = function(t2) {
   return t2.isVisible;
-}, F = function() {
-  var t2 = z$3();
-  return A$3(t2) ? jsx(b$2, { position: t2.position, anchor: t2.anchor, children: t2.content }) : null;
-}, M = function(t2) {
-  var i2 = t2.container, o2 = t2.children, n2 = V(i2), r2 = n2.actions, e3 = n2.state;
-  return jsx(j$2.Provider, { value: r2, children: jsx(O$3.Provider, { value: e3, children: o2 }) });
+}, F$2 = function() {
+  var t2 = z$5();
+  return A$4(t2) ? jsx(b$8, { position: t2.position, anchor: t2.anchor, children: t2.content }) : null;
+}, M$2 = function(t2) {
+  var i2 = t2.container, o2 = t2.children, n2 = V$1(i2), r2 = n2.actions, e3 = n2.state;
+  return jsx(j$7.Provider, { value: r2, children: jsx(O$5.Provider, { value: e3, children: o2 }) });
 };
 function define(constructor, factory, prototype) {
   constructor.prototype = factory.prototype = prototype;
@@ -751,12 +1159,12 @@ function hslConvert(o2) {
   if (!o2) return new Hsl();
   if (o2 instanceof Hsl) return o2;
   o2 = o2.rgb();
-  var r2 = o2.r / 255, g2 = o2.g / 255, b2 = o2.b / 255, min = Math.min(r2, g2, b2), max = Math.max(r2, g2, b2), h = NaN, s = max - min, l2 = (max + min) / 2;
+  var r2 = o2.r / 255, g2 = o2.g / 255, b2 = o2.b / 255, min2 = Math.min(r2, g2, b2), max2 = Math.max(r2, g2, b2), h = NaN, s = max2 - min2, l2 = (max2 + min2) / 2;
   if (s) {
-    if (r2 === max) h = (g2 - b2) / s + (g2 < b2) * 6;
-    else if (g2 === max) h = (b2 - r2) / s + 2;
+    if (r2 === max2) h = (g2 - b2) / s + (g2 < b2) * 6;
+    else if (g2 === max2) h = (b2 - r2) / s + 2;
     else h = (r2 - g2) / s + 4;
-    s /= l2 < 0.5 ? max + min : 2 - max - min;
+    s /= l2 < 0.5 ? max2 + min2 : 2 - max2 - min2;
     h *= 60;
   } else {
     s = l2 > 0 && l2 < 1 ? 0 : h;
@@ -813,11 +1221,11 @@ function hsl2rgb(h, m1, m2) {
 }
 const radians = Math.PI / 180;
 const degrees = 180 / Math.PI;
-var A$2 = -0.14861, B$2 = 1.78277, C$2 = -0.29227, D$1 = -0.90649, E$2 = 1.97294, ED = E$2 * D$1, EB = E$2 * B$2, BC_DA = B$2 * C$2 - D$1 * A$2;
+var A$3 = -0.14861, B$3 = 1.78277, C$7 = -0.29227, D$2 = -0.90649, E$8 = 1.97294, ED = E$8 * D$2, EB = E$8 * B$3, BC_DA = B$3 * C$7 - D$2 * A$3;
 function cubehelixConvert(o2) {
   if (o2 instanceof Cubehelix) return new Cubehelix(o2.h, o2.s, o2.l, o2.opacity);
   if (!(o2 instanceof Rgb)) o2 = rgbConvert(o2);
-  var r2 = o2.r / 255, g2 = o2.g / 255, b2 = o2.b / 255, l2 = (BC_DA * b2 + ED * r2 - EB * g2) / (BC_DA + ED - EB), bl = b2 - l2, k2 = (E$2 * (g2 - l2) - C$2 * bl) / D$1, s = Math.sqrt(k2 * k2 + bl * bl) / (E$2 * l2 * (1 - l2)), h = s ? Math.atan2(k2, bl) * degrees - 120 : NaN;
+  var r2 = o2.r / 255, g2 = o2.g / 255, b2 = o2.b / 255, l2 = (BC_DA * b2 + ED * r2 - EB * g2) / (BC_DA + ED - EB), bl = b2 - l2, k2 = (E$8 * (g2 - l2) - C$7 * bl) / D$2, s = Math.sqrt(k2 * k2 + bl * bl) / (E$8 * l2 * (1 - l2)), h = s ? Math.atan2(k2, bl) * degrees - 120 : NaN;
   return new Cubehelix(h < 0 ? h + 360 : h, s, l2, o2.opacity);
 }
 function cubehelix$1(h, s, l2, opacity) {
@@ -841,9 +1249,9 @@ define(Cubehelix, cubehelix$1, extend(Color, {
   rgb() {
     var h = isNaN(this.h) ? 0 : (this.h + 120) * radians, l2 = +this.l, a2 = isNaN(this.s) ? 0 : this.s * l2 * (1 - l2), cosh = Math.cos(h), sinh = Math.sin(h);
     return new Rgb(
-      255 * (l2 + a2 * (A$2 * cosh + B$2 * sinh)),
-      255 * (l2 + a2 * (C$2 * cosh + D$1 * sinh)),
-      255 * (l2 + a2 * (E$2 * cosh)),
+      255 * (l2 + a2 * (A$3 * cosh + B$3 * sinh)),
+      255 * (l2 + a2 * (C$7 * cosh + D$2 * sinh)),
+      255 * (l2 + a2 * (E$8 * cosh)),
       this.opacity
     );
   }
@@ -978,8 +1386,8 @@ function one(b2) {
     return b2(t2) + "";
   };
 }
-function _$3(a2, b2) {
-  var bi = reA.lastIndex = reB.lastIndex = 0, am, bm, bs, i2 = -1, s = [], q = [];
+function _$4(a2, b2) {
+  var bi = reA.lastIndex = reB.lastIndex = 0, am, bm, bs, i2 = -1, s = [], q2 = [];
   a2 = a2 + "", b2 = b2 + "";
   while ((am = reA.exec(a2)) && (bm = reB.exec(b2))) {
     if ((bs = bm.index) > bi) {
@@ -992,7 +1400,7 @@ function _$3(a2, b2) {
       else s[++i2] = bm;
     } else {
       s[++i2] = null;
-      q.push({ i: i2, x: interpolateNumber(am, bm) });
+      q2.push({ i: i2, x: interpolateNumber(am, bm) });
     }
     bi = reB.lastIndex;
   }
@@ -1001,14 +1409,14 @@ function _$3(a2, b2) {
     if (s[i2]) s[i2] += bs;
     else s[++i2] = bs;
   }
-  return s.length < 2 ? q[0] ? one(q[0].x) : zero$1(b2) : (b2 = q.length, function(t2) {
-    for (var i3 = 0, o2; i3 < b2; ++i3) s[(o2 = q[i3]).i] = o2.x(t2);
+  return s.length < 2 ? q2[0] ? one(q2[0].x) : zero$1(b2) : (b2 = q2.length, function(t2) {
+    for (var i3 = 0, o2; i3 < b2; ++i3) s[(o2 = q2[i3]).i] = o2.x(t2);
     return s.join("");
   });
 }
 function interpolate(a2, b2) {
   var t2 = typeof b2, c2;
-  return b2 == null || t2 === "boolean" ? constant$1(b2) : (t2 === "number" ? interpolateNumber : t2 === "string" ? (c2 = color(b2)) ? (b2 = c2, rgb) : _$3 : b2 instanceof color ? rgb : b2 instanceof Date ? date$1 : isNumberArray(b2) ? numberArray : Array.isArray(b2) ? genericArray : typeof b2.valueOf !== "function" && typeof b2.toString !== "function" || isNaN(b2) ? object : interpolateNumber)(a2, b2);
+  return b2 == null || t2 === "boolean" ? constant$1(b2) : (t2 === "number" ? interpolateNumber : t2 === "string" ? (c2 = color(b2)) ? (b2 = c2, rgb) : _$4 : b2 instanceof color ? rgb : b2 instanceof Date ? date$1 : isNumberArray(b2) ? numberArray : Array.isArray(b2) ? genericArray : typeof b2.valueOf !== "function" && typeof b2.toString !== "function" || isNaN(b2) ? object : interpolateNumber)(a2, b2);
 }
 function interpolateRound(a2, b2) {
   return a2 = +a2, b2 = +b2, function(t2) {
@@ -1037,7 +1445,7 @@ var cubehelixLong = cubehelix(nogamma);
 function ascending(a2, b2) {
   return a2 == null || b2 == null ? NaN : a2 < b2 ? -1 : a2 > b2 ? 1 : a2 >= b2 ? 0 : NaN;
 }
-function descending(a2, b2) {
+function descending$1(a2, b2) {
   return a2 == null || b2 == null ? NaN : b2 < a2 ? -1 : b2 > a2 ? 1 : b2 >= a2 ? 0 : NaN;
 }
 function bisector(f2) {
@@ -1047,7 +1455,7 @@ function bisector(f2) {
     compare2 = (d, x2) => ascending(f2(d), x2);
     delta = (d, x2) => f2(d) - x2;
   } else {
-    compare1 = f2 === ascending || f2 === descending ? f2 : zero;
+    compare1 = f2 === ascending || f2 === descending$1 ? f2 : zero;
     compare2 = f2;
     delta = f2;
   }
@@ -1259,7 +1667,7 @@ function number$1(x2) {
   return +x2;
 }
 var unit = [0, 1];
-function identity$1(x2) {
+function identity$2(x2) {
   return x2;
 }
 function normalize(a2, b2) {
@@ -1301,10 +1709,10 @@ function copy(source, target) {
   return target.domain(source.domain()).range(source.range()).interpolate(source.interpolate()).clamp(source.clamp()).unknown(source.unknown());
 }
 function transformer() {
-  var domain = unit, range2 = unit, interpolate$1 = interpolate, transform, untransform, unknown, clamp = identity$1, piecewise, output, input;
+  var domain = unit, range2 = unit, interpolate$1 = interpolate, transform, untransform, unknown, clamp = identity$2, piecewise, output, input;
   function rescale() {
     var n2 = Math.min(domain.length, range2.length);
-    if (clamp !== identity$1) clamp = clamper(domain[0], domain[n2 - 1]);
+    if (clamp !== identity$2) clamp = clamper(domain[0], domain[n2 - 1]);
     piecewise = n2 > 2 ? polymap : bimap;
     output = input = null;
     return scale;
@@ -1325,7 +1733,7 @@ function transformer() {
     return range2 = Array.from(_2), interpolate$1 = interpolateRound, rescale();
   };
   scale.clamp = function(_2) {
-    return arguments.length ? (clamp = _2 ? true : identity$1, rescale()) : clamp !== identity$1;
+    return arguments.length ? (clamp = _2 ? true : identity$2, rescale()) : clamp !== identity$2;
   };
   scale.interpolate = function(_2) {
     return arguments.length ? (interpolate$1 = _2, rescale()) : interpolate$1;
@@ -1339,7 +1747,7 @@ function transformer() {
   };
 }
 function continuous() {
-  return transformer()(identity$1, identity$1);
+  return transformer()(identity$2, identity$2);
 }
 function formatDecimal(x2) {
   return Math.abs(x2 = Math.round(x2)) >= 1e21 ? x2.toLocaleString("en").replace(/,/g, "") : x2.toString(10);
@@ -1473,12 +1881,12 @@ const formatTypes = {
     return Math.round(x2).toString(16);
   }
 };
-function identity(x2) {
+function identity$1(x2) {
   return x2;
 }
 var map = Array.prototype.map, prefixes = ["y", "z", "a", "f", "p", "n", "µ", "m", "", "k", "M", "G", "T", "P", "E", "Z", "Y"];
 function formatLocale$1(locale2) {
-  var group = locale2.grouping === void 0 || locale2.thousands === void 0 ? identity : formatGroup(map.call(locale2.grouping, Number), locale2.thousands + ""), currencyPrefix = locale2.currency === void 0 ? "" : locale2.currency[0] + "", currencySuffix = locale2.currency === void 0 ? "" : locale2.currency[1] + "", decimal = locale2.decimal === void 0 ? "." : locale2.decimal + "", numerals = locale2.numerals === void 0 ? identity : formatNumerals(map.call(locale2.numerals, String)), percent = locale2.percent === void 0 ? "%" : locale2.percent + "", minus = locale2.minus === void 0 ? "-" : locale2.minus + "", nan = locale2.nan === void 0 ? "NaN" : locale2.nan + "";
+  var group = locale2.grouping === void 0 || locale2.thousands === void 0 ? identity$1 : formatGroup(map.call(locale2.grouping, Number), locale2.thousands + ""), currencyPrefix = locale2.currency === void 0 ? "" : locale2.currency[0] + "", currencySuffix = locale2.currency === void 0 ? "" : locale2.currency[1] + "", decimal = locale2.decimal === void 0 ? "." : locale2.decimal + "", numerals = locale2.numerals === void 0 ? identity$1 : formatNumerals(map.call(locale2.numerals, String)), percent = locale2.percent === void 0 ? "%" : locale2.percent + "", minus = locale2.minus === void 0 ? "-" : locale2.minus + "", nan = locale2.nan === void 0 ? "NaN" : locale2.nan + "";
   function newFormat(specifier) {
     specifier = formatSpecifier(specifier);
     var fill = specifier.fill, align = specifier.align, sign2 = specifier.sign, symbol = specifier.symbol, zero2 = specifier.zero, width = specifier.width, comma = specifier.comma, precision = specifier.precision, trim = specifier.trim, type = specifier.type;
@@ -1569,9 +1977,9 @@ function precisionFixed(step) {
 function precisionPrefix(step, value) {
   return Math.max(0, Math.max(-8, Math.min(8, Math.floor(exponent(value) / 3))) * 3 - exponent(Math.abs(step)));
 }
-function precisionRound(step, max) {
-  step = Math.abs(step), max = Math.abs(max) - step;
-  return Math.max(0, exponent(max) - exponent(step)) + 1;
+function precisionRound(step, max2) {
+  step = Math.abs(step), max2 = Math.abs(max2) - step;
+  return Math.max(0, exponent(max2) - exponent(step)) + 1;
 }
 function tickFormat(start, stop, count, specifier) {
   var step = tickStep(start, stop, count), precision;
@@ -2984,7 +3392,7 @@ const n = colors("1b9e77d95f027570b3e7298a66a61ee6ab02a6761d666666");
 const t = colors("a6cee31f78b4b2df8a33a02cfb9a99e31a1cfdbf6fff7f00cab2d66a3d9affff99b15928");
 const o = colors("fbb4aeb3cde3ccebc5decbe4fed9a6ffffcce5d8bdfddaecf2f2f2");
 const i = colors("b3e2cdfdcdaccbd5e8f4cae4e6f5c9fff2aef1e2cccccccc");
-const u$1 = colors("e41a1c377eb84daf4a984ea3ff7f00ffff33a65628f781bf999999");
+const u$2 = colors("e41a1c377eb84daf4a984ea3ff7f00ffff33a65628f781bf999999");
 const a = colors("66c2a5fc8d628da0cbe78ac3a6d854ffd92fe5c494b3b3b3");
 const l = colors("8dd3c7ffffb3bebadafb807280b1d3fdb462b3de69fccde5d9d9d9bc80bdccebc5ffed6f");
 const c$2 = colors("4e79a7f28e2ce1575976b7b259a14fedc949af7aa1ff9da79c755fbab0ab");
@@ -3000,7 +3408,7 @@ var scheme$q = new Array(3).concat(
   "5430058c510abf812ddfc27df6e8c3c7eae580cdc135978f01665e003c30",
   "5430058c510abf812ddfc27df6e8c3f5f5f5c7eae580cdc135978f01665e003c30"
 ).map(colors);
-const v$1 = ramp$1(scheme$q);
+const v$6 = ramp$1(scheme$q);
 var scheme$p = new Array(3).concat(
   "af8dc3f7f7f77fbf7b",
   "7b3294c2a5cfa6dba0008837",
@@ -3012,7 +3420,7 @@ var scheme$p = new Array(3).concat(
   "40004b762a839970abc2a5cfe7d4e8d9f0d3a6dba05aae611b783700441b",
   "40004b762a839970abc2a5cfe7d4e8f7f7f7d9f0d3a6dba05aae611b783700441b"
 ).map(colors);
-const _$2 = ramp$1(scheme$p);
+const _$3 = ramp$1(scheme$p);
 var scheme$o = new Array(3).concat(
   "e9a3c9f7f7f7a1d76a",
   "d01c8bf1b6dab8e1864dac26",
@@ -3024,7 +3432,7 @@ var scheme$o = new Array(3).concat(
   "8e0152c51b7dde77aef1b6dafde0efe6f5d0b8e1867fbc414d9221276419",
   "8e0152c51b7dde77aef1b6dafde0eff7f7f7e6f5d0b8e1867fbc414d9221276419"
 ).map(colors);
-const w$3 = ramp$1(scheme$o);
+const w$5 = ramp$1(scheme$o);
 var scheme$n = new Array(3).concat(
   "998ec3f7f7f7f1a340",
   "5e3c99b2abd2fdb863e66101",
@@ -3036,7 +3444,7 @@ var scheme$n = new Array(3).concat(
   "2d004b5427888073acb2abd2d8daebfee0b6fdb863e08214b358067f3b08",
   "2d004b5427888073acb2abd2d8daebf7f7f7fee0b6fdb863e08214b358067f3b08"
 ).map(colors);
-const k$1 = ramp$1(scheme$n);
+const k$5 = ramp$1(scheme$n);
 var scheme$m = new Array(3).concat(
   "ef8a62f7f7f767a9cf",
   "ca0020f4a58292c5de0571b0",
@@ -3048,7 +3456,7 @@ var scheme$m = new Array(3).concat(
   "67001fb2182bd6604df4a582fddbc7d1e5f092c5de4393c32166ac053061",
   "67001fb2182bd6604df4a582fddbc7f7f7f7d1e5f092c5de4393c32166ac053061"
 ).map(colors);
-const j$1 = ramp$1(scheme$m);
+const j$6 = ramp$1(scheme$m);
 var scheme$l = new Array(3).concat(
   "ef8a62ffffff999999",
   "ca0020f4a582bababa404040",
@@ -3060,7 +3468,7 @@ var scheme$l = new Array(3).concat(
   "67001fb2182bd6604df4a582fddbc7e0e0e0bababa8787874d4d4d1a1a1a",
   "67001fb2182bd6604df4a582fddbc7ffffffe0e0e0bababa8787874d4d4d1a1a1a"
 ).map(colors);
-const A$1 = ramp$1(scheme$l);
+const A$2 = ramp$1(scheme$l);
 var scheme$k = new Array(3).concat(
   "fc8d59ffffbf91bfdb",
   "d7191cfdae61abd9e92c7bb6",
@@ -3072,7 +3480,7 @@ var scheme$k = new Array(3).concat(
   "a50026d73027f46d43fdae61fee090e0f3f8abd9e974add14575b4313695",
   "a50026d73027f46d43fdae61fee090ffffbfe0f3f8abd9e974add14575b4313695"
 ).map(colors);
-const O$2 = ramp$1(scheme$k);
+const O$4 = ramp$1(scheme$k);
 var scheme$j = new Array(3).concat(
   "fc8d59ffffbf91cf60",
   "d7191cfdae61a6d96a1a9641",
@@ -3084,7 +3492,7 @@ var scheme$j = new Array(3).concat(
   "a50026d73027f46d43fdae61fee08bd9ef8ba6d96a66bd631a9850006837",
   "a50026d73027f46d43fdae61fee08bffffbfd9ef8ba6d96a66bd631a9850006837"
 ).map(colors);
-const z$2 = ramp$1(scheme$j);
+const z$4 = ramp$1(scheme$j);
 var scheme$i = new Array(3).concat(
   "fc8d59ffffbf99d594",
   "d7191cfdae61abdda42b83ba",
@@ -3096,7 +3504,7 @@ var scheme$i = new Array(3).concat(
   "9e0142d53e4ff46d43fdae61fee08be6f598abdda466c2a53288bd5e4fa2",
   "9e0142d53e4ff46d43fdae61fee08bffffbfe6f598abdda466c2a53288bd5e4fa2"
 ).map(colors);
-const E$1 = ramp$1(scheme$i);
+const E$7 = ramp$1(scheme$i);
 var scheme$h = new Array(3).concat(
   "e5f5f999d8c92ca25f",
   "edf8fbb2e2e266c2a4238b45",
@@ -3226,7 +3634,7 @@ var scheme$5 = new Array(3).concat(
   "f7fbffdeebf7c6dbef9ecae16baed64292c62171b5084594",
   "f7fbffdeebf7c6dbef9ecae16baed64292c62171b508519c08306b"
 ).map(colors);
-const K$1 = ramp$1(scheme$5);
+const K$3 = ramp$1(scheme$5);
 var scheme$4 = new Array(3).concat(
   "e5f5e0a1d99b31a354",
   "edf8e9bae4b374c476238b45",
@@ -3236,7 +3644,7 @@ var scheme$4 = new Array(3).concat(
   "f7fcf5e5f5e0c7e9c0a1d99b74c47641ab5d238b45005a32",
   "f7fcf5e5f5e0c7e9c0a1d99b74c47641ab5d238b45006d2c00441b"
 ).map(colors);
-const L$2 = ramp$1(scheme$4);
+const L$3 = ramp$1(scheme$4);
 var scheme$3 = new Array(3).concat(
   "f0f0f0bdbdbd636363",
   "f7f7f7cccccc969696525252",
@@ -3246,7 +3654,7 @@ var scheme$3 = new Array(3).concat(
   "fffffff0f0f0d9d9d9bdbdbd969696737373525252252525",
   "fffffff0f0f0d9d9d9bdbdbd969696737373525252252525000000"
 ).map(colors);
-const N = ramp$1(scheme$3);
+const N$6 = ramp$1(scheme$3);
 var scheme$2 = new Array(3).concat(
   "efedf5bcbddc756bb1",
   "f2f0f7cbc9e29e9ac86a51a3",
@@ -3256,7 +3664,7 @@ var scheme$2 = new Array(3).concat(
   "fcfbfdefedf5dadaebbcbddc9e9ac8807dba6a51a34a1486",
   "fcfbfdefedf5dadaebbcbddc9e9ac8807dba6a51a354278f3f007d"
 ).map(colors);
-const W$3 = ramp$1(scheme$2);
+const W$4 = ramp$1(scheme$2);
 var scheme$1 = new Array(3).concat(
   "fee0d2fc9272de2d26",
   "fee5d9fcae91fb6a4acb181d",
@@ -3266,7 +3674,7 @@ var scheme$1 = new Array(3).concat(
   "fff5f0fee0d2fcbba1fc9272fb6a4aef3b2ccb181d99000d",
   "fff5f0fee0d2fcbba1fc9272fb6a4aef3b2ccb181da50f1567000d"
 ).map(colors);
-const X$3 = ramp$1(scheme$1);
+const X$5 = ramp$1(scheme$1);
 var scheme = new Array(3).concat(
   "fee6cefdae6be6550d",
   "feeddefdbe85fd8d3cd94701",
@@ -3276,7 +3684,7 @@ var scheme = new Array(3).concat(
   "fff5ebfee6cefdd0a2fdae6bfd8d3cf16913d948018c2d04",
   "fff5ebfee6cefdd0a2fdae6bfd8d3cf16913d94801a636037f2704"
 ).map(colors);
-const Q$2 = ramp$1(scheme);
+const Q$4 = ramp$1(scheme);
 function te$1(t2) {
   t2 = Math.max(0, Math.min(1, t2));
   return "rgb(" + Math.max(0, Math.min(255, Math.round(-4.54 - t2 * (35.34 - t2 * (2381.73 - t2 * (6402.7 - t2 * (7024.72 - t2 * 2710.57))))))) + ", " + Math.max(0, Math.min(255, Math.round(32.49 + t2 * (170.73 + t2 * (52.82 - t2 * (131.46 - t2 * (176.58 - t2 * 67.37))))))) + ", " + Math.max(0, Math.min(255, Math.round(81.24 + t2 * (442.36 - t2 * (2482.43 - t2 * (6167.24 - t2 * (6614.94 - t2 * 2475.67))))))) + ")";
@@ -3302,7 +3710,7 @@ function _e(t2) {
   c.b = 255 * (x2 = Math.sin(t2 + pi_2_3)) * x2;
   return c + "";
 }
-function Y$3(t2) {
+function Y$6(t2) {
   t2 = Math.max(0, Math.min(1, t2));
   return "rgb(" + Math.max(0, Math.min(255, Math.round(34.61 + t2 * (1172.33 - t2 * (10793.56 - t2 * (33300.12 - t2 * (38394.49 - t2 * 14825.05))))))) + ", " + Math.max(0, Math.min(255, Math.round(23.31 + t2 * (557.33 + t2 * (1225.33 - t2 * (3574.96 - t2 * (1073.77 + t2 * 707.56))))))) + ", " + Math.max(0, Math.min(255, Math.round(27.2 + t2 * (3211.1 - t2 * (15327.97 - t2 * (27814 - t2 * (22569.18 - t2 * 6838.66))))))) + ")";
 }
@@ -3312,7 +3720,7 @@ function ramp(range2) {
     return range2[Math.max(0, Math.min(n2 - 1, Math.floor(t2 * n2)))];
   };
 }
-const Z$1 = ramp(colors("44015444025645045745055946075a46085c460a5d460b5e470d60470e6147106347116447136548146748166848176948186a481a6c481b6d481c6e481d6f481f70482071482173482374482475482576482677482878482979472a7a472c7a472d7b472e7c472f7d46307e46327e46337f463480453581453781453882443983443a83443b84433d84433e85423f854240864241864142874144874045884046883f47883f48893e49893e4a893e4c8a3d4d8a3d4e8a3c4f8a3c508b3b518b3b528b3a538b3a548c39558c39568c38588c38598c375a8c375b8d365c8d365d8d355e8d355f8d34608d34618d33628d33638d32648e32658e31668e31678e31688e30698e306a8e2f6b8e2f6c8e2e6d8e2e6e8e2e6f8e2d708e2d718e2c718e2c728e2c738e2b748e2b758e2a768e2a778e2a788e29798e297a8e297b8e287c8e287d8e277e8e277f8e27808e26818e26828e26828e25838e25848e25858e24868e24878e23888e23898e238a8d228b8d228c8d228d8d218e8d218f8d21908d21918c20928c20928c20938c1f948c1f958b1f968b1f978b1f988b1f998a1f9a8a1e9b8a1e9c891e9d891f9e891f9f881fa0881fa1881fa1871fa28720a38620a48621a58521a68522a78522a88423a98324aa8325ab8225ac8226ad8127ad8128ae8029af7f2ab07f2cb17e2db27d2eb37c2fb47c31b57b32b67a34b67935b77937b87838b9773aba763bbb753dbc743fbc7340bd7242be7144bf7046c06f48c16e4ac16d4cc26c4ec36b50c46a52c56954c56856c66758c7655ac8645cc8635ec96260ca6063cb5f65cb5e67cc5c69cd5b6ccd5a6ece5870cf5773d05675d05477d1537ad1517cd2507fd34e81d34d84d44b86d54989d5488bd6468ed64590d74393d74195d84098d83e9bd93c9dd93ba0da39a2da37a5db36a8db34aadc32addc30b0dd2fb2dd2db5de2bb8de29bade28bddf26c0df25c2df23c5e021c8e020cae11fcde11dd0e11cd2e21bd5e21ad8e219dae319dde318dfe318e2e418e5e419e7e419eae51aece51befe51cf1e51df4e61ef6e620f8e621fbe723fde725"));
+const Z$2 = ramp(colors("44015444025645045745055946075a46085c460a5d460b5e470d60470e6147106347116447136548146748166848176948186a481a6c481b6d481c6e481d6f481f70482071482173482374482475482576482677482878482979472a7a472c7a472d7b472e7c472f7d46307e46327e46337f463480453581453781453882443983443a83443b84433d84433e85423f854240864241864142874144874045884046883f47883f48893e49893e4a893e4c8a3d4d8a3d4e8a3c4f8a3c508b3b518b3b528b3a538b3a548c39558c39568c38588c38598c375a8c375b8d365c8d365d8d355e8d355f8d34608d34618d33628d33638d32648e32658e31668e31678e31688e30698e306a8e2f6b8e2f6c8e2e6d8e2e6e8e2e6f8e2d708e2d718e2c718e2c728e2c738e2b748e2b758e2a768e2a778e2a788e29798e297a8e297b8e287c8e287d8e277e8e277f8e27808e26818e26828e26828e25838e25848e25858e24868e24878e23888e23898e238a8d228b8d228c8d228d8d218e8d218f8d21908d21918c20928c20928c20938c1f948c1f958b1f968b1f978b1f988b1f998a1f9a8a1e9b8a1e9c891e9d891f9e891f9f881fa0881fa1881fa1871fa28720a38620a48621a58521a68522a78522a88423a98324aa8325ab8225ac8226ad8127ad8128ae8029af7f2ab07f2cb17e2db27d2eb37c2fb47c31b57b32b67a34b67935b77937b87838b9773aba763bbb753dbc743fbc7340bd7242be7144bf7046c06f48c16e4ac16d4cc26c4ec36b50c46a52c56954c56856c66758c7655ac8645cc8635ec96260ca6063cb5f65cb5e67cc5c69cd5b6ccd5a6ece5870cf5773d05675d05477d1537ad1517cd2507fd34e81d34d84d44b86d54989d5488bd6468ed64590d74393d74195d84098d83e9bd93c9dd93ba0da39a2da37a5db36a8db34aadc32addc30b0dd2fb2dd2db5de2bb8de29bade28bddf26c0df25c2df23c5e021c8e020cae11fcde11dd0e11cd2e21bd5e21ad8e219dae319dde318dfe318e2e418e5e419e7e419eae51aece51befe51cf1e51df4e61ef6e620f8e621fbe723fde725"));
 var magma = ramp(colors("00000401000501010601010802010902020b02020d03030f03031204041405041606051806051a07061c08071e0907200a08220b09240c09260d0a290e0b2b100b2d110c2f120d31130d34140e36150e38160f3b180f3d19103f1a10421c10441d11471e114920114b21114e22115024125325125527125829115a2a115c2c115f2d11612f116331116533106734106936106b38106c390f6e3b0f703d0f713f0f72400f74420f75440f764510774710784910784a10794c117a4e117b4f127b51127c52137c54137d56147d57157e59157e5a167e5c167f5d177f5f187f601880621980641a80651a80671b80681c816a1c816b1d816d1d816e1e81701f81721f817320817521817621817822817922827b23827c23827e24828025828125818326818426818627818827818928818b29818c29818e2a81902a81912b81932b80942c80962c80982d80992d809b2e7f9c2e7f9e2f7fa02f7fa1307ea3307ea5317ea6317da8327daa337dab337cad347cae347bb0357bb2357bb3367ab5367ab73779b83779ba3878bc3978bd3977bf3a77c03a76c23b75c43c75c53c74c73d73c83e73ca3e72cc3f71cd4071cf4070d0416fd2426fd3436ed5446dd6456cd8456cd9466bdb476adc4869de4968df4a68e04c67e24d66e34e65e44f64e55064e75263e85362e95462ea5661eb5760ec5860ed5a5fee5b5eef5d5ef05f5ef1605df2625df2645cf3655cf4675cf4695cf56b5cf66c5cf66e5cf7705cf7725cf8745cf8765cf9785df9795df97b5dfa7d5efa7f5efa815ffb835ffb8560fb8761fc8961fc8a62fc8c63fc8e64fc9065fd9266fd9467fd9668fd9869fd9a6afd9b6bfe9d6cfe9f6dfea16efea36ffea571fea772fea973feaa74feac76feae77feb078feb27afeb47bfeb67cfeb77efeb97ffebb81febd82febf84fec185fec287fec488fec68afec88cfeca8dfecc8ffecd90fecf92fed194fed395fed597fed799fed89afdda9cfddc9efddea0fde0a1fde2a3fde3a5fde5a7fde7a9fde9aafdebacfcecaefceeb0fcf0b2fcf2b4fcf4b6fcf6b8fcf7b9fcf9bbfcfbbdfcfdbf"));
 var inferno = ramp(colors("00000401000501010601010802010a02020c02020e03021004031204031405041706041907051b08051d09061f0a07220b07240c08260d08290e092b10092d110a30120a32140b34150b37160b39180c3c190c3e1b0c411c0c431e0c451f0c48210c4a230c4c240c4f260c51280b53290b552b0b572d0b592f0a5b310a5c320a5e340a5f3609613809623909633b09643d09653e0966400a67420a68440a68450a69470b6a490b6a4a0c6b4c0c6b4d0d6c4f0d6c510e6c520e6d540f6d550f6d57106e59106e5a116e5c126e5d126e5f136e61136e62146e64156e65156e67166e69166e6a176e6c186e6d186e6f196e71196e721a6e741a6e751b6e771c6d781c6d7a1d6d7c1d6d7d1e6d7f1e6c801f6c82206c84206b85216b87216b88226a8a226a8c23698d23698f24699025689225689326679526679727669827669a28659b29649d29649f2a63a02a63a22b62a32c61a52c60a62d60a82e5fa92e5eab2f5ead305dae305cb0315bb1325ab3325ab43359b63458b73557b93556ba3655bc3754bd3853bf3952c03a51c13a50c33b4fc43c4ec63d4dc73e4cc83f4bca404acb4149cc4248ce4347cf4446d04545d24644d34743d44842d54a41d74b3fd84c3ed94d3dda4e3cdb503bdd513ade5238df5337e05536e15635e25734e35933e45a31e55c30e65d2fe75e2ee8602de9612bea632aeb6429eb6628ec6726ed6925ee6a24ef6c23ef6e21f06f20f1711ff1731df2741cf3761bf37819f47918f57b17f57d15f67e14f68013f78212f78410f8850ff8870ef8890cf98b0bf98c0af98e09fa9008fa9207fa9407fb9606fb9706fb9906fb9b06fb9d07fc9f07fca108fca309fca50afca60cfca80dfcaa0ffcac11fcae12fcb014fcb216fcb418fbb61afbb81dfbba1ffbbc21fbbe23fac026fac228fac42afac62df9c72ff9c932f9cb35f8cd37f8cf3af7d13df7d340f6d543f6d746f5d949f5db4cf4dd4ff4df53f4e156f3e35af3e55df2e661f2e865f2ea69f1ec6df1ed71f1ef75f1f179f2f27df2f482f3f586f3f68af4f88ef5f992f6fa96f8fb9af9fc9dfafda1fcffa4"));
 var plasma = ramp(colors("0d088710078813078916078a19068c1b068d1d068e20068f2206902406912605912805922a05932c05942e05952f059631059733059735049837049938049a3a049a3c049b3e049c3f049c41049d43039e44039e46039f48039f4903a04b03a14c02a14e02a25002a25102a35302a35502a45601a45801a45901a55b01a55c01a65e01a66001a66100a76300a76400a76600a76700a86900a86a00a86c00a86e00a86f00a87100a87201a87401a87501a87701a87801a87a02a87b02a87d03a87e03a88004a88104a78305a78405a78606a68707a68808a68a09a58b0aa58d0ba58e0ca48f0da4910ea3920fa39410a29511a19613a19814a099159f9a169f9c179e9d189d9e199da01a9ca11b9ba21d9aa31e9aa51f99a62098a72197a82296aa2395ab2494ac2694ad2793ae2892b02991b12a90b22b8fb32c8eb42e8db52f8cb6308bb7318ab83289ba3388bb3488bc3587bd3786be3885bf3984c03a83c13b82c23c81c33d80c43e7fc5407ec6417dc7427cc8437bc9447aca457acb4679cc4778cc4977cd4a76ce4b75cf4c74d04d73d14e72d24f71d35171d45270d5536fd5546ed6556dd7566cd8576bd9586ada5a6ada5b69db5c68dc5d67dd5e66de5f65de6164df6263e06363e16462e26561e26660e3685fe4695ee56a5de56b5de66c5ce76e5be76f5ae87059e97158e97257ea7457eb7556eb7655ec7754ed7953ed7a52ee7b51ef7c51ef7e50f07f4ff0804ef1814df1834cf2844bf3854bf3874af48849f48948f58b47f58c46f68d45f68f44f79044f79143f79342f89441f89540f9973ff9983ef99a3efa9b3dfa9c3cfa9e3bfb9f3afba139fba238fca338fca537fca636fca835fca934fdab33fdac33fdae32fdaf31fdb130fdb22ffdb42ffdb52efeb72dfeb82cfeba2cfebb2bfebd2afebe2afec029fdc229fdc328fdc527fdc627fdc827fdca26fdcb26fccd25fcce25fcd025fcd225fbd324fbd524fbd724fad824fada24f9dc24f9dd25f8df25f8e125f7e225f7e425f6e626f6e826f5e926f5eb27f4ed27f3ee27f3f027f2f227f1f426f1f525f0f724f0f921"));
@@ -3321,7 +3729,23 @@ function constant(x2) {
     return x2;
   };
 }
+const abs = Math.abs;
+const atan2 = Math.atan2;
+const cos = Math.cos;
+const max = Math.max;
+const min = Math.min;
+const sin = Math.sin;
+const sqrt = Math.sqrt;
 const epsilon$2 = 1e-12;
+const pi$1 = Math.PI;
+const halfPi = pi$1 / 2;
+const tau$2 = 2 * pi$1;
+function acos(x2) {
+  return x2 > 1 ? 0 : x2 < -1 ? pi$1 : Math.acos(x2);
+}
+function asin(x2) {
+  return x2 >= 1 ? halfPi : x2 <= -1 ? -halfPi : Math.asin(x2);
+}
 const pi = Math.PI, tau$1 = 2 * pi, epsilon$1 = 1e-6, tauEpsilon = tau$1 - epsilon$1;
 function append(strings) {
   this._ += strings[0];
@@ -3422,6 +3846,133 @@ function withPath(shape) {
   };
   return () => new Path$1(digits);
 }
+function arcInnerRadius(d) {
+  return d.innerRadius;
+}
+function arcOuterRadius(d) {
+  return d.outerRadius;
+}
+function arcStartAngle(d) {
+  return d.startAngle;
+}
+function arcEndAngle(d) {
+  return d.endAngle;
+}
+function arcPadAngle(d) {
+  return d && d.padAngle;
+}
+function intersect(x0, y0, x1, y1, x2, y2, x3, y3) {
+  var x10 = x1 - x0, y10 = y1 - y0, x32 = x3 - x2, y32 = y3 - y2, t2 = y32 * x10 - x32 * y10;
+  if (t2 * t2 < epsilon$2) return;
+  t2 = (x32 * (y0 - y2) - y32 * (x0 - x2)) / t2;
+  return [x0 + t2 * x10, y0 + t2 * y10];
+}
+function cornerTangents(x0, y0, x1, y1, r1, rc, cw) {
+  var x01 = x0 - x1, y01 = y0 - y1, lo = (cw ? rc : -rc) / sqrt(x01 * x01 + y01 * y01), ox = lo * y01, oy = -lo * x01, x11 = x0 + ox, y11 = y0 + oy, x10 = x1 + ox, y10 = y1 + oy, x00 = (x11 + x10) / 2, y00 = (y11 + y10) / 2, dx = x10 - x11, dy = y10 - y11, d2 = dx * dx + dy * dy, r2 = r1 - rc, D2 = x11 * y10 - x10 * y11, d = (dy < 0 ? -1 : 1) * sqrt(max(0, r2 * r2 * d2 - D2 * D2)), cx0 = (D2 * dy - dx * d) / d2, cy0 = (-D2 * dx - dy * d) / d2, cx1 = (D2 * dy + dx * d) / d2, cy1 = (-D2 * dx + dy * d) / d2, dx0 = cx0 - x00, dy0 = cy0 - y00, dx1 = cx1 - x00, dy1 = cy1 - y00;
+  if (dx0 * dx0 + dy0 * dy0 > dx1 * dx1 + dy1 * dy1) cx0 = cx1, cy0 = cy1;
+  return {
+    cx: cx0,
+    cy: cy0,
+    x01: -ox,
+    y01: -oy,
+    x11: cx0 * (r1 / r2 - 1),
+    y11: cy0 * (r1 / r2 - 1)
+  };
+}
+function y$1() {
+  var innerRadius = arcInnerRadius, outerRadius = arcOuterRadius, cornerRadius = constant(0), padRadius = null, startAngle = arcStartAngle, endAngle = arcEndAngle, padAngle = arcPadAngle, context = null, path = withPath(arc);
+  function arc() {
+    var buffer, r2, r0 = +innerRadius.apply(this, arguments), r1 = +outerRadius.apply(this, arguments), a0 = startAngle.apply(this, arguments) - halfPi, a1 = endAngle.apply(this, arguments) - halfPi, da = abs(a1 - a0), cw = a1 > a0;
+    if (!context) context = buffer = path();
+    if (r1 < r0) r2 = r1, r1 = r0, r0 = r2;
+    if (!(r1 > epsilon$2)) context.moveTo(0, 0);
+    else if (da > tau$2 - epsilon$2) {
+      context.moveTo(r1 * cos(a0), r1 * sin(a0));
+      context.arc(0, 0, r1, a0, a1, !cw);
+      if (r0 > epsilon$2) {
+        context.moveTo(r0 * cos(a1), r0 * sin(a1));
+        context.arc(0, 0, r0, a1, a0, cw);
+      }
+    } else {
+      var a01 = a0, a11 = a1, a00 = a0, a10 = a1, da0 = da, da1 = da, ap = padAngle.apply(this, arguments) / 2, rp = ap > epsilon$2 && (padRadius ? +padRadius.apply(this, arguments) : sqrt(r0 * r0 + r1 * r1)), rc = min(abs(r1 - r0) / 2, +cornerRadius.apply(this, arguments)), rc0 = rc, rc1 = rc, t02, t12;
+      if (rp > epsilon$2) {
+        var p0 = asin(rp / r0 * sin(ap)), p1 = asin(rp / r1 * sin(ap));
+        if ((da0 -= p0 * 2) > epsilon$2) p0 *= cw ? 1 : -1, a00 += p0, a10 -= p0;
+        else da0 = 0, a00 = a10 = (a0 + a1) / 2;
+        if ((da1 -= p1 * 2) > epsilon$2) p1 *= cw ? 1 : -1, a01 += p1, a11 -= p1;
+        else da1 = 0, a01 = a11 = (a0 + a1) / 2;
+      }
+      var x01 = r1 * cos(a01), y01 = r1 * sin(a01), x10 = r0 * cos(a10), y10 = r0 * sin(a10);
+      if (rc > epsilon$2) {
+        var x11 = r1 * cos(a11), y11 = r1 * sin(a11), x00 = r0 * cos(a00), y00 = r0 * sin(a00), oc;
+        if (da < pi$1) {
+          if (oc = intersect(x01, y01, x00, y00, x11, y11, x10, y10)) {
+            var ax = x01 - oc[0], ay = y01 - oc[1], bx = x11 - oc[0], by = y11 - oc[1], kc = 1 / sin(acos((ax * bx + ay * by) / (sqrt(ax * ax + ay * ay) * sqrt(bx * bx + by * by))) / 2), lc = sqrt(oc[0] * oc[0] + oc[1] * oc[1]);
+            rc0 = min(rc, (r0 - lc) / (kc - 1));
+            rc1 = min(rc, (r1 - lc) / (kc + 1));
+          } else {
+            rc0 = rc1 = 0;
+          }
+        }
+      }
+      if (!(da1 > epsilon$2)) context.moveTo(x01, y01);
+      else if (rc1 > epsilon$2) {
+        t02 = cornerTangents(x00, y00, x01, y01, r1, rc1, cw);
+        t12 = cornerTangents(x11, y11, x10, y10, r1, rc1, cw);
+        context.moveTo(t02.cx + t02.x01, t02.cy + t02.y01);
+        if (rc1 < rc) context.arc(t02.cx, t02.cy, rc1, atan2(t02.y01, t02.x01), atan2(t12.y01, t12.x01), !cw);
+        else {
+          context.arc(t02.cx, t02.cy, rc1, atan2(t02.y01, t02.x01), atan2(t02.y11, t02.x11), !cw);
+          context.arc(0, 0, r1, atan2(t02.cy + t02.y11, t02.cx + t02.x11), atan2(t12.cy + t12.y11, t12.cx + t12.x11), !cw);
+          context.arc(t12.cx, t12.cy, rc1, atan2(t12.y11, t12.x11), atan2(t12.y01, t12.x01), !cw);
+        }
+      } else context.moveTo(x01, y01), context.arc(0, 0, r1, a01, a11, !cw);
+      if (!(r0 > epsilon$2) || !(da0 > epsilon$2)) context.lineTo(x10, y10);
+      else if (rc0 > epsilon$2) {
+        t02 = cornerTangents(x10, y10, x11, y11, r0, -rc0, cw);
+        t12 = cornerTangents(x01, y01, x00, y00, r0, -rc0, cw);
+        context.lineTo(t02.cx + t02.x01, t02.cy + t02.y01);
+        if (rc0 < rc) context.arc(t02.cx, t02.cy, rc0, atan2(t02.y01, t02.x01), atan2(t12.y01, t12.x01), !cw);
+        else {
+          context.arc(t02.cx, t02.cy, rc0, atan2(t02.y01, t02.x01), atan2(t02.y11, t02.x11), !cw);
+          context.arc(0, 0, r0, atan2(t02.cy + t02.y11, t02.cx + t02.x11), atan2(t12.cy + t12.y11, t12.cx + t12.x11), cw);
+          context.arc(t12.cx, t12.cy, rc0, atan2(t12.y11, t12.x11), atan2(t12.y01, t12.x01), !cw);
+        }
+      } else context.arc(0, 0, r0, a10, a00, cw);
+    }
+    context.closePath();
+    if (buffer) return context = null, buffer + "" || null;
+  }
+  arc.centroid = function() {
+    var r2 = (+innerRadius.apply(this, arguments) + +outerRadius.apply(this, arguments)) / 2, a2 = (+startAngle.apply(this, arguments) + +endAngle.apply(this, arguments)) / 2 - pi$1 / 2;
+    return [cos(a2) * r2, sin(a2) * r2];
+  };
+  arc.innerRadius = function(_2) {
+    return arguments.length ? (innerRadius = typeof _2 === "function" ? _2 : constant(+_2), arc) : innerRadius;
+  };
+  arc.outerRadius = function(_2) {
+    return arguments.length ? (outerRadius = typeof _2 === "function" ? _2 : constant(+_2), arc) : outerRadius;
+  };
+  arc.cornerRadius = function(_2) {
+    return arguments.length ? (cornerRadius = typeof _2 === "function" ? _2 : constant(+_2), arc) : cornerRadius;
+  };
+  arc.padRadius = function(_2) {
+    return arguments.length ? (padRadius = _2 == null ? null : typeof _2 === "function" ? _2 : constant(+_2), arc) : padRadius;
+  };
+  arc.startAngle = function(_2) {
+    return arguments.length ? (startAngle = typeof _2 === "function" ? _2 : constant(+_2), arc) : startAngle;
+  };
+  arc.endAngle = function(_2) {
+    return arguments.length ? (endAngle = typeof _2 === "function" ? _2 : constant(+_2), arc) : endAngle;
+  };
+  arc.padAngle = function(_2) {
+    return arguments.length ? (padAngle = typeof _2 === "function" ? _2 : constant(+_2), arc) : padAngle;
+  };
+  arc.context = function(_2) {
+    return arguments.length ? (context = _2 == null ? null : _2, arc) : context;
+  };
+  return arc;
+}
 function array(x2) {
   return typeof x2 === "object" && "length" in x2 ? x2 : Array.from(x2);
 }
@@ -3460,15 +4011,15 @@ Linear.prototype = {
 function sr(context) {
   return new Linear(context);
 }
-function x$1(p2) {
+function x$6(p2) {
   return p2[0];
 }
 function y(p2) {
   return p2[1];
 }
-function R(x2, y$12) {
+function H$4(x2, y$12) {
   var defined = constant(true), context = null, curve = sr, output = null, path = withPath(line);
-  x2 = typeof x2 === "function" ? x2 : x2 === void 0 ? x$1 : constant(x2);
+  x2 = typeof x2 === "function" ? x2 : x2 === void 0 ? x$6 : constant(x2);
   y$12 = typeof y$12 === "function" ? y$12 : y$12 === void 0 ? y : constant(y$12);
   function line(data) {
     var i2, n2 = (data = array(data)).length, d, defined0 = false, buffer;
@@ -3499,9 +4050,9 @@ function R(x2, y$12) {
   };
   return line;
 }
-function I$1(x0, y0, y1) {
+function Y$5(x0, y0, y1) {
   var x1 = null, defined = constant(true), context = null, curve = sr, output = null, path = withPath(area);
-  x0 = typeof x0 === "function" ? x0 : x0 === void 0 ? x$1 : constant(+x0);
+  x0 = typeof x0 === "function" ? x0 : x0 === void 0 ? x$6 : constant(+x0);
   y0 = typeof y0 === "function" ? y0 : y0 === void 0 ? constant(0) : constant(+y0);
   y1 = typeof y1 === "function" ? y1 : y1 === void 0 ? y : constant(+y1);
   function area(data) {
@@ -3531,7 +4082,7 @@ function I$1(x0, y0, y1) {
     if (buffer) return output = null, buffer + "" || null;
   }
   function arealine() {
-    return R().defined(defined).curve(curve).context(context);
+    return H$4().defined(defined).curve(curve).context(context);
   }
   area.x = function(_2) {
     return arguments.length ? (x0 = typeof _2 === "function" ? _2 : constant(+_2), x1 = null, area) : x0;
@@ -3570,6 +4121,59 @@ function I$1(x0, y0, y1) {
     return arguments.length ? (_2 == null ? context = output = null : output = curve(context = _2), area) : context;
   };
   return area;
+}
+function descending(a2, b2) {
+  return b2 < a2 ? -1 : b2 > a2 ? 1 : b2 >= a2 ? 0 : NaN;
+}
+function identity(d) {
+  return d;
+}
+function T$7() {
+  var value = identity, sortValues = descending, sort = null, startAngle = constant(0), endAngle = constant(tau$2), padAngle = constant(0);
+  function pie(data) {
+    var i2, n2 = (data = array(data)).length, j2, k2, sum = 0, index = new Array(n2), arcs = new Array(n2), a0 = +startAngle.apply(this, arguments), da = Math.min(tau$2, Math.max(-tau$2, endAngle.apply(this, arguments) - a0)), a1, p2 = Math.min(Math.abs(da) / n2, padAngle.apply(this, arguments)), pa = p2 * (da < 0 ? -1 : 1), v2;
+    for (i2 = 0; i2 < n2; ++i2) {
+      if ((v2 = arcs[index[i2] = i2] = +value(data[i2], i2, data)) > 0) {
+        sum += v2;
+      }
+    }
+    if (sortValues != null) index.sort(function(i3, j3) {
+      return sortValues(arcs[i3], arcs[j3]);
+    });
+    else if (sort != null) index.sort(function(i3, j3) {
+      return sort(data[i3], data[j3]);
+    });
+    for (i2 = 0, k2 = sum ? (da - n2 * pa) / sum : 0; i2 < n2; ++i2, a0 = a1) {
+      j2 = index[i2], v2 = arcs[j2], a1 = a0 + (v2 > 0 ? v2 * k2 : 0) + pa, arcs[j2] = {
+        data: data[j2],
+        index: i2,
+        value: v2,
+        startAngle: a0,
+        endAngle: a1,
+        padAngle: p2
+      };
+    }
+    return arcs;
+  }
+  pie.value = function(_2) {
+    return arguments.length ? (value = typeof _2 === "function" ? _2 : constant(+_2), pie) : value;
+  };
+  pie.sortValues = function(_2) {
+    return arguments.length ? (sortValues = _2, sort = null, pie) : sortValues;
+  };
+  pie.sort = function(_2) {
+    return arguments.length ? (sort = _2, sortValues = null, pie) : sort;
+  };
+  pie.startAngle = function(_2) {
+    return arguments.length ? (startAngle = typeof _2 === "function" ? _2 : constant(+_2), pie) : startAngle;
+  };
+  pie.endAngle = function(_2) {
+    return arguments.length ? (endAngle = typeof _2 === "function" ? _2 : constant(+_2), pie) : endAngle;
+  };
+  pie.padAngle = function(_2) {
+    return arguments.length ? (padAngle = typeof _2 === "function" ? _2 : constant(+_2), pie) : padAngle;
+  };
+  return pie;
 }
 function noop() {
 }
@@ -3629,7 +4233,7 @@ Basis.prototype = {
     this._y0 = this._y1, this._y1 = y2;
   }
 };
-function $e$1(context) {
+function $e$3(context) {
   return new Basis(context);
 }
 function BasisClosed(context) {
@@ -4321,7 +4925,7 @@ function controlPoints(x2) {
   for (i2 = 0; i2 < n2 - 1; ++i2) b2[i2] = 2 * x2[i2 + 1] - a2[i2 + 1];
   return [a2, b2];
 }
-function pr$1(context) {
+function pr$2(context) {
   return new Natural(context);
 }
 function Step(context, t2) {
@@ -4377,6 +4981,2080 @@ function stepBefore(context) {
 function stepAfter(context) {
   return new Step(context, 1);
 }
+var Pr$1 = { background: "transparent", text: { fontFamily: "sans-serif", fontSize: 11, fill: "#333333", outlineWidth: 0, outlineColor: "transparent", outlineOpacity: 1 }, axis: { domain: { line: { stroke: "transparent", strokeWidth: 1 } }, ticks: { line: { stroke: "#777777", strokeWidth: 1 }, text: {} }, legend: { text: { fontSize: 12 } } }, grid: { line: { stroke: "#dddddd", strokeWidth: 1 } }, legends: { hidden: { symbol: { fill: "#333333", opacity: 0.6 }, text: { fill: "#333333", opacity: 0.6 } }, text: {}, ticks: { line: { stroke: "#777777", strokeWidth: 1 }, text: { fontSize: 10 } }, title: { text: {} } }, labels: { text: {} }, markers: { lineColor: "#000000", lineStrokeWidth: 1, text: {} }, dots: { text: {} }, tooltip: { container: { background: "white", color: "inherit", fontSize: "inherit", borderRadius: "2px", boxShadow: "0 1px 2px rgba(0, 0, 0, 0.25)", padding: "5px 9px" }, basic: { whiteSpace: "pre", display: "flex", alignItems: "center" }, chip: { marginRight: 7 }, table: {}, tableCell: { padding: "3px 5px" }, tableCellValue: { fontWeight: "bold" } }, crosshair: { line: { stroke: "#000000", strokeWidth: 1, strokeOpacity: 0.75, strokeDasharray: "6 6" } }, annotations: { text: { fontSize: 13, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, link: { stroke: "#000000", strokeWidth: 1, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, outline: { fill: "none", stroke: "#000000", strokeWidth: 2, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, symbol: { fill: "#000000", outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 } } };
+function jr$2() {
+  return jr$2 = Object.assign ? Object.assign.bind() : function(e3) {
+    for (var r2 = 1; r2 < arguments.length; r2++) {
+      var t2 = arguments[r2];
+      for (var n2 in t2) Object.prototype.hasOwnProperty.call(t2, n2) && (e3[n2] = t2[n2]);
+    }
+    return e3;
+  }, jr$2.apply(this, arguments);
+}
+function Br$2(e3, r2) {
+  if (null == e3) return {};
+  var t2, n2, i2 = {}, o2 = Object.keys(e3);
+  for (n2 = 0; n2 < o2.length; n2++) t2 = o2[n2], r2.indexOf(t2) >= 0 || (i2[t2] = e3[t2]);
+  return i2;
+}
+var Gr$1 = ["axis.ticks.text", "axis.legend.text", "legends.title.text", "legends.text", "legends.ticks.text", "legends.title.text", "labels.text", "dots.text", "markers.text", "annotations.text"], Lr$1 = function(e3, r2) {
+  return jr$2({}, r2, e3);
+}, Ir$1 = function(e3, r2) {
+  var t2 = m$7({}, e3, r2);
+  return Gr$1.forEach(function(e4) {
+    v$8(t2, e4, Lr$1(y$2(t2, e4), t2.text));
+  }), t2;
+}, Yr$2 = createContext(), Ar$1 = function(e3) {
+  var t2 = e3.children, n2 = e3.animate, i2 = void 0 === n2 || n2, o2 = e3.config, l2 = void 0 === o2 ? "default" : o2, a2 = useMemo(function() {
+    var e4 = O$6(l2) ? config[l2] : l2;
+    return { animate: i2, config: e4 };
+  }, [i2, l2]);
+  return jsx(Yr$2.Provider, { value: a2, children: t2 });
+}, Er$2 = { animate: c$3.bool, motionConfig: c$3.oneOfType([c$3.oneOf(Object.keys(config)), c$3.shape({ mass: c$3.number, tension: c$3.number, friction: c$3.number, clamp: c$3.bool, precision: c$3.number, velocity: c$3.number, duration: c$3.number, easing: c$3.func })]) };
+Ar$1.propTypes = { children: c$3.node.isRequired, animate: Er$2.animate, config: Er$2.motionConfig };
+var Ur$2 = function() {
+  return useContext(Yr$2);
+}, Xr$2 = { nivo: ["#d76445", "#f47560", "#e8c1a0", "#97e3d5", "#61cdbb", "#00b0a7"], BrBG: W$5(scheme$q), PRGn: W$5(scheme$p), PiYG: W$5(scheme$o), PuOr: W$5(scheme$n), RdBu: W$5(scheme$m), RdGy: W$5(scheme$l), RdYlBu: W$5(scheme$k), RdYlGn: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), BuGn: W$5(scheme$h), BuPu: W$5(scheme$g), GnBu: W$5(scheme$f), OrRd: W$5(scheme$e), PuBuGn: W$5(scheme$d), PuBu: W$5(scheme$c), PuRd: W$5(scheme$b), RdPu: W$5(scheme$a), YlGnBu: W$5(scheme$9), YlGn: W$5(scheme$8), YlOrBr: W$5(scheme$7), YlOrRd: W$5(scheme$6) }, Nr$2 = Object.keys(Xr$2);
+({ nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, brown_blueGreen: W$5(scheme$q), purpleRed_green: W$5(scheme$p), pink_yellowGreen: W$5(scheme$o), purple_orange: W$5(scheme$n), red_blue: W$5(scheme$m), red_grey: W$5(scheme$l), red_yellow_blue: W$5(scheme$k), red_yellow_green: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), blue_green: W$5(scheme$h), blue_purple: W$5(scheme$g), green_blue: W$5(scheme$f), orange_red: W$5(scheme$e), purple_blue_green: W$5(scheme$d), purple_blue: W$5(scheme$c), purple_red: W$5(scheme$b), red_purple: W$5(scheme$a), yellow_green_blue: W$5(scheme$9), yellow_green: W$5(scheme$8), yellow_orange_brown: W$5(scheme$7), yellow_orange_red: W$5(scheme$6) });
+c$3.oneOfType([c$3.oneOf(Nr$2), c$3.func, c$3.arrayOf(c$3.string)]);
+var rt$3 = { basis: $e$3, basisClosed: er, basisOpen: rr, bundle: tr, cardinal: nr, cardinalClosed: ir, cardinalOpen: or, catmullRom: lr, catmullRomClosed: ar, catmullRomOpen: dr, linear: sr, linearClosed: ur, monotoneX, monotoneY, natural: pr$2, step: hr, stepAfter, stepBefore }, tt$3 = Object.keys(rt$3);
+tt$3.filter(function(e3) {
+  return e3.endsWith("Closed");
+});
+Ze(tt$3, "bundle", "basisClosed", "basisOpen", "cardinalClosed", "cardinalOpen", "catmullRomClosed", "catmullRomOpen", "linearClosed");
+Ze(tt$3, "bundle", "basisClosed", "basisOpen", "cardinalClosed", "cardinalOpen", "catmullRomClosed", "catmullRomOpen", "linearClosed");
+c$3.shape({ top: c$3.number, right: c$3.number, bottom: c$3.number, left: c$3.number }).isRequired;
+var ht$2 = ["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"];
+c$3.oneOf(ht$2);
+ordinal(l);
+var _t$1 = { top: 0, right: 0, bottom: 0, left: 0 }, wt$1 = function(e3, t2, n2) {
+  return void 0 === n2 && (n2 = {}), useMemo(function() {
+    var r2 = jr$2({}, _t$1, n2);
+    return { margin: r2, innerWidth: e3 - r2.left - r2.right, innerHeight: t2 - r2.top - r2.bottom, outerWidth: e3, outerHeight: t2 };
+  }, [e3, t2, n2.top, n2.right, n2.bottom, n2.left]);
+}, kt$2 = function() {
+  var e3 = useRef(null), r2 = useState({ left: 0, top: 0, width: 0, height: 0 }), t2 = r2[0], l2 = r2[1], a2 = useState(function() {
+    return "undefined" == typeof ResizeObserver ? null : new ResizeObserver(function(e4) {
+      var r3 = e4[0];
+      return l2(r3.contentRect);
+    });
+  })[0];
+  return useEffect(function() {
+    return e3.current && null !== a2 && a2.observe(e3.current), function() {
+      null !== a2 && a2.disconnect();
+    };
+  }, []), [e3, t2];
+}, Rt$1 = function(e3) {
+  return useMemo(function() {
+    return Ir$1(Pr$1, e3);
+  }, [e3]);
+}, xt$2 = function(e3) {
+  return "function" == typeof e3 ? e3 : "string" == typeof e3 ? 0 === e3.indexOf("time:") ? timeFormat(e3.slice("5")) : format(e3) : function(e4) {
+    return "" + e4;
+  };
+}, Ot$2 = function(e3) {
+  return useMemo(function() {
+    return xt$2(e3);
+  }, [e3]);
+}, qt$2 = createContext(), Ct$1 = {}, Wt$1 = function(e3) {
+  var r2 = e3.theme, t2 = void 0 === r2 ? Ct$1 : r2, n2 = e3.children, i2 = Rt$1(t2);
+  return jsx(qt$2.Provider, { value: i2, children: n2 });
+};
+Wt$1.propTypes = { children: c$3.node.isRequired, theme: c$3.object };
+var zt$2 = function() {
+  return useContext(qt$2);
+}, Tt$2 = ["outlineWidth", "outlineColor", "outlineOpacity"], Mt$2 = function(e3) {
+  return e3.outlineWidth, e3.outlineColor, e3.outlineOpacity, Br$2(e3, Tt$2);
+}, Pt$1 = function(e3) {
+  var r2 = e3.children, t2 = e3.condition, n2 = e3.wrapper;
+  return t2 ? cloneElement(n2, {}, r2) : r2;
+};
+Pt$1.propTypes = { children: c$3.node.isRequired, condition: c$3.bool.isRequired, wrapper: c$3.element.isRequired };
+var jt$1 = { position: "relative" }, St$1 = function(e3) {
+  var r2 = e3.children, t2 = e3.theme, i2 = e3.renderWrapper, o2 = void 0 === i2 || i2, l2 = e3.isInteractive, a2 = void 0 === l2 || l2, d = e3.animate, s = e3.motionConfig, u2 = useRef(null);
+  return jsx(Wt$1, { theme: t2, children: jsx(Ar$1, { animate: d, config: s, children: jsx(M$2, { container: u2, children: jsxs(Pt$1, { condition: o2, wrapper: jsx("div", { style: jt$1, ref: u2 }), children: [r2, a2 && jsx(F$2, {})] }) }) }) });
+};
+St$1.propTypes = { children: c$3.element.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object, animate: c$3.bool, motionConfig: c$3.oneOfType([c$3.string, Er$2.motionConfig]) };
+({ children: c$3.func.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object.isRequired, animate: c$3.bool.isRequired, motionConfig: c$3.oneOfType([c$3.string, Er$2.motionConfig]) });
+var It$1 = function(e3) {
+  var r2 = e3.children, t2 = kt$2(), n2 = t2[0], i2 = t2[1], o2 = i2.width > 0 && i2.height > 0;
+  return jsx("div", { ref: n2, style: { width: "100%", height: "100%" }, children: o2 && r2({ width: i2.width, height: i2.height }) });
+};
+It$1.propTypes = { children: c$3.func.isRequired };
+var Yt$2 = ["id", "colors"], Dt$2 = function(e3) {
+  var r2 = e3.id, t2 = e3.colors, n2 = Br$2(e3, Yt$2);
+  return jsx("linearGradient", jr$2({ id: r2, x1: 0, x2: 0, y1: 0, y2: 1 }, n2, { children: t2.map(function(e4) {
+    var r3 = e4.offset, t3 = e4.color, n3 = e4.opacity;
+    return jsx("stop", { offset: r3 + "%", stopColor: t3, stopOpacity: void 0 !== n3 ? n3 : 1 }, r3);
+  }) }));
+};
+Dt$2.propTypes = { id: c$3.string.isRequired, colors: c$3.arrayOf(c$3.shape({ offset: c$3.number.isRequired, color: c$3.string.isRequired, opacity: c$3.number })).isRequired, gradientTransform: c$3.string };
+var Et$2 = { linearGradient: Dt$2 }, Ut$2 = { color: "#000000", background: "#ffffff", size: 4, padding: 4, stagger: false }, Ft$2 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.background, n2 = void 0 === t2 ? Ut$2.background : t2, i2 = e3.color, o2 = void 0 === i2 ? Ut$2.color : i2, l2 = e3.size, a2 = void 0 === l2 ? Ut$2.size : l2, d = e3.padding, s = void 0 === d ? Ut$2.padding : d, u2 = e3.stagger, c2 = void 0 === u2 ? Ut$2.stagger : u2, f2 = a2 + s, p2 = a2 / 2, h = s / 2;
+  return true === c2 && (f2 = 2 * a2 + 2 * s), jsxs("pattern", { id: r2, width: f2, height: f2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: f2, height: f2, fill: n2 }), jsx("circle", { cx: h + p2, cy: h + p2, r: p2, fill: o2 }), c2 && jsx("circle", { cx: 1.5 * s + a2 + p2, cy: 1.5 * s + a2 + p2, r: p2, fill: o2 })] });
+});
+Ft$2.displayName = "PatternDots", Ft$2.propTypes = { id: c$3.string.isRequired, color: c$3.string.isRequired, background: c$3.string.isRequired, size: c$3.number.isRequired, padding: c$3.number.isRequired, stagger: c$3.bool.isRequired };
+var Ht$2 = function(e3) {
+  return e3 * Math.PI / 180;
+}, Kt$1 = function(e3) {
+  return 180 * e3 / Math.PI;
+}, nn$3 = { spacing: 5, rotation: 0, background: "#000000", color: "#ffffff", lineWidth: 2 }, on$3 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.spacing, n2 = void 0 === t2 ? nn$3.spacing : t2, i2 = e3.rotation, o2 = void 0 === i2 ? nn$3.rotation : i2, l2 = e3.background, a2 = void 0 === l2 ? nn$3.background : l2, d = e3.color, s = void 0 === d ? nn$3.color : d, u2 = e3.lineWidth, c2 = void 0 === u2 ? nn$3.lineWidth : u2, f2 = Math.round(o2) % 360, p2 = Math.abs(n2);
+  f2 > 180 ? f2 -= 360 : f2 > 90 ? f2 -= 180 : f2 < -180 ? f2 += 360 : f2 < -90 && (f2 += 180);
+  var h, g2 = p2, b2 = p2;
+  return 0 === f2 ? h = "\n                M 0 0 L " + g2 + " 0\n                M 0 " + b2 + " L " + g2 + " " + b2 + "\n            " : 90 === f2 ? h = "\n                M 0 0 L 0 " + b2 + "\n                M " + g2 + " 0 L " + g2 + " " + b2 + "\n            " : (g2 = Math.abs(p2 / Math.sin(Ht$2(f2))), b2 = p2 / Math.sin(Ht$2(90 - f2)), h = f2 > 0 ? "\n                    M 0 " + -b2 + " L " + 2 * g2 + " " + b2 + "\n                    M " + -g2 + " " + -b2 + " L " + g2 + " " + b2 + "\n                    M " + -g2 + " 0 L " + g2 + " " + 2 * b2 + "\n                " : "\n                    M " + -g2 + " " + b2 + " L " + g2 + " " + -b2 + "\n                    M " + -g2 + " " + 2 * b2 + " L " + 2 * g2 + " " + -b2 + "\n                    M 0 " + 2 * b2 + " L " + 2 * g2 + " 0\n                "), jsxs("pattern", { id: r2, width: g2, height: b2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: g2, height: b2, fill: a2, stroke: "rgba(255, 0, 0, 0.1)", strokeWidth: 0 }), jsx("path", { d: h, strokeWidth: c2, stroke: s, strokeLinecap: "square" })] });
+});
+on$3.displayName = "PatternLines", on$3.propTypes = { id: c$3.string.isRequired, spacing: c$3.number.isRequired, rotation: c$3.number.isRequired, background: c$3.string.isRequired, color: c$3.string.isRequired, lineWidth: c$3.number.isRequired };
+var an$3 = { color: "#000000", background: "#ffffff", size: 4, padding: 4, stagger: false }, dn$3 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.color, n2 = void 0 === t2 ? an$3.color : t2, i2 = e3.background, o2 = void 0 === i2 ? an$3.background : i2, l2 = e3.size, a2 = void 0 === l2 ? an$3.size : l2, d = e3.padding, s = void 0 === d ? an$3.padding : d, u2 = e3.stagger, c2 = void 0 === u2 ? an$3.stagger : u2, f2 = a2 + s, p2 = s / 2;
+  return true === c2 && (f2 = 2 * a2 + 2 * s), jsxs("pattern", { id: r2, width: f2, height: f2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: f2, height: f2, fill: o2 }), jsx("rect", { x: p2, y: p2, width: a2, height: a2, fill: n2 }), c2 && jsx("rect", { x: 1.5 * s + a2, y: 1.5 * s + a2, width: a2, height: a2, fill: n2 })] });
+});
+dn$3.displayName = "PatternSquares", dn$3.propTypes = { id: c$3.string.isRequired, color: c$3.string.isRequired, background: c$3.string.isRequired, size: c$3.number.isRequired, padding: c$3.number.isRequired, stagger: c$3.bool.isRequired };
+var un$3 = { patternDots: Ft$2, patternLines: on$3, patternSquares: dn$3 }, cn$3 = ["type"], fn$3 = jr$2({}, Et$2, un$3), pn$3 = function(e3) {
+  var r2 = e3.defs;
+  return !r2 || r2.length < 1 ? null : jsx("defs", { "aria-hidden": true, children: r2.map(function(e4) {
+    var r3 = e4.type, t2 = Br$2(e4, cn$3);
+    return fn$3[r3] ? createElement(fn$3[r3], jr$2({ key: t2.id }, t2)) : null;
+  }) });
+};
+pn$3.propTypes = { defs: c$3.arrayOf(c$3.shape({ type: c$3.oneOf(Object.keys(fn$3)).isRequired, id: c$3.string.isRequired })) };
+var hn$2 = memo(pn$3), gn$2 = function(e3) {
+  var r2 = e3.width, t2 = e3.height, n2 = e3.margin, i2 = e3.defs, o2 = e3.children, l2 = e3.role, a2 = e3.ariaLabel, d = e3.ariaLabelledBy, s = e3.ariaDescribedBy, u2 = e3.isFocusable, c2 = zt$2();
+  return jsxs("svg", { xmlns: "http://www.w3.org/2000/svg", width: r2, height: t2, role: l2, "aria-label": a2, "aria-labelledby": d, "aria-describedby": s, focusable: u2, tabIndex: u2 ? 0 : void 0, children: [jsx(hn$2, { defs: i2 }), jsx("rect", { width: r2, height: t2, fill: c2.background }), jsx("g", { transform: "translate(" + n2.left + "," + n2.top + ")", children: o2 })] });
+};
+gn$2.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, margin: c$3.shape({ top: c$3.number.isRequired, left: c$3.number.isRequired }).isRequired, defs: c$3.array, children: c$3.oneOfType([c$3.arrayOf(c$3.node), c$3.node]).isRequired, role: c$3.string, isFocusable: c$3.bool, ariaLabel: c$3.string, ariaLabelledBy: c$3.string, ariaDescribedBy: c$3.string };
+var bn$2 = function(e3) {
+  var r2 = e3.size, t2 = e3.color, n2 = e3.borderWidth, i2 = e3.borderColor;
+  return jsx("circle", { r: r2 / 2, fill: t2, stroke: i2, strokeWidth: n2, style: { pointerEvents: "none" } });
+};
+bn$2.propTypes = { size: c$3.number.isRequired, color: c$3.string.isRequired, borderWidth: c$3.number.isRequired, borderColor: c$3.string.isRequired };
+var mn$3 = memo(bn$2), yn$3 = function(e3) {
+  var r2 = e3.x, t2 = e3.y, n2 = e3.symbol, i2 = void 0 === n2 ? mn$3 : n2, o2 = e3.size, l2 = e3.datum, a2 = e3.color, d = e3.borderWidth, u2 = e3.borderColor, c2 = e3.label, f2 = e3.labelTextAnchor, p2 = void 0 === f2 ? "middle" : f2, h = e3.labelYOffset, g2 = void 0 === h ? -12 : h, b2 = zt$2(), m2 = Ur$2(), y2 = m2.animate, v2 = m2.config, _2 = useSpring({ transform: "translate(" + r2 + ", " + t2 + ")", config: v2, immediate: !y2 });
+  return jsxs(animated.g, { transform: _2.transform, style: { pointerEvents: "none" }, children: [createElement(i2, { size: o2, color: a2, datum: l2, borderWidth: d, borderColor: u2 }), c2 && jsx("text", { textAnchor: p2, y: g2, style: Mt$2(b2.dots.text), children: c2 })] });
+};
+yn$3.propTypes = { x: c$3.number.isRequired, y: c$3.number.isRequired, datum: c$3.object.isRequired, size: c$3.number.isRequired, color: c$3.string.isRequired, borderWidth: c$3.number.isRequired, borderColor: c$3.string.isRequired, symbol: c$3.oneOfType([c$3.func, c$3.object]), label: c$3.oneOfType([c$3.string, c$3.number]), labelTextAnchor: c$3.oneOf(["start", "middle", "end"]), labelYOffset: c$3.number };
+memo(yn$3);
+var _n$2 = function(e3) {
+  var r2 = e3.width, t2 = e3.height, n2 = e3.axis, i2 = e3.scale, o2 = e3.value, l2 = e3.lineStyle, a2 = e3.textStyle, d = e3.legend, s = e3.legendNode, u2 = e3.legendPosition, c2 = void 0 === u2 ? "top-right" : u2, f2 = e3.legendOffsetX, p2 = void 0 === f2 ? 14 : f2, h = e3.legendOffsetY, g2 = void 0 === h ? 14 : h, b2 = e3.legendOrientation, m2 = void 0 === b2 ? "horizontal" : b2, y2 = zt$2(), v2 = 0, _2 = 0, w2 = 0, k2 = 0;
+  if ("y" === n2 ? (w2 = i2(o2), _2 = r2) : (v2 = i2(o2), k2 = t2), d && !s) {
+    var R = function(e4) {
+      var r3 = e4.axis, t3 = e4.width, n3 = e4.height, i3 = e4.position, o3 = e4.offsetX, l3 = e4.offsetY, a3 = e4.orientation, d2 = 0, s2 = 0, u3 = "vertical" === a3 ? -90 : 0, c3 = "start";
+      if ("x" === r3) switch (i3) {
+        case "top-left":
+          d2 = -o3, s2 = l3, c3 = "end";
+          break;
+        case "top":
+          s2 = -l3, c3 = "horizontal" === a3 ? "middle" : "start";
+          break;
+        case "top-right":
+          d2 = o3, s2 = l3, c3 = "horizontal" === a3 ? "start" : "end";
+          break;
+        case "right":
+          d2 = o3, s2 = n3 / 2, c3 = "horizontal" === a3 ? "start" : "middle";
+          break;
+        case "bottom-right":
+          d2 = o3, s2 = n3 - l3, c3 = "start";
+          break;
+        case "bottom":
+          s2 = n3 + l3, c3 = "horizontal" === a3 ? "middle" : "end";
+          break;
+        case "bottom-left":
+          s2 = n3 - l3, d2 = -o3, c3 = "horizontal" === a3 ? "end" : "start";
+          break;
+        case "left":
+          d2 = -o3, s2 = n3 / 2, c3 = "horizontal" === a3 ? "end" : "middle";
+      }
+      else switch (i3) {
+        case "top-left":
+          d2 = o3, s2 = -l3, c3 = "start";
+          break;
+        case "top":
+          d2 = t3 / 2, s2 = -l3, c3 = "horizontal" === a3 ? "middle" : "start";
+          break;
+        case "top-right":
+          d2 = t3 - o3, s2 = -l3, c3 = "horizontal" === a3 ? "end" : "start";
+          break;
+        case "right":
+          d2 = t3 + o3, c3 = "horizontal" === a3 ? "start" : "middle";
+          break;
+        case "bottom-right":
+          d2 = t3 - o3, s2 = l3, c3 = "end";
+          break;
+        case "bottom":
+          d2 = t3 / 2, s2 = l3, c3 = "horizontal" === a3 ? "middle" : "end";
+          break;
+        case "bottom-left":
+          d2 = o3, s2 = l3, c3 = "horizontal" === a3 ? "start" : "end";
+          break;
+        case "left":
+          d2 = -o3, c3 = "horizontal" === a3 ? "end" : "middle";
+      }
+      return { x: d2, y: s2, rotation: u3, textAnchor: c3 };
+    }({ axis: n2, width: r2, height: t2, position: c2, offsetX: p2, offsetY: g2, orientation: m2 });
+    s = jsx("text", { transform: "translate(" + R.x + ", " + R.y + ") rotate(" + R.rotation + ")", textAnchor: R.textAnchor, dominantBaseline: "central", style: a2, children: d });
+  }
+  return jsxs("g", { transform: "translate(" + v2 + ", " + w2 + ")", children: [jsx("line", { x1: 0, x2: _2, y1: 0, y2: k2, stroke: y2.markers.lineColor, strokeWidth: y2.markers.lineStrokeWidth, style: l2 }), s] });
+};
+_n$2.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, axis: c$3.oneOf(["x", "y"]).isRequired, scale: c$3.func.isRequired, value: c$3.oneOfType([c$3.number, c$3.string, c$3.instanceOf(Date)]).isRequired, lineStyle: c$3.object, textStyle: c$3.object, legend: c$3.string, legendPosition: c$3.oneOf(["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"]), legendOffsetX: c$3.number.isRequired, legendOffsetY: c$3.number.isRequired, legendOrientation: c$3.oneOf(["horizontal", "vertical"]).isRequired };
+var wn$2 = memo(_n$2), kn$3 = function(e3) {
+  var r2 = e3.markers, t2 = e3.width, n2 = e3.height, i2 = e3.xScale, o2 = e3.yScale;
+  return r2 && 0 !== r2.length ? r2.map(function(e4, r3) {
+    return jsx(wn$2, jr$2({}, e4, { width: t2, height: n2, scale: "y" === e4.axis ? o2 : i2 }), r3);
+  }) : null;
+};
+kn$3.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, xScale: c$3.func.isRequired, yScale: c$3.func.isRequired, markers: c$3.arrayOf(c$3.shape({ axis: c$3.oneOf(["x", "y"]).isRequired, value: c$3.oneOfType([c$3.number, c$3.string, c$3.instanceOf(Date)]).isRequired, lineStyle: c$3.object, textStyle: c$3.object })) };
+memo(kn$3);
+var Cn$1 = function(e3) {
+  return Qe(e3) ? e3 : function(r2) {
+    return y$2(r2, e3);
+  };
+}, Wn$1 = function(e3) {
+  return useMemo(function() {
+    return Cn$1(e3);
+  }, [e3]);
+}, Bn$1 = Object.keys(Et$2), Gn$1 = Object.keys(un$3), Ln$1 = function(e3, r2, t2) {
+  if ("*" === e3) return true;
+  if (Qe(e3)) return e3(r2);
+  if (je(e3)) {
+    var n2 = t2 ? y$2(r2, t2) : r2;
+    return Mr(Tr(n2, Object.keys(e3)), e3);
+  }
+  return false;
+}, In$1 = function(e3, r2, t2, n2) {
+  var i2 = {}, o2 = i2.dataKey, l2 = i2.colorKey, a2 = void 0 === l2 ? "color" : l2, d = i2.targetKey, s = void 0 === d ? "fill" : d, u2 = [], c2 = {};
+  return e3.length && r2.length && (u2 = [].concat(e3), r2.forEach(function(r3) {
+    for (var n3 = function() {
+      var n4 = t2[i3], l3 = n4.id, d2 = n4.match;
+      if (Ln$1(d2, r3, o2)) {
+        var f2 = e3.find(function(e4) {
+          return e4.id === l3;
+        });
+        if (f2) {
+          if (Gn$1.includes(f2.type)) if ("inherit" === f2.background || "inherit" === f2.color) {
+            var p2 = y$2(r3, a2), h = f2.background, g2 = f2.color, b2 = l3;
+            "inherit" === f2.background && (b2 = b2 + ".bg." + p2, h = p2), "inherit" === f2.color && (b2 = b2 + ".fg." + p2, g2 = p2), v$8(r3, s, "url(#" + b2 + ")"), c2[b2] || (u2.push(jr$2({}, f2, { id: b2, background: h, color: g2 })), c2[b2] = 1);
+          } else v$8(r3, s, "url(#" + l3 + ")");
+          else if (Bn$1.includes(f2.type)) {
+            if (f2.colors.map(function(e4) {
+              return e4.color;
+            }).includes("inherit")) {
+              var m2 = y$2(r3, a2), _2 = l3, w2 = jr$2({}, f2, { colors: f2.colors.map(function(e4, r4) {
+                return "inherit" !== e4.color ? e4 : (_2 = _2 + "." + r4 + "." + m2, jr$2({}, e4, { color: "inherit" === e4.color ? m2 : e4.color }));
+              }) });
+              w2.id = _2, v$8(r3, s, "url(#" + _2 + ")"), c2[_2] || (u2.push(w2), c2[_2] = 1);
+            } else v$8(r3, s, "url(#" + l3 + ")");
+          }
+        }
+        return "break";
+      }
+    }, i3 = 0; i3 < t2.length; i3++) {
+      if ("break" === n3()) break;
+    }
+  })), u2;
+};
+function v$5() {
+  return v$5 = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var i2 = 1; i2 < arguments.length; i2++) {
+      var o2 = arguments[i2];
+      for (var n2 in o2) Object.prototype.hasOwnProperty.call(o2, n2) && (t2[n2] = o2[n2]);
+    }
+    return t2;
+  }, v$5.apply(this, arguments);
+}
+var x$5 = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m$5 = function(t2, i2) {
+  return "translate(" + t2 + "px, " + i2 + "px)";
+}, b$7 = memo(function(t2) {
+  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt$1(), d = Ur$1(), y2 = d.animate, f2 = d.config, b2 = kt$1(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
+  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m$5(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
+  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v$5({}, x$5, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m$5(j2, N2), opacity: O2.transform ? 1 : 0 });
+  return jsx(animated.div, { ref: g2, style: V2, children: e3 });
+});
+b$7.displayName = "TooltipWrapper";
+var g$3 = memo(function(t2) {
+  var i2 = t2.size, o2 = void 0 === i2 ? 12 : i2, n2 = t2.color, r2 = t2.style;
+  return jsx("span", { style: v$5({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
+});
+memo(function(t2) {
+  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt$1(), u2 = Ot$1(r2);
+  if ("function" == typeof c2) i2 = c2();
+  else {
+    var f2 = n2;
+    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g$3, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
+  }
+  return jsx("div", { style: h.tooltip.container, children: i2 });
+});
+var T$6 = { width: "100%", borderCollapse: "collapse" }, C$6 = memo(function(t2) {
+  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt$1();
+  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v$5({}, T$6, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
+    return jsx("tr", { children: t3.map(function(t4, i4) {
+      return jsx("td", { style: l2.tooltip.tableCell, children: t4 }, i4);
+    }) }, i3);
+  }) }) })] }), jsx("div", { style: l2.tooltip.container, children: i2 })) : null;
+});
+C$6.displayName = "TableTooltip";
+var E$6 = memo(function(t2) {
+  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt$1(), u2 = Ur$1(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
+    return v$5({}, l2.crosshair.line, { pointerEvents: "none" });
+  }, [l2.crosshair.line]), x2 = useSpring({ x1: i2, x2: n2, y1: r2, y2: e3, config: y2, immediate: !d });
+  return jsx(animated.line, v$5({}, x2, { fill: "none", style: f2 }));
+});
+E$6.displayName = "CrosshairLine";
+var P$6 = memo(function(t2) {
+  var i2, o2, n2 = t2.width, r2 = t2.height, e3 = t2.type, l2 = t2.x, a2 = t2.y;
+  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$6, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$6, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
+});
+P$6.displayName = "Crosshair";
+createContext({ showTooltipAt: function() {
+}, showTooltipFromEvent: function() {
+}, hideTooltip: function() {
+} });
+var N$5 = { isVisible: false, position: [null, null], content: null, anchor: null };
+createContext(N$5);
+function jr$1() {
+  return jr$1 = Object.assign ? Object.assign.bind() : function(e3) {
+    for (var r2 = 1; r2 < arguments.length; r2++) {
+      var t2 = arguments[r2];
+      for (var n2 in t2) Object.prototype.hasOwnProperty.call(t2, n2) && (e3[n2] = t2[n2]);
+    }
+    return e3;
+  }, jr$1.apply(this, arguments);
+}
+function Br$1(e3, r2) {
+  if (null == e3) return {};
+  var t2, n2, i2 = {}, o2 = Object.keys(e3);
+  for (n2 = 0; n2 < o2.length; n2++) t2 = o2[n2], r2.indexOf(t2) >= 0 || (i2[t2] = e3[t2]);
+  return i2;
+}
+var Yr$1 = createContext(), Er$1 = { animate: c$3.bool, motionConfig: c$3.oneOfType([c$3.oneOf(Object.keys(config)), c$3.shape({ mass: c$3.number, tension: c$3.number, friction: c$3.number, clamp: c$3.bool, precision: c$3.number, velocity: c$3.number, duration: c$3.number, easing: c$3.func })]) };
+({ children: c$3.node.isRequired, animate: Er$1.animate, config: Er$1.motionConfig });
+var Ur$1 = function() {
+  return useContext(Yr$1);
+}, Xr$1 = { nivo: ["#d76445", "#f47560", "#e8c1a0", "#97e3d5", "#61cdbb", "#00b0a7"], BrBG: W$5(scheme$q), PRGn: W$5(scheme$p), PiYG: W$5(scheme$o), PuOr: W$5(scheme$n), RdBu: W$5(scheme$m), RdGy: W$5(scheme$l), RdYlBu: W$5(scheme$k), RdYlGn: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), BuGn: W$5(scheme$h), BuPu: W$5(scheme$g), GnBu: W$5(scheme$f), OrRd: W$5(scheme$e), PuBuGn: W$5(scheme$d), PuBu: W$5(scheme$c), PuRd: W$5(scheme$b), RdPu: W$5(scheme$a), YlGnBu: W$5(scheme$9), YlGn: W$5(scheme$8), YlOrBr: W$5(scheme$7), YlOrRd: W$5(scheme$6) }, Nr$1 = Object.keys(Xr$1);
+({ nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, brown_blueGreen: W$5(scheme$q), purpleRed_green: W$5(scheme$p), pink_yellowGreen: W$5(scheme$o), purple_orange: W$5(scheme$n), red_blue: W$5(scheme$m), red_grey: W$5(scheme$l), red_yellow_blue: W$5(scheme$k), red_yellow_green: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), blue_green: W$5(scheme$h), blue_purple: W$5(scheme$g), green_blue: W$5(scheme$f), orange_red: W$5(scheme$e), purple_blue_green: W$5(scheme$d), purple_blue: W$5(scheme$c), purple_red: W$5(scheme$b), red_purple: W$5(scheme$a), yellow_green_blue: W$5(scheme$9), yellow_green: W$5(scheme$8), yellow_orange_brown: W$5(scheme$7), yellow_orange_red: W$5(scheme$6) });
+c$3.oneOfType([c$3.oneOf(Nr$1), c$3.func, c$3.arrayOf(c$3.string)]);
+var rt$2 = { basis: $e$3, basisClosed: er, basisOpen: rr, bundle: tr, cardinal: nr, cardinalClosed: ir, cardinalOpen: or, catmullRom: lr, catmullRomClosed: ar, catmullRomOpen: dr, linear: sr, linearClosed: ur, monotoneX, monotoneY, natural: pr$2, step: hr, stepAfter, stepBefore }, tt$2 = Object.keys(rt$2);
+tt$2.filter(function(e3) {
+  return e3.endsWith("Closed");
+});
+Ze(tt$2, "bundle", "basisClosed", "basisOpen", "cardinalClosed", "cardinalOpen", "catmullRomClosed", "catmullRomOpen", "linearClosed");
+Ze(tt$2, "bundle", "basisClosed", "basisOpen", "cardinalClosed", "cardinalOpen", "catmullRomClosed", "catmullRomOpen", "linearClosed");
+c$3.shape({ top: c$3.number, right: c$3.number, bottom: c$3.number, left: c$3.number }).isRequired;
+var ht$1 = ["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"];
+c$3.oneOf(ht$1);
+ordinal(l);
+var kt$1 = function() {
+  var e3 = useRef(null), r2 = useState({ left: 0, top: 0, width: 0, height: 0 }), t2 = r2[0], l2 = r2[1], a2 = useState(function() {
+    return "undefined" == typeof ResizeObserver ? null : new ResizeObserver(function(e4) {
+      var r3 = e4[0];
+      return l2(r3.contentRect);
+    });
+  })[0];
+  return useEffect(function() {
+    return e3.current && null !== a2 && a2.observe(e3.current), function() {
+      null !== a2 && a2.disconnect();
+    };
+  }, []), [e3, t2];
+}, xt$1 = function(e3) {
+  return "function" == typeof e3 ? e3 : "string" == typeof e3 ? 0 === e3.indexOf("time:") ? timeFormat(e3.slice("5")) : format(e3) : function(e4) {
+    return "" + e4;
+  };
+}, Ot$1 = function(e3) {
+  return useMemo(function() {
+    return xt$1(e3);
+  }, [e3]);
+}, qt$1 = createContext();
+({ children: c$3.node.isRequired, theme: c$3.object });
+var zt$1 = function() {
+  return useContext(qt$1);
+}, Tt$1 = ["outlineWidth", "outlineColor", "outlineOpacity"], Mt$1 = function(e3) {
+  return e3.outlineWidth, e3.outlineColor, e3.outlineOpacity, Br$1(e3, Tt$1);
+};
+({ children: c$3.node.isRequired, condition: c$3.bool.isRequired, wrapper: c$3.element.isRequired });
+({ children: c$3.element.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object, animate: c$3.bool, motionConfig: c$3.oneOfType([c$3.string, Er$1.motionConfig]) });
+({ children: c$3.func.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object.isRequired, animate: c$3.bool.isRequired, motionConfig: c$3.oneOfType([c$3.string, Er$1.motionConfig]) });
+({ children: c$3.func.isRequired });
+var Yt$1 = ["id", "colors"], Dt$1 = function(e3) {
+  var r2 = e3.id, t2 = e3.colors, n2 = Br$1(e3, Yt$1);
+  return jsx("linearGradient", jr$1({ id: r2, x1: 0, x2: 0, y1: 0, y2: 1 }, n2, { children: t2.map(function(e4) {
+    var r3 = e4.offset, t3 = e4.color, n3 = e4.opacity;
+    return jsx("stop", { offset: r3 + "%", stopColor: t3, stopOpacity: void 0 !== n3 ? n3 : 1 }, r3);
+  }) }));
+};
+Dt$1.propTypes = { id: c$3.string.isRequired, colors: c$3.arrayOf(c$3.shape({ offset: c$3.number.isRequired, color: c$3.string.isRequired, opacity: c$3.number })).isRequired, gradientTransform: c$3.string };
+var Et$1 = { linearGradient: Dt$1 }, Ut$1 = { color: "#000000", background: "#ffffff", size: 4, padding: 4, stagger: false }, Ft$1 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.background, n2 = void 0 === t2 ? Ut$1.background : t2, i2 = e3.color, o2 = void 0 === i2 ? Ut$1.color : i2, l2 = e3.size, a2 = void 0 === l2 ? Ut$1.size : l2, d = e3.padding, s = void 0 === d ? Ut$1.padding : d, u2 = e3.stagger, c2 = void 0 === u2 ? Ut$1.stagger : u2, f2 = a2 + s, p2 = a2 / 2, h = s / 2;
+  return true === c2 && (f2 = 2 * a2 + 2 * s), jsxs("pattern", { id: r2, width: f2, height: f2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: f2, height: f2, fill: n2 }), jsx("circle", { cx: h + p2, cy: h + p2, r: p2, fill: o2 }), c2 && jsx("circle", { cx: 1.5 * s + a2 + p2, cy: 1.5 * s + a2 + p2, r: p2, fill: o2 })] });
+});
+Ft$1.displayName = "PatternDots", Ft$1.propTypes = { id: c$3.string.isRequired, color: c$3.string.isRequired, background: c$3.string.isRequired, size: c$3.number.isRequired, padding: c$3.number.isRequired, stagger: c$3.bool.isRequired };
+var Ht$1 = function(e3) {
+  return e3 * Math.PI / 180;
+}, Kt = function(e3) {
+  return 180 * e3 / Math.PI;
+}, Vt = function(e3) {
+  return e3.startAngle + (e3.endAngle - e3.startAngle) / 2;
+}, Jt = function(e3, r2) {
+  return { x: Math.cos(e3) * r2, y: Math.sin(e3) * r2 };
+}, nn$2 = { spacing: 5, rotation: 0, background: "#000000", color: "#ffffff", lineWidth: 2 }, on$2 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.spacing, n2 = void 0 === t2 ? nn$2.spacing : t2, i2 = e3.rotation, o2 = void 0 === i2 ? nn$2.rotation : i2, l2 = e3.background, a2 = void 0 === l2 ? nn$2.background : l2, d = e3.color, s = void 0 === d ? nn$2.color : d, u2 = e3.lineWidth, c2 = void 0 === u2 ? nn$2.lineWidth : u2, f2 = Math.round(o2) % 360, p2 = Math.abs(n2);
+  f2 > 180 ? f2 -= 360 : f2 > 90 ? f2 -= 180 : f2 < -180 ? f2 += 360 : f2 < -90 && (f2 += 180);
+  var h, g2 = p2, b2 = p2;
+  return 0 === f2 ? h = "\n                M 0 0 L " + g2 + " 0\n                M 0 " + b2 + " L " + g2 + " " + b2 + "\n            " : 90 === f2 ? h = "\n                M 0 0 L 0 " + b2 + "\n                M " + g2 + " 0 L " + g2 + " " + b2 + "\n            " : (g2 = Math.abs(p2 / Math.sin(Ht$1(f2))), b2 = p2 / Math.sin(Ht$1(90 - f2)), h = f2 > 0 ? "\n                    M 0 " + -b2 + " L " + 2 * g2 + " " + b2 + "\n                    M " + -g2 + " " + -b2 + " L " + g2 + " " + b2 + "\n                    M " + -g2 + " 0 L " + g2 + " " + 2 * b2 + "\n                " : "\n                    M " + -g2 + " " + b2 + " L " + g2 + " " + -b2 + "\n                    M " + -g2 + " " + 2 * b2 + " L " + 2 * g2 + " " + -b2 + "\n                    M 0 " + 2 * b2 + " L " + 2 * g2 + " 0\n                "), jsxs("pattern", { id: r2, width: g2, height: b2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: g2, height: b2, fill: a2, stroke: "rgba(255, 0, 0, 0.1)", strokeWidth: 0 }), jsx("path", { d: h, strokeWidth: c2, stroke: s, strokeLinecap: "square" })] });
+});
+on$2.displayName = "PatternLines", on$2.propTypes = { id: c$3.string.isRequired, spacing: c$3.number.isRequired, rotation: c$3.number.isRequired, background: c$3.string.isRequired, color: c$3.string.isRequired, lineWidth: c$3.number.isRequired };
+var an$2 = { color: "#000000", background: "#ffffff", size: 4, padding: 4, stagger: false }, dn$2 = memo(function(e3) {
+  var r2 = e3.id, t2 = e3.color, n2 = void 0 === t2 ? an$2.color : t2, i2 = e3.background, o2 = void 0 === i2 ? an$2.background : i2, l2 = e3.size, a2 = void 0 === l2 ? an$2.size : l2, d = e3.padding, s = void 0 === d ? an$2.padding : d, u2 = e3.stagger, c2 = void 0 === u2 ? an$2.stagger : u2, f2 = a2 + s, p2 = s / 2;
+  return true === c2 && (f2 = 2 * a2 + 2 * s), jsxs("pattern", { id: r2, width: f2, height: f2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: f2, height: f2, fill: o2 }), jsx("rect", { x: p2, y: p2, width: a2, height: a2, fill: n2 }), c2 && jsx("rect", { x: 1.5 * s + a2, y: 1.5 * s + a2, width: a2, height: a2, fill: n2 })] });
+});
+dn$2.displayName = "PatternSquares", dn$2.propTypes = { id: c$3.string.isRequired, color: c$3.string.isRequired, background: c$3.string.isRequired, size: c$3.number.isRequired, padding: c$3.number.isRequired, stagger: c$3.bool.isRequired };
+var un$2 = { patternDots: Ft$1, patternLines: on$2, patternSquares: dn$2 }, cn$2 = ["type"], fn$2 = jr$1({}, Et$1, un$2), pn$2 = function(e3) {
+  var r2 = e3.defs;
+  return !r2 || r2.length < 1 ? null : jsx("defs", { "aria-hidden": true, children: r2.map(function(e4) {
+    var r3 = e4.type, t2 = Br$1(e4, cn$2);
+    return fn$2[r3] ? createElement(fn$2[r3], jr$1({ key: t2.id }, t2)) : null;
+  }) });
+};
+pn$2.propTypes = { defs: c$3.arrayOf(c$3.shape({ type: c$3.oneOf(Object.keys(fn$2)).isRequired, id: c$3.string.isRequired })) };
+memo(pn$2);
+({ width: c$3.number.isRequired, height: c$3.number.isRequired, margin: c$3.shape({ top: c$3.number.isRequired, left: c$3.number.isRequired }).isRequired, defs: c$3.array, children: c$3.oneOfType([c$3.arrayOf(c$3.node), c$3.node]).isRequired, role: c$3.string, isFocusable: c$3.bool, ariaLabel: c$3.string, ariaLabelledBy: c$3.string, ariaDescribedBy: c$3.string });
+var bn$1 = function(e3) {
+  var r2 = e3.size, t2 = e3.color, n2 = e3.borderWidth, i2 = e3.borderColor;
+  return jsx("circle", { r: r2 / 2, fill: t2, stroke: i2, strokeWidth: n2, style: { pointerEvents: "none" } });
+};
+bn$1.propTypes = { size: c$3.number.isRequired, color: c$3.string.isRequired, borderWidth: c$3.number.isRequired, borderColor: c$3.string.isRequired };
+var mn$2 = memo(bn$1), yn$2 = function(e3) {
+  var r2 = e3.x, t2 = e3.y, n2 = e3.symbol, i2 = void 0 === n2 ? mn$2 : n2, o2 = e3.size, l2 = e3.datum, a2 = e3.color, d = e3.borderWidth, u2 = e3.borderColor, c2 = e3.label, f2 = e3.labelTextAnchor, p2 = void 0 === f2 ? "middle" : f2, h = e3.labelYOffset, g2 = void 0 === h ? -12 : h, b2 = zt$1(), m2 = Ur$1(), y2 = m2.animate, v2 = m2.config, _2 = useSpring({ transform: "translate(" + r2 + ", " + t2 + ")", config: v2, immediate: !y2 });
+  return jsxs(animated.g, { transform: _2.transform, style: { pointerEvents: "none" }, children: [createElement(i2, { size: o2, color: a2, datum: l2, borderWidth: d, borderColor: u2 }), c2 && jsx("text", { textAnchor: p2, y: g2, style: Mt$1(b2.dots.text), children: c2 })] });
+};
+yn$2.propTypes = { x: c$3.number.isRequired, y: c$3.number.isRequired, datum: c$3.object.isRequired, size: c$3.number.isRequired, color: c$3.string.isRequired, borderWidth: c$3.number.isRequired, borderColor: c$3.string.isRequired, symbol: c$3.oneOfType([c$3.func, c$3.object]), label: c$3.oneOfType([c$3.string, c$3.number]), labelTextAnchor: c$3.oneOf(["start", "middle", "end"]), labelYOffset: c$3.number };
+memo(yn$2);
+var _n$1 = function(e3) {
+  var r2 = e3.width, t2 = e3.height, n2 = e3.axis, i2 = e3.scale, o2 = e3.value, l2 = e3.lineStyle, a2 = e3.textStyle, d = e3.legend, s = e3.legendNode, u2 = e3.legendPosition, c2 = void 0 === u2 ? "top-right" : u2, f2 = e3.legendOffsetX, p2 = void 0 === f2 ? 14 : f2, h = e3.legendOffsetY, g2 = void 0 === h ? 14 : h, b2 = e3.legendOrientation, m2 = void 0 === b2 ? "horizontal" : b2, y2 = zt$1(), v2 = 0, _2 = 0, w2 = 0, k2 = 0;
+  if ("y" === n2 ? (w2 = i2(o2), _2 = r2) : (v2 = i2(o2), k2 = t2), d && !s) {
+    var R = function(e4) {
+      var r3 = e4.axis, t3 = e4.width, n3 = e4.height, i3 = e4.position, o3 = e4.offsetX, l3 = e4.offsetY, a3 = e4.orientation, d2 = 0, s2 = 0, u3 = "vertical" === a3 ? -90 : 0, c3 = "start";
+      if ("x" === r3) switch (i3) {
+        case "top-left":
+          d2 = -o3, s2 = l3, c3 = "end";
+          break;
+        case "top":
+          s2 = -l3, c3 = "horizontal" === a3 ? "middle" : "start";
+          break;
+        case "top-right":
+          d2 = o3, s2 = l3, c3 = "horizontal" === a3 ? "start" : "end";
+          break;
+        case "right":
+          d2 = o3, s2 = n3 / 2, c3 = "horizontal" === a3 ? "start" : "middle";
+          break;
+        case "bottom-right":
+          d2 = o3, s2 = n3 - l3, c3 = "start";
+          break;
+        case "bottom":
+          s2 = n3 + l3, c3 = "horizontal" === a3 ? "middle" : "end";
+          break;
+        case "bottom-left":
+          s2 = n3 - l3, d2 = -o3, c3 = "horizontal" === a3 ? "end" : "start";
+          break;
+        case "left":
+          d2 = -o3, s2 = n3 / 2, c3 = "horizontal" === a3 ? "end" : "middle";
+      }
+      else switch (i3) {
+        case "top-left":
+          d2 = o3, s2 = -l3, c3 = "start";
+          break;
+        case "top":
+          d2 = t3 / 2, s2 = -l3, c3 = "horizontal" === a3 ? "middle" : "start";
+          break;
+        case "top-right":
+          d2 = t3 - o3, s2 = -l3, c3 = "horizontal" === a3 ? "end" : "start";
+          break;
+        case "right":
+          d2 = t3 + o3, c3 = "horizontal" === a3 ? "start" : "middle";
+          break;
+        case "bottom-right":
+          d2 = t3 - o3, s2 = l3, c3 = "end";
+          break;
+        case "bottom":
+          d2 = t3 / 2, s2 = l3, c3 = "horizontal" === a3 ? "middle" : "end";
+          break;
+        case "bottom-left":
+          d2 = o3, s2 = l3, c3 = "horizontal" === a3 ? "start" : "end";
+          break;
+        case "left":
+          d2 = -o3, c3 = "horizontal" === a3 ? "end" : "middle";
+      }
+      return { x: d2, y: s2, rotation: u3, textAnchor: c3 };
+    }({ axis: n2, width: r2, height: t2, position: c2, offsetX: p2, offsetY: g2, orientation: m2 });
+    s = jsx("text", { transform: "translate(" + R.x + ", " + R.y + ") rotate(" + R.rotation + ")", textAnchor: R.textAnchor, dominantBaseline: "central", style: a2, children: d });
+  }
+  return jsxs("g", { transform: "translate(" + v2 + ", " + w2 + ")", children: [jsx("line", { x1: 0, x2: _2, y1: 0, y2: k2, stroke: y2.markers.lineColor, strokeWidth: y2.markers.lineStrokeWidth, style: l2 }), s] });
+};
+_n$1.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, axis: c$3.oneOf(["x", "y"]).isRequired, scale: c$3.func.isRequired, value: c$3.oneOfType([c$3.number, c$3.string, c$3.instanceOf(Date)]).isRequired, lineStyle: c$3.object, textStyle: c$3.object, legend: c$3.string, legendPosition: c$3.oneOf(["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"]), legendOffsetX: c$3.number.isRequired, legendOffsetY: c$3.number.isRequired, legendOrientation: c$3.oneOf(["horizontal", "vertical"]).isRequired };
+var wn$1 = memo(_n$1), kn$2 = function(e3) {
+  var r2 = e3.markers, t2 = e3.width, n2 = e3.height, i2 = e3.xScale, o2 = e3.yScale;
+  return r2 && 0 !== r2.length ? r2.map(function(e4, r3) {
+    return jsx(wn$1, jr$1({}, e4, { width: t2, height: n2, scale: "y" === e4.axis ? o2 : i2 }), r3);
+  }) : null;
+};
+kn$2.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, xScale: c$3.func.isRequired, yScale: c$3.func.isRequired, markers: c$3.arrayOf(c$3.shape({ axis: c$3.oneOf(["x", "y"]).isRequired, value: c$3.oneOfType([c$3.number, c$3.string, c$3.instanceOf(Date)]).isRequired, lineStyle: c$3.object, textStyle: c$3.object })) };
+memo(kn$2);
+var Cn = function(e3) {
+  return Qe(e3) ? e3 : function(r2) {
+    return y$2(r2, e3);
+  };
+}, Wn = function(e3) {
+  return useMemo(function() {
+    return Cn(e3);
+  }, [e3]);
+};
+function qe$2() {
+  return qe$2 = Object.assign ? Object.assign.bind() : function(e3) {
+    for (var r2 = 1; r2 < arguments.length; r2++) {
+      var n2 = arguments[r2];
+      for (var t2 in n2) Object.prototype.hasOwnProperty.call(n2, t2) && (e3[t2] = n2[t2]);
+    }
+    return e3;
+  }, qe$2.apply(this, arguments);
+}
+function Ce$1(e3, r2) {
+  (null == r2 || r2 > e3.length) && (r2 = e3.length);
+  for (var n2 = 0, t2 = new Array(r2); n2 < r2; n2++) t2[n2] = e3[n2];
+  return t2;
+}
+function Ge$1(e3, r2) {
+  var n2 = "undefined" != typeof Symbol && e3[Symbol.iterator] || e3["@@iterator"];
+  if (n2) return (n2 = n2.call(e3)).next.bind(n2);
+  if (Array.isArray(e3) || (n2 = function(e4, r3) {
+    if (e4) {
+      if ("string" == typeof e4) return Ce$1(e4, r3);
+      var n3 = Object.prototype.toString.call(e4).slice(8, -1);
+      return "Object" === n3 && e4.constructor && (n3 = e4.constructor.name), "Map" === n3 || "Set" === n3 ? Array.from(e4) : "Arguments" === n3 || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n3) ? Ce$1(e4, r3) : void 0;
+    }
+  }(e3)) || r2) {
+    n2 && (e3 = n2);
+    var t2 = 0;
+    return function() {
+      return t2 >= e3.length ? { done: true } : { done: false, value: e3[t2++] };
+    };
+  }
+  throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+var Re$2 = { nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, tableau10: c$2 }, Pe$2 = { brown_blueGreen: scheme$q, purpleRed_green: scheme$p, pink_yellowGreen: scheme$o, purple_orange: scheme$n, red_blue: scheme$m, red_grey: scheme$l, red_yellow_blue: scheme$k, red_yellow_green: scheme$j, spectral: scheme$i }, Ue$2 = { brown_blueGreen: v$6, purpleRed_green: _$3, pink_yellowGreen: w$5, purple_orange: k$5, red_blue: j$6, red_grey: A$2, red_yellow_blue: O$4, red_yellow_green: z$4, spectral: E$7 }, De$2 = { blues: scheme$5, greens: scheme$4, greys: scheme$3, oranges: scheme, purples: scheme$2, reds: scheme$1, blue_green: scheme$h, blue_purple: scheme$g, green_blue: scheme$f, orange_red: scheme$e, purple_blue_green: scheme$d, purple_blue: scheme$c, purple_red: scheme$b, red_purple: scheme$a, yellow_green_blue: scheme$9, yellow_green: scheme$8, yellow_orange_brown: scheme$7, yellow_orange_red: scheme$6 }, $e$2 = { blues: K$3, greens: L$3, greys: N$6, oranges: Q$4, purples: W$4, reds: X$5, turbo: Y$6, viridis: Z$2, inferno, magma, plasma, cividis: te$1, warm, cool, cubehelixDefault: ue$1, blue_green: ae$1, blue_purple: le$1, green_blue: ce$1, orange_red: se$1, purple_blue_green: fe$1, purple_blue: pe$1, purple_red: de$1, red_purple: me$1, yellow_green_blue: he$1, yellow_green: ge$1, yellow_orange_brown: ye, yellow_orange_red: be };
+qe$2({}, Re$2, Pe$2, De$2);
+var Le$2 = { rainbow: ve$1, sinebow: _e };
+qe$2({}, Ue$2, $e$2, Le$2);
+var We$1 = function(e3, r2) {
+  if ("function" == typeof e3) return e3;
+  if (je(e3)) {
+    if (function(e4) {
+      return void 0 !== e4.theme;
+    }(e3)) {
+      if (void 0 === r2) throw new Error("Unable to use color from theme as no theme was provided");
+      var n2 = y$2(r2, e3.theme);
+      if (void 0 === n2) throw new Error("Color from theme is undefined at path: '" + e3.theme + "'");
+      return function() {
+        return n2;
+      };
+    }
+    if (function(e4) {
+      return void 0 !== e4.from;
+    }(e3)) {
+      var t2 = function(r3) {
+        return y$2(r3, e3.from);
+      };
+      if (Array.isArray(e3.modifiers)) {
+        for (var o2, i2 = [], u2 = function() {
+          var e4 = o2.value, r3 = e4[0], n3 = e4[1];
+          if ("brighter" === r3) i2.push(function(e6) {
+            return e6.brighter(n3);
+          });
+          else if ("darker" === r3) i2.push(function(e6) {
+            return e6.darker(n3);
+          });
+          else {
+            if ("opacity" !== r3) throw new Error("Invalid color modifier: '" + r3 + "', must be one of: 'brighter', 'darker', 'opacity'");
+            i2.push(function(e6) {
+              return e6.opacity = n3, e6;
+            });
+          }
+        }, a2 = Ge$1(e3.modifiers); !(o2 = a2()).done; ) u2();
+        return 0 === i2.length ? t2 : function(e4) {
+          return i2.reduce(function(e6, r3) {
+            return r3(e6);
+          }, rgb$1(t2(e4))).toString();
+        };
+      }
+      return t2;
+    }
+    throw new Error("Invalid color spec, you should either specify 'theme' or 'from' when using a config object");
+  }
+  return function() {
+    return e3;
+  };
+}, Xe$1 = function(e3, r2) {
+  return useMemo(function() {
+    return We$1(e3, r2);
+  }, [e3, r2]);
+};
+c$3.oneOfType([c$3.string, c$3.func, c$3.shape({ theme: c$3.string.isRequired }), c$3.shape({ from: c$3.string.isRequired, modifiers: c$3.arrayOf(c$3.array) })]);
+function M$1() {
+  return M$1 = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var n2 = 1; n2 < arguments.length; n2++) {
+      var e3 = arguments[n2];
+      for (var r2 in e3) Object.prototype.hasOwnProperty.call(e3, r2) && (t2[r2] = e3[r2]);
+    }
+    return t2;
+  }, M$1.apply(this, arguments);
+}
+var k$4 = { pointerEvents: "none" }, b$6 = function(n2) {
+  var e3 = n2.label, r2 = n2.style, a2 = zt$1();
+  return jsx(animated.g, { transform: r2.transform, opacity: r2.progress, style: k$4, children: jsx(animated.text, { textAnchor: "middle", dominantBaseline: "central", style: M$1({}, a2.labels.text, { fill: r2.textColor }), children: e3 }) });
+}, C$5 = function(t2) {
+  var n2 = t2 % (2 * Math.PI);
+  return n2 < 0 && (n2 += 2 * Math.PI), n2;
+}, L$2 = function(t2, n2) {
+  return t2.filter(function(t3) {
+    return Math.abs(Kt(t3.arc.endAngle - t3.arc.startAngle)) >= n2;
+  });
+}, E$5 = { startAngle: { enter: function(t2) {
+  return M$1({}, t2, { endAngle: t2.startAngle });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { startAngle: t2.endAngle });
+} }, middleAngle: { enter: function(t2) {
+  var n2 = t2.startAngle + (t2.endAngle - t2.startAngle) / 2;
+  return M$1({}, t2, { startAngle: n2, endAngle: n2 });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  var n2 = t2.startAngle + (t2.endAngle - t2.startAngle) / 2;
+  return M$1({}, t2, { startAngle: n2, endAngle: n2 });
+} }, endAngle: { enter: function(t2) {
+  return M$1({}, t2, { startAngle: t2.endAngle });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { endAngle: t2.startAngle });
+} }, innerRadius: { enter: function(t2) {
+  return M$1({}, t2, { outerRadius: t2.innerRadius });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.outerRadius });
+} }, centerRadius: { enter: function(t2) {
+  var n2 = t2.innerRadius + (t2.outerRadius - t2.innerRadius) / 2;
+  return M$1({}, t2, { innerRadius: n2, outerRadius: n2 });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  var n2 = t2.innerRadius + (t2.outerRadius - t2.innerRadius) / 2;
+  return M$1({}, t2, { innerRadius: n2, outerRadius: n2 });
+} }, outerRadius: { enter: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.outerRadius });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { outerRadius: t2.innerRadius });
+} }, pushIn: { enter: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.innerRadius - t2.outerRadius + t2.innerRadius, outerRadius: t2.innerRadius });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.outerRadius, outerRadius: t2.outerRadius + t2.outerRadius - t2.innerRadius });
+} }, pushOut: { enter: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.outerRadius, outerRadius: t2.outerRadius + t2.outerRadius - t2.innerRadius });
+}, update: function(t2) {
+  return t2;
+}, leave: function(t2) {
+  return M$1({}, t2, { innerRadius: t2.innerRadius - t2.outerRadius + t2.innerRadius, outerRadius: t2.innerRadius });
+} } }, I$1 = function(t2, n2) {
+  return useMemo(function() {
+    var e3 = E$5[t2];
+    return { enter: function(t3) {
+      return M$1({ progress: 0 }, e3.enter(t3.arc), n2 ? n2.enter(t3) : {});
+    }, update: function(t3) {
+      return M$1({ progress: 1 }, e3.update(t3.arc), n2 ? n2.update(t3) : {});
+    }, leave: function(t3) {
+      return M$1({ progress: 0 }, e3.leave(t3.arc), n2 ? n2.leave(t3) : {});
+    } };
+  }, [t2, n2]);
+}, T$5 = function(t2, n2) {
+  var e3 = Vt(t2) - Math.PI / 2, r2 = t2.innerRadius + (t2.outerRadius - t2.innerRadius) * n2;
+  return Jt(e3, r2);
+}, j$5 = function(t2) {
+  return function(e3, r2, i2, a2) {
+    return to([e3, r2, i2, a2], function(n2, e4, r3, i3) {
+      var a3 = T$5({ startAngle: n2, endAngle: e4, innerRadius: r3, outerRadius: i3 }, t2);
+      return "translate(" + a3.x + "," + a3.y + ")";
+    });
+  };
+}, W$3 = function(t2, n2, r2, i2) {
+  void 0 === n2 && (n2 = 0.5), void 0 === r2 && (r2 = "innerRadius");
+  var a2 = Ur$1(), o2 = a2.animate, u2 = a2.config, l2 = I$1(r2, i2);
+  return { transition: useTransition(t2, { keys: function(t3) {
+    return t3.id;
+  }, initial: l2.update, from: l2.enter, enter: l2.update, update: l2.update, leave: l2.leave, config: u2, immediate: !o2 }), interpolate: j$5(n2) };
+}, B$2 = function(t2) {
+  var n2 = t2.center, e3 = t2.data, r2 = t2.transitionMode, o2 = t2.label, u2 = t2.radiusOffset, l2 = t2.skipAngle, s = t2.textColor, f2 = t2.component, c2 = void 0 === f2 ? b$6 : f2, g2 = Wn(o2), h = zt$1(), x2 = Xe$1(s, h), m2 = useMemo(function() {
+    return e3.filter(function(t3) {
+      return Math.abs(Kt(t3.arc.endAngle - t3.arc.startAngle)) >= l2;
+    });
+  }, [e3, l2]), y2 = W$3(m2, u2, r2), k2 = y2.transition, C2 = y2.interpolate, L2 = c2;
+  return jsx("g", { transform: "translate(" + n2[0] + "," + n2[1] + ")", children: k2(function(t3, n3) {
+    return createElement(L2, { key: n3.id, datum: n3, label: g2(n3), style: M$1({}, t3, { transform: C2(t3.startAngle, t3.endAngle, t3.innerRadius, t3.outerRadius), textColor: x2(n3) }) });
+  }) });
+}, G = function(n2) {
+  var e3 = n2.label, r2 = n2.style, a2 = zt$1();
+  return jsxs(animated.g, { opacity: r2.opacity, children: [jsx(animated.path, { fill: "none", stroke: r2.linkColor, strokeWidth: r2.thickness, d: r2.path }), jsx(animated.text, { transform: r2.textPosition, textAnchor: r2.textAnchor, dominantBaseline: "central", style: M$1({}, a2.labels.text, { fill: r2.textColor }), children: e3 })] });
+}, q$1 = function(t2) {
+  var n2 = C$5(t2.startAngle + (t2.endAngle - t2.startAngle) / 2 - Math.PI / 2);
+  return n2 < Math.PI / 2 || n2 > 1.5 * Math.PI ? "start" : "end";
+}, D$1 = function(t2, n2, e3, r2) {
+  var i2, a2, u2 = C$5(t2.startAngle + (t2.endAngle - t2.startAngle) / 2 - Math.PI / 2), l2 = Jt(u2, t2.outerRadius + n2), s = Jt(u2, t2.outerRadius + n2 + e3);
+  return u2 < Math.PI / 2 || u2 > 1.5 * Math.PI ? (i2 = "after", a2 = { x: s.x + r2, y: s.y }) : (i2 = "before", a2 = { x: s.x - r2, y: s.y }), { side: i2, points: [l2, s, a2] };
+}, H$3 = H$4().x(function(t2) {
+  return t2.x;
+}).y(function(t2) {
+  return t2.y;
+}), J$1 = function(t2, e3, r2, i2, a2, o2, u2) {
+  return to([t2, e3, r2, i2, a2, o2, u2], function(t3, n2, e4, r3, i3, a3, o3) {
+    var u3 = D$1({ startAngle: t3, endAngle: n2, innerRadius: e4, outerRadius: r3 }, i3, a3, o3).points;
+    return H$3(u3);
+  });
+}, K$2 = function(t2, e3, r2, i2) {
+  return to([t2, e3, r2, i2], function(t3, n2, e4, r3) {
+    return q$1({ startAngle: t3, endAngle: n2, innerRadius: e4, outerRadius: r3 });
+  });
+}, N$4 = function(t2, e3, r2, i2, a2, o2, u2, l2) {
+  return to([t2, e3, r2, i2, a2, o2, u2, l2], function(t3, n2, e4, r3, i3, a3, o3, u3) {
+    var l3 = D$1({ startAngle: t3, endAngle: n2, innerRadius: e4, outerRadius: r3 }, i3, a3, o3), s = l3.points, d = l3.side, f2 = s[2];
+    return "before" === d ? f2.x -= u3 : f2.x += u3, "translate(" + f2.x + "," + f2.y + ")";
+  });
+}, Q$3 = function(t2) {
+  var n2 = t2.data, r2 = t2.offset, a2 = void 0 === r2 ? 0 : r2, o2 = t2.diagonalLength, u2 = t2.straightLength, l2 = t2.skipAngle, d = void 0 === l2 ? 0 : l2, f2 = t2.textOffset, c2 = t2.linkColor, g2 = t2.textColor, p2 = Ur$1(), h = p2.animate, A2 = p2.config, x2 = zt$1(), m2 = Xe$1(c2, x2), y2 = Xe$1(g2, x2), M2 = function(t3, n3) {
+    return useMemo(function() {
+      return L$2(t3, n3);
+    }, [t3, n3]);
+  }(n2, d), k2 = function(t3) {
+    var n3 = t3.offset, e3 = t3.diagonalLength, r3 = t3.straightLength, i2 = t3.textOffset, a3 = t3.getLinkColor, o3 = t3.getTextColor;
+    return useMemo(function() {
+      return { enter: function(t4) {
+        return { startAngle: t4.arc.startAngle, endAngle: t4.arc.endAngle, innerRadius: t4.arc.innerRadius, outerRadius: t4.arc.outerRadius, offset: n3, diagonalLength: 0, straightLength: 0, textOffset: i2, linkColor: a3(t4), textColor: o3(t4), opacity: 0 };
+      }, update: function(t4) {
+        return { startAngle: t4.arc.startAngle, endAngle: t4.arc.endAngle, innerRadius: t4.arc.innerRadius, outerRadius: t4.arc.outerRadius, offset: n3, diagonalLength: e3, straightLength: r3, textOffset: i2, linkColor: a3(t4), textColor: o3(t4), opacity: 1 };
+      }, leave: function(t4) {
+        return { startAngle: t4.arc.startAngle, endAngle: t4.arc.endAngle, innerRadius: t4.arc.innerRadius, outerRadius: t4.arc.outerRadius, offset: n3, diagonalLength: 0, straightLength: 0, textOffset: i2, linkColor: a3(t4), textColor: o3(t4), opacity: 0 };
+      } };
+    }, [e3, r3, i2, a3, o3, n3]);
+  }({ offset: a2, diagonalLength: o2, straightLength: u2, textOffset: f2, getLinkColor: m2, getTextColor: y2 });
+  return { transition: useTransition(M2, { keys: function(t3) {
+    return t3.id;
+  }, initial: k2.update, from: k2.enter, enter: k2.update, update: k2.update, leave: k2.leave, config: A2, immediate: !h }), interpolateLink: J$1, interpolateTextAnchor: K$2, interpolateTextPosition: N$4 };
+}, U$2 = function(t2) {
+  var n2 = t2.center, e3 = t2.data, r2 = t2.label, i2 = t2.skipAngle, a2 = t2.offset, o2 = t2.diagonalLength, u2 = t2.straightLength, l2 = t2.strokeWidth, s = t2.textOffset, f2 = t2.textColor, c2 = t2.linkColor, g2 = t2.component, h = void 0 === g2 ? G : g2, v2 = Wn(r2), x2 = Q$3({ data: e3, skipAngle: i2, offset: a2, diagonalLength: o2, straightLength: u2, textOffset: s, linkColor: c2, textColor: f2 }), R = x2.transition, m2 = x2.interpolateLink, y2 = x2.interpolateTextAnchor, k2 = x2.interpolateTextPosition, b2 = h;
+  return jsx("g", { transform: "translate(" + n2[0] + "," + n2[1] + ")", children: R(function(t3, n3) {
+    return createElement(b2, { key: n3.id, datum: n3, label: v2(n3), style: M$1({}, t3, { thickness: l2, path: m2(t3.startAngle, t3.endAngle, t3.innerRadius, t3.outerRadius, t3.offset, t3.diagonalLength, t3.straightLength), textAnchor: y2(t3.startAngle, t3.endAngle, t3.innerRadius, t3.outerRadius), textPosition: k2(t3.startAngle, t3.endAngle, t3.innerRadius, t3.outerRadius, t3.offset, t3.diagonalLength, t3.straightLength, t3.textOffset) }) });
+  }) });
+}, tt$1 = function(n2) {
+  var e3 = n2.datum, r2 = n2.style, i2 = n2.onClick, a2 = n2.onMouseEnter, o2 = n2.onMouseMove, u2 = n2.onMouseLeave, l2 = useCallback(function(t2) {
+    return null == i2 ? void 0 : i2(e3, t2);
+  }, [i2, e3]), s = useCallback(function(t2) {
+    return null == a2 ? void 0 : a2(e3, t2);
+  }, [a2, e3]), d = useCallback(function(t2) {
+    return null == o2 ? void 0 : o2(e3, t2);
+  }, [o2, e3]), f2 = useCallback(function(t2) {
+    return null == u2 ? void 0 : u2(e3, t2);
+  }, [u2, e3]);
+  return jsx(animated.path, { d: r2.path, opacity: r2.opacity, fill: e3.fill || r2.color, stroke: r2.borderColor, strokeWidth: r2.borderWidth, onClick: i2 ? l2 : void 0, onMouseEnter: a2 ? s : void 0, onMouseMove: o2 ? d : void 0, onMouseLeave: u2 ? f2 : void 0 });
+}, nt = function(t2, e3, r2, i2, a2) {
+  return to([t2, e3, r2, i2], function(t3, n2, e4, r3) {
+    return a2({ startAngle: t3, endAngle: n2, innerRadius: Math.max(0, e4), outerRadius: Math.max(0, r3) });
+  });
+}, et = function(t2, n2, r2) {
+  void 0 === n2 && (n2 = "innerRadius");
+  var i2 = Ur$1(), a2 = i2.animate, o2 = i2.config, u2 = I$1(n2, r2);
+  return { transition: useTransition(t2, { keys: function(t3) {
+    return t3.id;
+  }, initial: u2.update, from: u2.enter, enter: u2.update, update: u2.update, leave: u2.leave, config: o2, immediate: !a2 }), interpolate: nt };
+}, rt$1 = function(t2) {
+  var n2 = t2.center, e3 = t2.data, r2 = t2.arcGenerator, a2 = t2.borderWidth, o2 = t2.borderColor, u2 = t2.onClick, l2 = t2.onMouseEnter, s = t2.onMouseMove, d = t2.onMouseLeave, f2 = t2.transitionMode, c2 = t2.component, g2 = void 0 === c2 ? tt$1 : c2, h = zt$1(), v2 = Xe$1(o2, h), x2 = et(e3, f2, { enter: function(t3) {
+    return { opacity: 0, color: t3.color, borderColor: v2(t3) };
+  }, update: function(t3) {
+    return { opacity: 1, color: t3.color, borderColor: v2(t3) };
+  }, leave: function(t3) {
+    return { opacity: 0, color: t3.color, borderColor: v2(t3) };
+  } }), m2 = x2.transition, y2 = x2.interpolate, k2 = g2;
+  return jsx("g", { transform: "translate(" + n2[0] + "," + n2[1] + ")", children: m2(function(t3, n3) {
+    return createElement(k2, { key: n3.id, datum: n3, style: M$1({}, t3, { borderWidth: a2, path: y2(t3.startAngle, t3.endAngle, t3.innerRadius, t3.outerRadius, r2) }), onClick: u2, onMouseEnter: l2, onMouseMove: s, onMouseLeave: d });
+  }) });
+}, it = function(t2, n2, e3, r2, i2, a2) {
+  void 0 === a2 && (a2 = true);
+  var l2 = [], s = Jt(Ht$1(r2), e3);
+  l2.push([s.x, s.y]);
+  var d = Jt(Ht$1(i2), e3);
+  l2.push([d.x, d.y]);
+  for (var f2 = Math.round(Math.min(r2, i2)); f2 <= Math.round(Math.max(r2, i2)); f2++) if (f2 % 90 == 0) {
+    var c2 = Jt(Ht$1(f2), e3);
+    l2.push([c2.x, c2.y]);
+  }
+  l2 = l2.map(function(e4) {
+    var r3 = e4[0], i3 = e4[1];
+    return [t2 + r3, n2 + i3];
+  }), a2 && l2.push([t2, n2]);
+  var g2 = l2.map(function(t3) {
+    return t3[0];
+  }), p2 = l2.map(function(t3) {
+    return t3[1];
+  }), h = Math.min.apply(Math, g2), v2 = Math.max.apply(Math, g2), A2 = Math.min.apply(Math, p2);
+  return { points: l2, x: h, y: A2, width: v2 - h, height: Math.max.apply(Math, p2) - A2 };
+}, lt$1 = function(t2) {
+  var n2 = void 0 === t2 ? {} : t2, e3 = n2.cornerRadius, r2 = void 0 === e3 ? 0 : e3, i2 = n2.padAngle, a2 = void 0 === i2 ? 0 : i2;
+  return useMemo(function() {
+    return y$1().innerRadius(function(t3) {
+      return t3.innerRadius;
+    }).outerRadius(function(t3) {
+      return t3.outerRadius;
+    }).cornerRadius(r2).padAngle(a2);
+  }, [r2, a2]);
+};
+function qe$1() {
+  return qe$1 = Object.assign ? Object.assign.bind() : function(e3) {
+    for (var r2 = 1; r2 < arguments.length; r2++) {
+      var n2 = arguments[r2];
+      for (var t2 in n2) Object.prototype.hasOwnProperty.call(n2, t2) && (e3[t2] = n2[t2]);
+    }
+    return e3;
+  }, qe$1.apply(this, arguments);
+}
+var Re$1 = { nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, tableau10: c$2 }, Ve$1 = Object.keys(Re$1), Pe$1 = { brown_blueGreen: scheme$q, purpleRed_green: scheme$p, pink_yellowGreen: scheme$o, purple_orange: scheme$n, red_blue: scheme$m, red_grey: scheme$l, red_yellow_blue: scheme$k, red_yellow_green: scheme$j, spectral: scheme$i }, Te$1 = Object.keys(Pe$1), Ue$1 = { brown_blueGreen: v$6, purpleRed_green: _$3, pink_yellowGreen: w$5, purple_orange: k$5, red_blue: j$6, red_grey: A$2, red_yellow_blue: O$4, red_yellow_green: z$4, spectral: E$7 }, De$1 = { blues: scheme$5, greens: scheme$4, greys: scheme$3, oranges: scheme, purples: scheme$2, reds: scheme$1, blue_green: scheme$h, blue_purple: scheme$g, green_blue: scheme$f, orange_red: scheme$e, purple_blue_green: scheme$d, purple_blue: scheme$c, purple_red: scheme$b, red_purple: scheme$a, yellow_green_blue: scheme$9, yellow_green: scheme$8, yellow_orange_brown: scheme$7, yellow_orange_red: scheme$6 }, Me$1 = Object.keys(De$1), $e$1 = { blues: K$3, greens: L$3, greys: N$6, oranges: Q$4, purples: W$4, reds: X$5, turbo: Y$6, viridis: Z$2, inferno, magma, plasma, cividis: te$1, warm, cool, cubehelixDefault: ue$1, blue_green: ae$1, blue_purple: le$1, green_blue: ce$1, orange_red: se$1, purple_blue_green: fe$1, purple_blue: pe$1, purple_red: de$1, red_purple: me$1, yellow_green_blue: he$1, yellow_green: ge$1, yellow_orange_brown: ye, yellow_orange_red: be }, Be$1 = qe$1({}, Re$1, Pe$1, De$1), He$1 = function(e3) {
+  return Ve$1.includes(e3);
+}, Je$1 = function(e3) {
+  return Te$1.includes(e3);
+}, Ke$1 = function(e3) {
+  return Me$1.includes(e3);
+}, Le$1 = { rainbow: ve$1, sinebow: _e };
+qe$1({}, Ue$1, $e$1, Le$1);
+c$3.oneOfType([c$3.string, c$3.func, c$3.shape({ theme: c$3.string.isRequired }), c$3.shape({ from: c$3.string.isRequired, modifiers: c$3.arrayOf(c$3.array) })]);
+var fr$1 = function(e3, r2) {
+  if ("function" == typeof e3) return e3;
+  var n2 = function(e4) {
+    return y$2(e4, r2);
+  };
+  if (Array.isArray(e3)) {
+    var t2 = ordinal(e3), o2 = function(e4) {
+      return t2(n2(e4));
+    };
+    return o2.scale = t2, o2;
+  }
+  if (je(e3)) {
+    if (function(e4) {
+      return void 0 !== e4.datum;
+    }(e3)) return function(r3) {
+      return y$2(r3, e3.datum);
+    };
+    if (function(e4) {
+      return void 0 !== e4.scheme;
+    }(e3)) {
+      if (He$1(e3.scheme)) {
+        var i2 = ordinal(Be$1[e3.scheme]), u2 = function(e4) {
+          return i2(n2(e4));
+        };
+        return u2.scale = i2, u2;
+      }
+      if (Je$1(e3.scheme)) {
+        if (void 0 !== e3.size && (e3.size < 3 || e3.size > 11)) throw new Error("Invalid size '" + e3.size + "' for diverging color scheme '" + e3.scheme + "', must be between 3~11");
+        var a2 = ordinal(Be$1[e3.scheme][e3.size || 11]), l2 = function(e4) {
+          return a2(n2(e4));
+        };
+        return l2.scale = a2, l2;
+      }
+      if (Ke$1(e3.scheme)) {
+        if (void 0 !== e3.size && (e3.size < 3 || e3.size > 9)) throw new Error("Invalid size '" + e3.size + "' for sequential color scheme '" + e3.scheme + "', must be between 3~9");
+        var c2 = ordinal(Be$1[e3.scheme][e3.size || 9]), s = function(e4) {
+          return c2(n2(e4));
+        };
+        return s.scale = c2, s;
+      }
+    }
+    throw new Error("Invalid colors, when using an object, you should either pass a 'datum' or a 'scheme' property");
+  }
+  return function() {
+    return e3;
+  };
+}, pr$1 = function(e3, r2) {
+  return useMemo(function() {
+    return fr$1(e3, r2);
+  }, [e3, r2]);
+};
+var f$1 = function(e3) {
+  var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
+  return jsx("circle", { r: o2 / 2, cx: i2 + o2 / 2, cy: n2 + o2 / 2, fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, style: { pointerEvents: "none" } });
+}, m$4 = function(e3) {
+  var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
+  return jsx("g", { transform: "translate(" + i2 + "," + n2 + ")", children: jsx("path", { d: "\n                    M" + o2 / 2 + " 0\n                    L" + 0.8 * o2 + " " + o2 / 2 + "\n                    L" + o2 / 2 + " " + o2 + "\n                    L" + 0.2 * o2 + " " + o2 / 2 + "\n                    L" + o2 / 2 + " 0\n                ", fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, style: { pointerEvents: "none" } }) });
+}, v$4 = function(e3) {
+  var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
+  return jsx("rect", { x: i2, y: n2, fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, width: o2, height: o2, style: { pointerEvents: "none" } });
+}, u$1 = function(e3) {
+  var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
+  return jsx("g", { transform: "translate(" + i2 + "," + n2 + ")", children: jsx("path", { d: "\n                M" + o2 / 2 + " 0\n                L" + o2 + " " + o2 + "\n                L0 " + o2 + "\n                L" + o2 / 2 + " 0\n            ", fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, style: { pointerEvents: "none" } }) });
+};
+function p$2() {
+  return p$2 = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var e3 = 1; e3 < arguments.length; e3++) {
+      var i2 = arguments[e3];
+      for (var n2 in i2) Object.prototype.hasOwnProperty.call(i2, n2) && (t2[n2] = i2[n2]);
+    }
+    return t2;
+  }, p$2.apply(this, arguments);
+}
+var k$3 = { top: 0, right: 0, bottom: 0, left: 0 }, x$4 = function(t2) {
+  var e3, i2 = t2.direction, n2 = t2.itemsSpacing, o2 = t2.padding, r2 = t2.itemCount, l2 = t2.itemWidth, a2 = t2.itemHeight;
+  if ("number" != typeof o2 && ("object" != typeof (e3 = o2) || Array.isArray(e3) || null === e3)) throw new Error("Invalid property padding, must be one of: number, object");
+  var c2 = "number" == typeof o2 ? { top: o2, right: o2, bottom: o2, left: o2 } : p$2({}, k$3, o2), d = c2.left + c2.right, s = c2.top + c2.bottom, h = l2 + d, g2 = a2 + s, f2 = (r2 - 1) * n2;
+  return "row" === i2 ? h = l2 * r2 + f2 + d : "column" === i2 && (g2 = a2 * r2 + f2 + s), { width: h, height: g2, padding: c2 };
+}, b$5 = function(t2) {
+  var e3 = t2.anchor, i2 = t2.translateX, n2 = t2.translateY, o2 = t2.containerWidth, r2 = t2.containerHeight, l2 = t2.width, a2 = t2.height, c2 = i2, d = n2;
+  switch (e3) {
+    case "top":
+      c2 += (o2 - l2) / 2;
+      break;
+    case "top-right":
+      c2 += o2 - l2;
+      break;
+    case "right":
+      c2 += o2 - l2, d += (r2 - a2) / 2;
+      break;
+    case "bottom-right":
+      c2 += o2 - l2, d += r2 - a2;
+      break;
+    case "bottom":
+      c2 += (o2 - l2) / 2, d += r2 - a2;
+      break;
+    case "bottom-left":
+      d += r2 - a2;
+      break;
+    case "left":
+      d += (r2 - a2) / 2;
+      break;
+    case "center":
+      c2 += (o2 - l2) / 2, d += (r2 - a2) / 2;
+  }
+  return { x: c2, y: d };
+}, S$2 = function(t2) {
+  var e3, i2, n2, o2, r2, l2, a2 = t2.direction, c2 = t2.justify, d = t2.symbolSize, s = t2.symbolSpacing, h = t2.width, g2 = t2.height;
+  switch (a2) {
+    case "left-to-right":
+      e3 = 0, i2 = (g2 - d) / 2, o2 = g2 / 2, l2 = "central", c2 ? (n2 = h, r2 = "end") : (n2 = d + s, r2 = "start");
+      break;
+    case "right-to-left":
+      e3 = h - d, i2 = (g2 - d) / 2, o2 = g2 / 2, l2 = "central", c2 ? (n2 = 0, r2 = "start") : (n2 = h - d - s, r2 = "end");
+      break;
+    case "top-to-bottom":
+      e3 = (h - d) / 2, i2 = 0, n2 = h / 2, r2 = "middle", c2 ? (o2 = g2, l2 = "alphabetic") : (o2 = d + s, l2 = "text-before-edge");
+      break;
+    case "bottom-to-top":
+      e3 = (h - d) / 2, i2 = g2 - d, n2 = h / 2, r2 = "middle", c2 ? (o2 = 0, l2 = "text-before-edge") : (o2 = g2 - d - s, l2 = "alphabetic");
+  }
+  return { symbolX: e3, symbolY: i2, labelX: n2, labelY: o2, labelAnchor: r2, labelAlignment: l2 };
+}, w$4 = { circle: f$1, diamond: m$4, square: v$4, triangle: u$1 }, X$4 = function(i2) {
+  var n2, l2, a2, d, g2, f2, m2, v2, u2, y2, k2, x2 = i2.x, b2 = i2.y, A2 = i2.width, W2 = i2.height, z2 = i2.data, C2 = i2.direction, X2 = void 0 === C2 ? "left-to-right" : C2, Y2 = i2.justify, O2 = void 0 !== Y2 && Y2, B2 = i2.textColor, H2 = i2.background, E2 = void 0 === H2 ? "transparent" : H2, j2 = i2.opacity, L2 = void 0 === j2 ? 1 : j2, M2 = i2.symbolShape, F2 = void 0 === M2 ? "square" : M2, T2 = i2.symbolSize, P2 = void 0 === T2 ? 16 : T2, V2 = i2.symbolSpacing, R = void 0 === V2 ? 8 : V2, D2 = i2.symbolBorderWidth, q2 = void 0 === D2 ? 0 : D2, G2 = i2.symbolBorderColor, I2 = void 0 === G2 ? "transparent" : G2, N2 = i2.onClick, _2 = i2.onMouseEnter, J2 = i2.onMouseLeave, K2 = i2.toggleSerie, Q2 = i2.effects, U2 = useState({}), Z2 = U2[0], $2 = U2[1], tt2 = zt$2(), et2 = useCallback(function(t2) {
+    if (Q2) {
+      var e3 = Q2.filter(function(t3) {
+        return "hover" === t3.on;
+      }).reduce(function(t3, e4) {
+        return p$2({}, t3, e4.style);
+      }, {});
+      $2(e3);
+    }
+    null == _2 || _2(z2, t2);
+  }, [_2, z2, Q2]), it2 = useCallback(function(t2) {
+    if (Q2) {
+      var e3 = Q2.filter(function(t3) {
+        return "hover" !== t3.on;
+      }).reduce(function(t3, e4) {
+        return p$2({}, t3, e4.style);
+      }, {});
+      $2(e3);
+    }
+    null == J2 || J2(z2, t2);
+  }, [J2, z2, Q2]), nt2 = S$2({ direction: X2, justify: O2, symbolSize: null != (n2 = Z2.symbolSize) ? n2 : P2, symbolSpacing: R, width: A2, height: W2 }), ot = nt2.symbolX, rt2 = nt2.symbolY, lt2 = nt2.labelX, at = nt2.labelY, ct = nt2.labelAnchor, dt = nt2.labelAlignment, st = [N2, _2, J2, K2].some(function(t2) {
+    return void 0 !== t2;
+  }), ht2 = "function" == typeof F2 ? F2 : w$4[F2];
+  return jsxs("g", { transform: "translate(" + x2 + "," + b2 + ")", style: { opacity: null != (l2 = Z2.itemOpacity) ? l2 : L2 }, children: [jsx("rect", { width: A2, height: W2, fill: null != (a2 = Z2.itemBackground) ? a2 : E2, style: { cursor: st ? "pointer" : "auto" }, onClick: function(t2) {
+    null == N2 || N2(z2, t2), null == K2 || K2(z2.id);
+  }, onMouseEnter: et2, onMouseLeave: it2 }), React.createElement(ht2, p$2({ id: z2.id, x: ot, y: rt2, size: null != (d = Z2.symbolSize) ? d : P2, fill: null != (g2 = null != (f2 = z2.fill) ? f2 : z2.color) ? g2 : "black", borderWidth: null != (m2 = Z2.symbolBorderWidth) ? m2 : q2, borderColor: null != (v2 = Z2.symbolBorderColor) ? v2 : I2 }, z2.hidden ? tt2.legends.hidden.symbol : void 0)), jsx("text", { textAnchor: ct, style: p$2({}, Mt$2(tt2.legends.text), { fill: null != (u2 = null != (y2 = null != (k2 = Z2.itemTextColor) ? k2 : B2) ? y2 : tt2.legends.text.fill) ? u2 : "black", dominantBaseline: dt, pointerEvents: "none", userSelect: "none" }, z2.hidden ? tt2.legends.hidden.text : void 0), x: lt2, y: at, children: z2.label })] });
+}, Y$4 = function(e3) {
+  var i2 = e3.data, n2 = e3.x, o2 = e3.y, r2 = e3.direction, l2 = e3.padding, a2 = void 0 === l2 ? 0 : l2, c2 = e3.justify, d = e3.effects, s = e3.itemWidth, h = e3.itemHeight, g2 = e3.itemDirection, f2 = void 0 === g2 ? "left-to-right" : g2, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemTextColor, p2 = e3.itemBackground, y2 = void 0 === p2 ? "transparent" : p2, k2 = e3.itemOpacity, b2 = void 0 === k2 ? 1 : k2, S2 = e3.symbolShape, A2 = e3.symbolSize, W2 = e3.symbolSpacing, z2 = e3.symbolBorderWidth, C2 = e3.symbolBorderColor, w2 = e3.onClick, Y2 = e3.onMouseEnter, O2 = e3.onMouseLeave, B2 = e3.toggleSerie, H2 = x$4({ itemCount: i2.length, itemWidth: s, itemHeight: h, itemsSpacing: v2, direction: r2, padding: a2 }).padding, E2 = "row" === r2 ? s + v2 : 0, j2 = "column" === r2 ? h + v2 : 0;
+  return jsx("g", { transform: "translate(" + n2 + "," + o2 + ")", children: i2.map(function(e4, i3) {
+    return jsx(X$4, { data: e4, x: i3 * E2 + H2.left, y: i3 * j2 + H2.top, width: s, height: h, direction: f2, justify: c2, effects: d, textColor: u2, background: y2, opacity: b2, symbolShape: S2, symbolSize: A2, symbolSpacing: W2, symbolBorderWidth: z2, symbolBorderColor: C2, onClick: w2, onMouseEnter: Y2, onMouseLeave: O2, toggleSerie: B2 }, i3);
+  }) });
+}, O$3 = function(e3) {
+  var i2 = e3.data, n2 = e3.containerWidth, o2 = e3.containerHeight, r2 = e3.translateX, l2 = void 0 === r2 ? 0 : r2, a2 = e3.translateY, c2 = void 0 === a2 ? 0 : a2, d = e3.anchor, s = e3.direction, h = e3.padding, g2 = void 0 === h ? 0 : h, f2 = e3.justify, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemWidth, p2 = e3.itemHeight, y2 = e3.itemDirection, k2 = e3.itemTextColor, S2 = e3.itemBackground, A2 = e3.itemOpacity, W2 = e3.symbolShape, z2 = e3.symbolSize, C2 = e3.symbolSpacing, w2 = e3.symbolBorderWidth, X2 = e3.symbolBorderColor, O2 = e3.onClick, B2 = e3.onMouseEnter, H2 = e3.onMouseLeave, E2 = e3.toggleSerie, j2 = e3.effects, L2 = x$4({ itemCount: i2.length, itemsSpacing: v2, itemWidth: u2, itemHeight: p2, direction: s, padding: g2 }), M2 = L2.width, F2 = L2.height, T2 = b$5({ anchor: d, translateX: l2, translateY: c2, containerWidth: n2, containerHeight: o2, width: M2, height: F2 }), P2 = T2.x, V2 = T2.y;
+  return jsx(Y$4, { data: i2, x: P2, y: V2, direction: s, padding: g2, justify: f2, effects: j2, itemsSpacing: v2, itemWidth: u2, itemHeight: p2, itemDirection: y2, itemTextColor: k2, itemBackground: S2, itemOpacity: A2, symbolShape: W2, symbolSize: z2, symbolSpacing: C2, symbolBorderWidth: w2, symbolBorderColor: X2, onClick: O2, onMouseEnter: B2, onMouseLeave: H2, toggleSerie: "boolean" == typeof E2 ? void 0 : E2 });
+};
+function E$4() {
+  return E$4 = Object.assign ? Object.assign.bind() : function(e3) {
+    for (var t2 = 1; t2 < arguments.length; t2++) {
+      var i2 = arguments[t2];
+      for (var n2 in i2) Object.prototype.hasOwnProperty.call(i2, n2) && (e3[n2] = i2[n2]);
+    }
+    return e3;
+  }, E$4.apply(this, arguments);
+}
+function F$1(e3, t2) {
+  if (null == e3) return {};
+  var i2, n2, a2 = {}, r2 = Object.keys(e3);
+  for (n2 = 0; n2 < r2.length; n2++) i2 = r2[n2], t2.indexOf(i2) >= 0 || (a2[i2] = e3[i2]);
+  return a2;
+}
+var H$2, X$3 = function(e3) {
+  var t2 = e3.width, i2 = e3.height, n2 = e3.legends, a2 = e3.data, r2 = e3.toggleSerie;
+  return jsx(Fragment, { children: n2.map(function(e4, n3) {
+    var o2;
+    return jsx(O$3, E$4({}, e4, { containerWidth: t2, containerHeight: i2, data: null != (o2 = e4.data) ? o2 : a2, toggleSerie: e4.toggleSerie ? r2 : void 0 }), n3);
+  }) });
+}, Y$3 = { id: "id", value: "value", sortByValue: false, innerRadius: 0, padAngle: 0, cornerRadius: 0, layers: ["arcs", "arcLinkLabels", "arcLabels", "legends"], startAngle: 0, endAngle: 360, fit: true, activeInnerRadiusOffset: 0, activeOuterRadiusOffset: 0, borderWidth: 0, borderColor: { from: "color", modifiers: [["darker", 1]] }, enableArcLabels: true, arcLabel: "formattedValue", arcLabelsSkipAngle: 0, arcLabelsRadiusOffset: 0.5, arcLabelsTextColor: { theme: "labels.text.fill" }, enableArcLinkLabels: true, arcLinkLabel: "id", arcLinkLabelsSkipAngle: 0, arcLinkLabelsOffset: 0, arcLinkLabelsDiagonalLength: 16, arcLinkLabelsStraightLength: 24, arcLinkLabelsThickness: 1, arcLinkLabelsTextOffset: 6, arcLinkLabelsTextColor: { theme: "labels.text.fill" }, arcLinkLabelsColor: { theme: "axis.ticks.line.stroke" }, colors: { scheme: "nivo" }, defs: [], fill: [], isInteractive: true, animate: true, motionConfig: "gentle", transitionMode: "innerRadius", tooltip: function(e3) {
+  var t2 = e3.datum;
+  return jsx(w$6, { id: t2.id, value: t2.formattedValue, enableChip: true, color: t2.color });
+}, legends: [], role: "img", pixelRatio: "undefined" != typeof window && null != (H$2 = window.devicePixelRatio) ? H$2 : 1 }, j$4 = ["points"], P$5 = function(t2) {
+  var i2 = t2.data, n2 = t2.id, a2 = void 0 === n2 ? Y$3.id : n2, r2 = t2.value, o2 = void 0 === r2 ? Y$3.value : r2, s = t2.valueFormat, c2 = t2.colors, u2 = void 0 === c2 ? Y$3.colors : c2, v2 = Wn$1(a2), f2 = Wn$1(o2), g2 = Ot$2(s), L2 = pr$1(u2, "id");
+  return useMemo(function() {
+    return i2.map(function(e3) {
+      var t3, i3 = v2(e3), n3 = f2(e3), a3 = { id: i3, label: null != (t3 = e3.label) ? t3 : i3, hidden: false, value: n3, formattedValue: g2(n3), data: e3 };
+      return E$4({}, a3, { color: L2(a3) });
+    });
+  }, [i2, v2, f2, g2, L2]);
+}, q = function(n2) {
+  var a2 = n2.data, r2 = n2.startAngle, o2 = n2.endAngle, d = n2.innerRadius, l2 = n2.outerRadius, u2 = n2.padAngle, v2 = n2.sortByValue, f2 = n2.activeId, g2 = n2.activeInnerRadiusOffset, L2 = n2.activeOuterRadiusOffset, h = n2.hiddenIds, b2 = n2.forwardLegendData, A2 = useMemo(function() {
+    var e3 = T$7().value(function(e4) {
+      return e4.value;
+    }).startAngle(Ht$2(r2)).endAngle(Ht$2(o2)).padAngle(Ht$2(u2));
+    return v2 || e3.sortValues(null), e3;
+  }, [r2, o2, u2, v2]), p2 = useMemo(function() {
+    var e3 = a2.filter(function(e4) {
+      return !h.includes(e4.id);
+    });
+    return { dataWithArc: A2(e3).map(function(e4) {
+      var t2 = Math.abs(e4.endAngle - e4.startAngle);
+      return E$4({}, e4.data, { arc: { index: e4.index, startAngle: e4.startAngle, endAngle: e4.endAngle, innerRadius: f2 === e4.data.id ? d - g2 : d, outerRadius: f2 === e4.data.id ? l2 + L2 : l2, thickness: l2 - d, padAngle: e4.padAngle, angle: t2, angleDeg: Kt$1(t2) } });
+    }), legendData: a2.map(function(e4) {
+      return { id: e4.id, label: e4.label, color: e4.color, hidden: h.includes(e4.id), data: e4 };
+    }) };
+  }, [A2, a2, h, f2, d, g2, l2, L2]), k2 = p2.legendData, I2 = useRef(b2);
+  return useEffect(function() {
+    "function" == typeof I2.current && I2.current(k2);
+  }, [I2, k2]), p2;
+}, z$3 = function(e3) {
+  var t2 = e3.activeId, i2 = e3.onActiveIdChange, r2 = e3.defaultActiveId, o2 = void 0 !== t2, d = useState(o2 ? null : void 0 === r2 ? null : r2), l2 = d[0], s = d[1];
+  return { activeId: o2 ? t2 : l2, setActiveId: useCallback(function(e4) {
+    i2 && i2(e4), o2 || s(e4);
+  }, [o2, i2, s]) };
+}, K$1 = function(t2) {
+  var i2 = t2.data, r2 = t2.width, o2 = t2.height, d = t2.innerRadius, l2 = void 0 === d ? Y$3.innerRadius : d, c2 = t2.startAngle, u2 = void 0 === c2 ? Y$3.startAngle : c2, v2 = t2.endAngle, f2 = void 0 === v2 ? Y$3.endAngle : v2, g2 = t2.padAngle, L2 = void 0 === g2 ? Y$3.padAngle : g2, h = t2.sortByValue, b2 = void 0 === h ? Y$3.sortByValue : h, k2 = t2.cornerRadius, I2 = void 0 === k2 ? Y$3.cornerRadius : k2, R = t2.fit, m2 = void 0 === R ? Y$3.fit : R, O2 = t2.activeInnerRadiusOffset, C2 = void 0 === O2 ? Y$3.activeInnerRadiusOffset : O2, x2 = t2.activeOuterRadiusOffset, w2 = void 0 === x2 ? Y$3.activeOuterRadiusOffset : x2, M2 = t2.activeId, y2 = t2.onActiveIdChange, W2 = t2.defaultActiveId, S2 = t2.forwardLegendData, T2 = z$3({ activeId: M2, onActiveIdChange: y2, defaultActiveId: W2 }), D2 = T2.activeId, V2 = T2.setActiveId, B2 = useState([]), G2 = B2[0], H2 = B2[1], X2 = useMemo(function() {
+    var e3, t3 = Math.min(r2, o2) / 2, i3 = t3 * Math.min(l2, 1), n2 = r2 / 2, a2 = o2 / 2;
+    if (m2) {
+      var d2 = it(n2, a2, t3, u2 - 90, f2 - 90), s = d2.points, c3 = F$1(d2, j$4), v3 = Math.min(r2 / c3.width, o2 / c3.height), g3 = { width: c3.width * v3, height: c3.height * v3 };
+      g3.x = (r2 - g3.width) / 2, g3.y = (o2 - g3.height) / 2, n2 = (n2 - c3.x) / c3.width * c3.width * v3 + g3.x, a2 = (a2 - c3.y) / c3.height * c3.height * v3 + g3.y, e3 = { box: c3, ratio: v3, points: s }, t3 *= v3, i3 *= v3;
+    }
+    return { centerX: n2, centerY: a2, radius: t3, innerRadius: i3, debug: e3 };
+  }, [r2, o2, l2, u2, f2, m2]), P2 = q({ data: i2, startAngle: u2, endAngle: f2, innerRadius: X2.innerRadius, outerRadius: X2.radius, padAngle: L2, sortByValue: b2, activeId: D2, activeInnerRadiusOffset: C2, activeOuterRadiusOffset: w2, hiddenIds: G2, forwardLegendData: S2 }), J2 = useCallback(function(e3) {
+    H2(function(t3) {
+      return t3.indexOf(e3) > -1 ? t3.filter(function(t4) {
+        return t4 !== e3;
+      }) : [].concat(t3, [e3]);
+    });
+  }, []);
+  return E$4({ arcGenerator: lt$1({ cornerRadius: I2, padAngle: Ht$2(L2) }), activeId: D2, setActiveId: V2, toggleSerie: J2 }, P2, X2);
+}, N$3 = function(t2) {
+  var i2 = t2.dataWithArc, n2 = t2.arcGenerator, a2 = t2.centerX, r2 = t2.centerY, o2 = t2.radius, d = t2.innerRadius;
+  return useMemo(function() {
+    return { dataWithArc: i2, arcGenerator: n2, centerX: a2, centerY: r2, radius: o2, innerRadius: d };
+  }, [i2, n2, a2, r2, o2, d]);
+}, Q$2 = function(t2) {
+  var i2 = t2.center, n2 = t2.data, a2 = t2.arcGenerator, o2 = t2.borderWidth, d = t2.borderColor, l2 = t2.isInteractive, s = t2.onClick, c2 = t2.onMouseEnter, u2 = t2.onMouseMove, v2 = t2.onMouseLeave, f2 = t2.setActiveId, g2 = t2.tooltip, L2 = t2.transitionMode, h = k$6(), b2 = h.showTooltipFromEvent, A2 = h.hideTooltip, p2 = useMemo(function() {
+    if (l2) return function(e3, t3) {
+      null == s || s(e3, t3);
+    };
+  }, [l2, s]), I2 = useMemo(function() {
+    if (l2) return function(e3, t3) {
+      b2(createElement(g2, { datum: e3 }), t3), f2(e3.id), null == c2 || c2(e3, t3);
+    };
+  }, [l2, b2, f2, c2, g2]), R = useMemo(function() {
+    if (l2) return function(e3, t3) {
+      b2(createElement(g2, { datum: e3 }), t3), null == u2 || u2(e3, t3);
+    };
+  }, [l2, b2, u2, g2]), m2 = useMemo(function() {
+    if (l2) return function(e3, t3) {
+      A2(), f2(null), null == v2 || v2(e3, t3);
+    };
+  }, [l2, A2, f2, v2]);
+  return jsx(rt$1, { center: i2, data: n2, arcGenerator: a2, borderWidth: o2, borderColor: d, transitionMode: L2, onClick: p2, onMouseEnter: I2, onMouseMove: R, onMouseLeave: m2 });
+}, U$1 = ["isInteractive", "animate", "motionConfig", "theme", "renderWrapper"], Z$1 = function(e3) {
+  var t2 = e3.data, i2 = e3.id, n2 = void 0 === i2 ? Y$3.id : i2, a2 = e3.value, d = void 0 === a2 ? Y$3.value : a2, l2 = e3.valueFormat, s = e3.sortByValue, c2 = void 0 === s ? Y$3.sortByValue : s, u2 = e3.layers, L2 = void 0 === u2 ? Y$3.layers : u2, h = e3.startAngle, b2 = void 0 === h ? Y$3.startAngle : h, A2 = e3.endAngle, p2 = void 0 === A2 ? Y$3.endAngle : A2, k2 = e3.padAngle, m2 = void 0 === k2 ? Y$3.padAngle : k2, O2 = e3.fit, C2 = void 0 === O2 ? Y$3.fit : O2, x2 = e3.innerRadius, w2 = void 0 === x2 ? Y$3.innerRadius : x2, M2 = e3.cornerRadius, y2 = void 0 === M2 ? Y$3.cornerRadius : M2, S2 = e3.activeInnerRadiusOffset, T2 = void 0 === S2 ? Y$3.activeInnerRadiusOffset : S2, D2 = e3.activeOuterRadiusOffset, V2 = void 0 === D2 ? Y$3.activeOuterRadiusOffset : D2, B2 = e3.width, G2 = e3.height, E2 = e3.margin, F2 = e3.colors, H2 = void 0 === F2 ? Y$3.colors : F2, j2 = e3.borderWidth, q2 = void 0 === j2 ? Y$3.borderWidth : j2, z2 = e3.borderColor, J2 = void 0 === z2 ? Y$3.borderColor : z2, U2 = e3.enableArcLabels, Z2 = void 0 === U2 ? Y$3.enableArcLabels : U2, $2 = e3.arcLabel, _2 = void 0 === $2 ? Y$3.arcLabel : $2, ee = e3.arcLabelsSkipAngle, te2 = void 0 === ee ? Y$3.arcLabelsSkipAngle : ee, ie2 = e3.arcLabelsTextColor, ne2 = void 0 === ie2 ? Y$3.arcLabelsTextColor : ie2, ae2 = e3.arcLabelsRadiusOffset, re2 = void 0 === ae2 ? Y$3.arcLabelsRadiusOffset : ae2, oe2 = e3.arcLabelsComponent, de2 = e3.enableArcLinkLabels, le2 = void 0 === de2 ? Y$3.enableArcLinkLabels : de2, se2 = e3.arcLinkLabel, ce2 = void 0 === se2 ? Y$3.arcLinkLabel : se2, ue2 = e3.arcLinkLabelsSkipAngle, ve2 = void 0 === ue2 ? Y$3.arcLinkLabelsSkipAngle : ue2, fe2 = e3.arcLinkLabelsOffset, ge2 = void 0 === fe2 ? Y$3.arcLinkLabelsOffset : fe2, Le2 = e3.arcLinkLabelsDiagonalLength, he2 = void 0 === Le2 ? Y$3.arcLinkLabelsDiagonalLength : Le2, be2 = e3.arcLinkLabelsStraightLength, Ae = void 0 === be2 ? Y$3.arcLinkLabelsStraightLength : be2, pe2 = e3.arcLinkLabelsThickness, ke = void 0 === pe2 ? Y$3.arcLinkLabelsThickness : pe2, Ie = e3.arcLinkLabelsTextOffset, Re2 = void 0 === Ie ? Y$3.arcLinkLabelsTextOffset : Ie, me2 = e3.arcLinkLabelsTextColor, Oe = void 0 === me2 ? Y$3.arcLinkLabelsTextColor : me2, Ce2 = e3.arcLinkLabelsColor, xe = void 0 === Ce2 ? Y$3.arcLinkLabelsColor : Ce2, we = e3.arcLinkLabelComponent, Me2 = e3.defs, ye2 = void 0 === Me2 ? Y$3.defs : Me2, We2 = e3.fill, Se = void 0 === We2 ? Y$3.fill : We2, Te2 = e3.isInteractive, De2 = void 0 === Te2 ? Y$3.isInteractive : Te2, Ve2 = e3.onClick, Be2 = e3.onMouseEnter, Ge2 = e3.onMouseMove, Ee = e3.onMouseLeave, Fe = e3.tooltip, He2 = void 0 === Fe ? Y$3.tooltip : Fe, Xe2 = e3.activeId, Ye = e3.onActiveIdChange, je2 = e3.defaultActiveId, Pe2 = e3.transitionMode, qe2 = void 0 === Pe2 ? Y$3.transitionMode : Pe2, ze = e3.legends, Je2 = void 0 === ze ? Y$3.legends : ze, Ke2 = e3.forwardLegendData, Ne = e3.role, Qe2 = void 0 === Ne ? Y$3.role : Ne, Ue2 = wt$1(B2, G2, E2), Ze2 = Ue2.outerWidth, $e2 = Ue2.outerHeight, _e2 = Ue2.margin, et2 = Ue2.innerWidth, tt2 = Ue2.innerHeight, it2 = P$5({ data: t2, id: n2, value: d, valueFormat: l2, colors: H2 }), nt2 = K$1({ data: it2, width: et2, height: tt2, fit: C2, innerRadius: w2, startAngle: b2, endAngle: p2, padAngle: m2, sortByValue: c2, cornerRadius: y2, activeInnerRadiusOffset: T2, activeOuterRadiusOffset: V2, activeId: Xe2, onActiveIdChange: Ye, defaultActiveId: je2, forwardLegendData: Ke2 }), at = nt2.dataWithArc, rt2 = nt2.legendData, ot = nt2.arcGenerator, dt = nt2.centerX, lt2 = nt2.centerY, st = nt2.radius, ct = nt2.innerRadius, ut = nt2.setActiveId, vt = nt2.toggleSerie, ft = In$1(ye2, at, Se), gt = { arcs: null, arcLinkLabels: null, arcLabels: null, legends: null };
+  L2.includes("arcs") && (gt.arcs = jsx(Q$2, { center: [dt, lt2], data: at, arcGenerator: ot, borderWidth: q2, borderColor: J2, isInteractive: De2, onClick: Ve2, onMouseEnter: Be2, onMouseMove: Ge2, onMouseLeave: Ee, setActiveId: ut, tooltip: He2, transitionMode: qe2 }, "arcs")), le2 && L2.includes("arcLinkLabels") && (gt.arcLinkLabels = jsx(U$2, { center: [dt, lt2], data: at, label: ce2, skipAngle: ve2, offset: ge2, diagonalLength: he2, straightLength: Ae, strokeWidth: ke, textOffset: Re2, textColor: Oe, linkColor: xe, component: we }, "arcLinkLabels")), Z2 && L2.includes("arcLabels") && (gt.arcLabels = jsx(B$2, { center: [dt, lt2], data: at, label: _2, radiusOffset: re2, skipAngle: te2, textColor: ne2, transitionMode: qe2, component: oe2 }, "arcLabels")), Je2.length > 0 && L2.includes("legends") && (gt.legends = jsx(X$3, { width: et2, height: tt2, data: rt2, legends: Je2, toggleSerie: vt }, "legends"));
+  var Lt = N$3({ dataWithArc: at, arcGenerator: ot, centerX: dt, centerY: lt2, radius: st, innerRadius: ct });
+  return jsx(gn$2, { width: Ze2, height: $e2, margin: _e2, defs: ft, role: Qe2, children: L2.map(function(e4, t3) {
+    return void 0 !== gt[e4] ? gt[e4] : "function" == typeof e4 ? jsx(Fragment$1, { children: createElement(e4, Lt) }, t3) : null;
+  }) });
+}, $$2 = function(e3) {
+  var t2 = e3.isInteractive, i2 = void 0 === t2 ? Y$3.isInteractive : t2, n2 = e3.animate, a2 = void 0 === n2 ? Y$3.animate : n2, r2 = e3.motionConfig, o2 = void 0 === r2 ? Y$3.motionConfig : r2, d = e3.theme, l2 = e3.renderWrapper, s = F$1(e3, U$1);
+  return jsx(St$1, { animate: a2, isInteractive: i2, motionConfig: o2, renderWrapper: l2, theme: d, children: jsx(Z$1, E$4({ isInteractive: i2 }, s)) });
+}, _$2 = function(e3) {
+  return jsx(It$1, { children: function(t2) {
+    var i2 = t2.width, n2 = t2.height;
+    return jsx($$2, E$4({ width: i2, height: n2 }, e3));
+  } });
+};
+const formatPricePDF = (price) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(price);
+};
+const styles = StyleSheet.create({
+  section: {
+    margin: 10,
+    padding: 10
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 0,
+    textAlign: "center",
+    color: "#333",
+    borderBottomStyle: "solid",
+    borderBottomWidth: 1,
+    borderBottomColor: "#bfbfbf"
+  },
+  subHeader: {
+    fontSize: 18,
+    color: "#666"
+  },
+  table: {
+    display: "flex",
+    width: "100%",
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderColor: "#bfbfbf",
+    marginBottom: 10
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#bfbfbf",
+    alignItems: "center"
+  },
+  tableHeader: {
+    backgroundColor: "#f0f0f0"
+  },
+  tableCell: {
+    padding: 5,
+    fontSize: 10,
+    borderRightWidth: 1,
+    borderRightColor: "#bfbfbf",
+    borderRightStyle: "solid"
+  },
+  metric: {
+    fontSize: 12,
+    marginBottom: 5
+  },
+  row: {
+    flexDirection: "row"
+  },
+  headerText: {
+    fontSize: 12,
+    fontWeight: "bold"
+  },
+  cell: {
+    padding: 5,
+    fontSize: 10,
+    borderRightWidth: 1,
+    borderRightColor: "#bfbfbf",
+    borderRightStyle: "solid"
+  },
+  footerText: {
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 10
+  },
+  footerLine: {
+    width: "100%",
+    marginLeft: 50,
+    marginRight: 50
+  },
+  headerLine: {
+    width: "100%",
+    marginBottom: 5
+  }
+});
+const HeaderSection = ({
+  userName,
+  date: date2
+}) => /* @__PURE__ */ jsxs(View, { style: styles.section, children: [
+  /* @__PURE__ */ jsx(Text, { style: [styles.header, styles.headerLine], children: "Chrono - Portfolio Performance Report" }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.subHeader, children: [
+    "Generated for: ",
+    userName
+  ] }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.metric, children: [
+    "Date: ",
+    new Date(date2).toLocaleDateString()
+  ] }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.metric, children: [
+    "Time:",
+    " ",
+    new Date(date2).toLocaleTimeString("en-US", {
+      timeZone: "America/New_York"
+    }),
+    " ",
+    new Date(date2).toLocaleTimeString("en-US", {
+      timeZone: "America/New_York",
+      timeZoneName: "short"
+    }).split(" ")[2]
+  ] })
+] });
+const SummarySection = ({
+  summary
+}) => /* @__PURE__ */ jsxs(View, { style: styles.section, children: [
+  /* @__PURE__ */ jsx(Text, { style: styles.subHeader, children: "Portfolio Summary" }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.metric, children: [
+    "Total Value: ",
+    formatPricePDF(summary.totalValue)
+  ] }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.metric, children: [
+    "Total Gain/Loss: ",
+    formatPricePDF(summary.totalGainLoss)
+  ] }),
+  /* @__PURE__ */ jsxs(Text, { style: styles.metric, children: [
+    "Overall Return: ",
+    Number(summary.totalGainLossPercentage).toFixed(2),
+    "%"
+  ] })
+] });
+const HoldingsSection = ({ holdings }) => /* @__PURE__ */ jsxs(View, { style: styles.section, children: [
+  /* @__PURE__ */ jsx(Text, { style: styles.subHeader, children: "Holdings Details" }),
+  /* @__PURE__ */ jsxs(View, { style: styles.table, children: [
+    /* @__PURE__ */ jsxs(View, { style: [styles.row, styles.header], children: [
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "15%" }], children: "Symbol" }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "25%" }], children: "Name" }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "15%" }], children: "Shares" }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "15%" }], children: "Avg Cost" }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "15%" }], children: "Price" }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.headerText, styles.cell, { width: "15%" }], children: "Value" })
+    ] }),
+    holdings.map((holding, index) => /* @__PURE__ */ jsxs(View, { style: [styles.row], children: [
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "15%" }], children: holding.symbol }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "25%" }], children: holding.name }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "15%" }], children: Number(holding.shares).toFixed(4) }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "15%" }], children: formatPricePDF(holding.averageCost) }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "15%" }], children: formatPricePDF(holding.currentPrice) }),
+      /* @__PURE__ */ jsx(Text, { style: [styles.cell, { width: "15%" }], children: formatPricePDF(holding.totalValue) })
+    ] }, index))
+  ] })
+] });
+const chartData = [
+  {
+    id: "SPY",
+    label: "SPY",
+    value: 45,
+    color: "hsl(207, 70%, 50%)"
+  },
+  {
+    id: "VOO",
+    label: "VOO",
+    value: 30,
+    color: "hsl(180, 70%, 50%)"
+  },
+  {
+    id: "QQQ",
+    label: "QQQ",
+    value: 25,
+    color: "hsl(54, 70%, 50%)"
+  }
+];
+const ChartSection = () => /* @__PURE__ */ jsx(ReactPDFChart, { style: { width: "400px", height: "400px" }, children: /* @__PURE__ */ jsx(
+  _$2,
+  {
+    data: chartData,
+    margin: { top: 40, right: 80, bottom: 80, left: 80 },
+    innerRadius: 0.5,
+    padAngle: 0.7,
+    cornerRadius: 3,
+    activeOuterRadiusOffset: 8,
+    borderWidth: 1,
+    borderColor: {
+      from: "color",
+      modifiers: [["darker", 0.2]]
+    },
+    arcLinkLabelsSkipAngle: 10,
+    arcLinkLabelsTextColor: "#333333",
+    arcLinkLabelsThickness: 2,
+    arcLinkLabelsColor: { from: "color" },
+    arcLabelsSkipAngle: 10,
+    arcLabelsTextColor: {
+      from: "color",
+      modifiers: [["darker", 2]]
+    },
+    legends: [
+      {
+        anchor: "bottom",
+        direction: "row",
+        justify: false,
+        translateX: 0,
+        translateY: 56,
+        itemsSpacing: 0,
+        itemWidth: 100,
+        itemHeight: 18,
+        itemTextColor: "#999",
+        itemDirection: "left-to-right",
+        itemOpacity: 1,
+        symbolSize: 18,
+        symbolShape: "circle"
+      }
+    ]
+  }
+) });
+const FooterSection = () => /* @__PURE__ */ jsxs(View, { style: styles.section, children: [
+  /* @__PURE__ */ jsx(View, { style: { alignItems: "center" }, children: /* @__PURE__ */ jsx(Svg, { width: "1000", height: "2", style: styles.footerLine, children: /* @__PURE__ */ jsx(
+    Line,
+    {
+      x1: "0",
+      y1: "0",
+      x2: "1000",
+      y2: "0",
+      strokeWidth: 1,
+      stroke: "rgb(0,0,0)"
+    }
+  ) }) }),
+  /* @__PURE__ */ jsx(Text, { style: styles.footerText, children: "This document is confidential and intended solely for the use of the individual or entity to whom it is addressed. Past performance does not guarantee future results. All investment values and calculations are approximations and may not reflect real-time market conditions. For official financial advice, please consult with a qualified financial advisor." })
+] });
+const PortfolioReport = ({ data }) => {
+  return /* @__PURE__ */ jsx(Document, { children: /* @__PURE__ */ jsxs(Page, { size: "LETTER", children: [
+    /* @__PURE__ */ jsx(HeaderSection, { userName: data.userName, date: data.reportDate }),
+    /* @__PURE__ */ jsx(SummarySection, { summary: data.portfolioSummary }),
+    /* @__PURE__ */ jsx(HoldingsSection, { holdings: data.holdings }),
+    /* @__PURE__ */ jsx(ChartSection, {}),
+    /* @__PURE__ */ jsx(FooterSection, {})
+  ] }) });
+};
+const loader$5 = async (args) => {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return json({ message: "Unauthorized" }, { status: 401 });
+  }
+  const [holdings, summary] = await Promise.all([
+    getPortfolioHoldings(userId),
+    getPortfolioSummary(userId)
+  ]);
+  return json({ holdings, summary, userId });
+};
+function Portfolio() {
+  const chartData2 = [
+    {
+      id: "stylus",
+      label: "stylus",
+      value: 32,
+      color: "hsl(278, 70%, 50%)"
+    },
+    {
+      id: "make",
+      label: "make",
+      value: 546,
+      color: "hsl(169, 70%, 50%)"
+    },
+    {
+      id: "hack",
+      label: "hack",
+      value: 347,
+      color: "hsl(170, 70%, 50%)"
+    },
+    {
+      id: "python",
+      label: "python",
+      value: 86,
+      color: "hsl(33, 70%, 50%)"
+    },
+    {
+      id: "css",
+      label: "css",
+      value: 143,
+      color: "hsl(81, 70%, 50%)"
+    }
+  ];
+  const { holdings, summary, userId } = useLoaderData();
+  const handleDownloadReport = async () => {
+    try {
+      const response = await fetch(`/api/report/${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch report data");
+      }
+      const reportData = await response.json();
+      const doc = /* @__PURE__ */ jsx(PortfolioReport, { data: reportData });
+      const blob = await pdf(doc).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `portfolio-report-${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
+  };
+  if (holdings.length === 0) {
+    return /* @__PURE__ */ jsx("div", { className: "flex flex-col items-center justify-center h-[80vh] space-y-4", children: /* @__PURE__ */ jsxs(Card, { className: "w-[450px]", children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsx(CardTitle, { children: "Welcome to Your Portfolio" }),
+        /* @__PURE__ */ jsx(CardDescription, { children: "You haven't purchased any ETF shares yet. Start building your investment portfolio today!" })
+      ] }),
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx(Button, { asChild: true, className: "w-full", children: /* @__PURE__ */ jsx(Link, { to: "/overview", children: "Browse ETFs" }) }) })
+    ] }) });
+  }
+  return /* @__PURE__ */ jsxs("div", { className: "container mx-auto py-6 space-y-8", children: [
+    /* @__PURE__ */ jsxs("div", { className: "grid gap-4 md:grid-cols-3", children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Total Portfolio Value" }),
+          /* @__PURE__ */ jsx(LineChart, { className: "h-4 w-4 text-muted-foreground" })
+        ] }),
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
+          "$",
+          formatPrice(summary.total_portfolio_value)
+        ] }) })
+      ] }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Total Gain/Loss" }),
+          summary.total_gain_loss >= 0 ? /* @__PURE__ */ jsx(ArrowUpRight, { className: "h-4 w-4 text-green-500" }) : /* @__PURE__ */ jsx(ArrowDownRight, { className: "h-4 w-4 text-red-500" })
+        ] }),
+        /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsxs(
+            "div",
+            {
+              className: `text-2xl font-bold ${summary.total_gain_loss >= 0 ? "text-green-500" : "text-red-500"}`,
+              children: [
+                "$",
+                formatPrice(summary.total_gain_loss)
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs(
+            "p",
+            {
+              className: `text-xs ${summary.total_gain_loss_percentage >= 0 ? "text-green-500" : "text-red-500"}`,
+              children: [
+                Number(summary.total_gain_loss_percentage).toFixed(2),
+                "%"
+              ]
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Holdings" }),
+          /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
+        ] }),
+        /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: holdings.length }),
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: "Different ETFs" })
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx(CardTitle, { children: "Your Holdings" }),
+          /* @__PURE__ */ jsx(CardDescription, { children: "A detailed view of your ETF investments" })
+        ] }),
+        /* @__PURE__ */ jsxs(
+          Button,
+          {
+            onClick: handleDownloadReport,
+            variant: "outline",
+            className: "flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx(FileDown, { className: "h-4 w-4" }),
+              "Download Report"
+            ]
+          }
+        )
+      ] }) }),
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs(Table, { children: [
+        /* @__PURE__ */ jsx(TableHeader, { children: /* @__PURE__ */ jsxs(TableRow, { children: [
+          /* @__PURE__ */ jsx(TableHead, { children: "Symbol" }),
+          /* @__PURE__ */ jsx(TableHead, { children: "Name" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Shares" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Avg Cost" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Current Price" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Total Value" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Gain/Loss" }),
+          /* @__PURE__ */ jsx(TableHead, { className: "text-right", children: "Return" })
+        ] }) }),
+        /* @__PURE__ */ jsx(TableBody, { children: holdings.map((holding) => /* @__PURE__ */ jsxs(TableRow, { children: [
+          /* @__PURE__ */ jsx(TableCell, { className: "font-medium", children: /* @__PURE__ */ jsx(
+            Link,
+            {
+              to: `/etf?ticker=${holding.ticker}`,
+              className: "hover:underline",
+              children: holding.ticker
+            }
+          ) }),
+          /* @__PURE__ */ jsx(TableCell, { children: holding.name }),
+          /* @__PURE__ */ jsx(TableCell, { className: "text-right", children: Number(holding.total_shares).toFixed(4) }),
+          /* @__PURE__ */ jsx(TableCell, { className: "text-right", children: formatPrice(holding.average_cost) }),
+          /* @__PURE__ */ jsx(TableCell, { className: "text-right", children: formatPrice(holding.current_price) }),
+          /* @__PURE__ */ jsxs(TableCell, { className: "text-right", children: [
+            "$",
+            formatPrice(holding.total_value)
+          ] }),
+          /* @__PURE__ */ jsxs(
+            TableCell,
+            {
+              className: `text-right ${holding.total_gain_loss >= 0 ? "text-green-500" : "text-red-500"}`,
+              children: [
+                "$",
+                formatPrice(holding.total_gain_loss)
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs(
+            TableCell,
+            {
+              className: `text-right ${Number(holding.gain_loss_percentage) >= 0 ? "text-green-500" : "text-red-500"}`,
+              children: [
+                Number(holding.gain_loss_percentage).toFixed(2),
+                "%"
+              ]
+            }
+          )
+        ] }, holding.ticker)) })
+      ] }) })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "h-[300px] w-[300px]", children: /* @__PURE__ */ jsx(
+      _$2,
+      {
+        data: chartData2,
+        margin: { top: 40, right: 80, bottom: 80, left: 80 },
+        innerRadius: 0.5,
+        padAngle: 0.7,
+        cornerRadius: 3,
+        activeOuterRadiusOffset: 8,
+        borderWidth: 1,
+        borderColor: {
+          from: "color",
+          modifiers: [["darker", 0.2]]
+        },
+        arcLinkLabelsSkipAngle: 10,
+        arcLinkLabelsTextColor: "#333333",
+        arcLinkLabelsThickness: 2,
+        arcLinkLabelsColor: { from: "color" },
+        arcLabelsSkipAngle: 10,
+        arcLabelsTextColor: {
+          from: "color",
+          modifiers: [["darker", 2]]
+        },
+        defs: [
+          {
+            id: "dots",
+            type: "patternDots",
+            background: "inherit",
+            color: "rgba(255, 255, 255, 0.3)",
+            size: 4,
+            padding: 1,
+            stagger: true
+          },
+          {
+            id: "lines",
+            type: "patternLines",
+            background: "inherit",
+            color: "rgba(255, 255, 255, 0.3)",
+            rotation: -45,
+            lineWidth: 6,
+            spacing: 10
+          }
+        ],
+        fill: [
+          {
+            match: {
+              id: "ruby"
+            },
+            id: "dots"
+          },
+          {
+            match: {
+              id: "c"
+            },
+            id: "dots"
+          },
+          {
+            match: {
+              id: "go"
+            },
+            id: "dots"
+          },
+          {
+            match: {
+              id: "python"
+            },
+            id: "dots"
+          },
+          {
+            match: {
+              id: "scala"
+            },
+            id: "lines"
+          },
+          {
+            match: {
+              id: "lisp"
+            },
+            id: "lines"
+          },
+          {
+            match: {
+              id: "elixir"
+            },
+            id: "lines"
+          },
+          {
+            match: {
+              id: "javascript"
+            },
+            id: "lines"
+          }
+        ],
+        legends: [
+          {
+            anchor: "bottom",
+            direction: "row",
+            justify: false,
+            translateX: 0,
+            translateY: 56,
+            itemsSpacing: 0,
+            itemWidth: 100,
+            itemHeight: 18,
+            itemTextColor: "#999",
+            itemDirection: "left-to-right",
+            itemOpacity: 1,
+            symbolSize: 18,
+            symbolShape: "circle",
+            effects: [
+              {
+                on: "hover",
+                style: {
+                  itemTextColor: "#000"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ) })
+  ] });
+}
+const route5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Portfolio,
+  loader: loader$5
+}, Symbol.toStringTag, { value: "Module" }));
+function SignInPage() {
+  return /* @__PURE__ */ jsx("div", { className: "flex justify-center py-8", children: /* @__PURE__ */ jsx(SignIn, {}) });
+}
+const route6 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: SignInPage
+}, Symbol.toStringTag, { value: "Module" }));
+function SignUpPage() {
+  return /* @__PURE__ */ jsx("div", { className: "flex justify-center py-8", children: /* @__PURE__ */ jsx(SignUp, {}) });
+}
+const route7 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: SignUpPage
+}, Symbol.toStringTag, { value: "Module" }));
+const TIMEFRAMES = {
+  "1D": {
+    multiplier: 5,
+    timespan: "minute",
+    fromDate: (date2) => {
+      const adjustedDate = adjustForWeekend(date2);
+      const yesterday = new Date(adjustedDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return formatDate(yesterday);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  "1W": {
+    multiplier: 1,
+    timespan: "hour",
+    fromDate: (date2) => {
+      const weekAgo = new Date(date2);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return formatDate(weekAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  "1M": {
+    multiplier: 6,
+    timespan: "hour",
+    fromDate: (date2) => {
+      const monthAgo = new Date(date2);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return formatDate(monthAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  },
+  // Disabled due to API limitations
+  // "3M": {
+  //   multiplier: 1,
+  //   timespan: "day",
+  //   fromDate: (date: Date) => {
+  //     const threeMonthsAgo = new Date(date);
+  //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  //     return formatDate(threeMonthsAgo);
+  //   },
+  //   toDate: (date: Date) => formatDate(date),
+  // },
+  YTD: {
+    multiplier: 1,
+    timespan: "day",
+    fromDate: (date2) => `${date2.getFullYear()}-01-01`,
+    toDate: (date2) => formatDate(date2)
+  },
+  "1Y": {
+    multiplier: 1,
+    timespan: "day",
+    fromDate: (date2) => {
+      const yearAgo = new Date(date2);
+      yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+      return formatDate(yearAgo);
+    },
+    toDate: (date2) => formatDate(date2)
+  }
+  // Disabled due to API limitations
+  // "2Y": {
+  //   multiplier: 1,
+  //   timespan: "week",
+  //   fromDate: (date: Date) => {
+  //     const fiveYearsAgo = new Date(date);
+  //     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 2);
+  //     return formatDate(fiveYearsAgo);
+  //   },
+  //   toDate: (date: Date) => formatDate(date),
+  // },
+};
+function formatDate(date2) {
+  return date2.toISOString().split("T")[0];
+}
+function adjustForWeekend(date2) {
+  const estDate = new Date(
+    date2.toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
+  const day2 = estDate.getDay();
+  const hours = estDate.getHours();
+  const minutes = estDate.getMinutes();
+  if (day2 === 1 && (hours < 9 || hours === 9 && minutes < 30)) {
+    estDate.setDate(estDate.getDate() - 2);
+  } else if (day2 === 0) {
+    estDate.setDate(estDate.getDate() - 2);
+  } else if (day2 === 6) {
+    estDate.setDate(estDate.getDate() - 1);
+  }
+  return estDate;
+}
+function getTimeframeConfig(timeframe) {
+  const config2 = TIMEFRAMES[timeframe];
+  const currentDate = /* @__PURE__ */ new Date();
+  return {
+    multiplier: config2.multiplier,
+    timespan: config2.timespan,
+    fromDate: config2.fromDate(currentDate),
+    toDate: config2.toDate(currentDate)
+  };
+}
+async function fetchChartData(ticker2, apiKey, timeframe = "1D") {
+  const config2 = getTimeframeConfig(timeframe);
+  const url = new URL(
+    `https://api.polygon.io/v2/aggs/ticker/${ticker2}/range/${config2.multiplier}/${config2.timespan}/${config2.fromDate}/${config2.toDate}`
+  );
+  url.searchParams.append("adjusted", "false");
+  url.searchParams.append("sort", "asc");
+  url.searchParams.append("apiKey", apiKey);
+  if (timeframe === "1M") {
+    url.searchParams.append("limit", "50000");
+  }
+  const response = await fetch(url.toString());
+  return response.json();
+}
+async function getETFByTicker(ticker2) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT etf_cache_price.*, etf_info.name 
+      FROM etf_cache_price 
+      INNER JOIN etf_info on etf_cache_price.ticker = etf_info.ticker 
+      WHERE etf_cache_price.ticker = $1`,
+      [ticker2]
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+async function getCachedETFData(ticker2, timeframe = "1W") {
+  var _a;
+  const client = await pool.connect();
+  try {
+    const priceResult = await client.query(
+      `SELECT etf_cache_price.*, etf_info.name 
+      FROM etf_cache_price 
+      INNER JOIN etf_info on etf_cache_price.ticker = etf_info.ticker 
+      WHERE etf_cache_price.ticker = $1`,
+      [ticker2]
+    );
+    const chartResult = await client.query(
+      `SELECT chart_data 
+      FROM etf_cache_chart 
+      WHERE ticker = $1 AND timeframe = $2`,
+      [ticker2, timeframe]
+    );
+    if (priceResult.rows[0]) {
+      console.log(`Data for ${ticker2} retrieved from cache: ${timeframe}`);
+    } else {
+      console.log(`No cached data found for ${ticker2}`);
+    }
+    return {
+      ...priceResult.rows[0],
+      chart_data: ((_a = chartResult.rows[0]) == null ? void 0 : _a.chart_data) || null
+    };
+  } finally {
+    client.release();
+  }
+}
+function getStalenessThreshold(timeframe) {
+  const config2 = TIMEFRAMES[timeframe];
+  switch (config2.timespan) {
+    case "minute":
+      return config2.multiplier * 60 * 1e3;
+    case "hour":
+      return config2.multiplier * 60 * 60 * 1e3;
+    case "day":
+      return config2.multiplier * 24 * 60 * 60 * 1e3;
+    default:
+      return 5 * 60 * 1e3;
+  }
+}
+async function isCacheStale(ticker2, timeframe = "1W") {
+  const client = await pool.connect();
+  try {
+    const priceResult = await client.query(
+      "SELECT last_updated FROM etf_cache_price WHERE ticker = $1",
+      [ticker2]
+    );
+    const chartResult = await client.query(
+      "SELECT last_updated FROM etf_cache_chart WHERE ticker = $1 AND timeframe = $2",
+      [ticker2, timeframe]
+    );
+    if (priceResult.rows.length === 0 || chartResult.rows.length === 0)
+      return true;
+    const priceLastUpdated = new Date(priceResult.rows[0].last_updated);
+    const chartLastUpdated = new Date(chartResult.rows[0].last_updated);
+    const threshold = getStalenessThreshold(timeframe);
+    const thresholdDate = new Date(Date.now() - threshold);
+    return priceLastUpdated < thresholdDate || chartLastUpdated < thresholdDate;
+  } finally {
+    client.release();
+  }
+}
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+);
+const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  LabelPrimitive.Root,
+  {
+    ref,
+    className: cn$4(labelVariants(), className),
+    ...props
+  }
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+const Form = FormProvider;
+const FormFieldContext = React.createContext(
+  {}
+);
+const FormField = ({
+  ...props
+}) => {
+  return /* @__PURE__ */ jsx(FormFieldContext.Provider, { value: { name: props.name }, children: /* @__PURE__ */ jsx(Controller, { ...props }) });
+};
+const useFormField = () => {
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
+  const { getFieldState, formState } = useFormContext();
+  const fieldState = getFieldState(fieldContext.name, formState);
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>");
+  }
+  const { id } = itemContext;
+  return {
+    id,
+    name: fieldContext.name,
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState
+  };
+};
+const FormItemContext = React.createContext(
+  {}
+);
+const FormItem = React.forwardRef(({ className, ...props }, ref) => {
+  const id = React.useId();
+  return /* @__PURE__ */ jsx(FormItemContext.Provider, { value: { id }, children: /* @__PURE__ */ jsx("div", { ref, className: cn$4("space-y-2", className), ...props }) });
+});
+FormItem.displayName = "FormItem";
+const FormLabel = React.forwardRef(({ className, ...props }, ref) => {
+  const { error, formItemId } = useFormField();
+  return /* @__PURE__ */ jsx(
+    Label,
+    {
+      ref,
+      className: cn$4(error && "text-red-500 dark:text-red-900", className),
+      htmlFor: formItemId,
+      ...props
+    }
+  );
+});
+FormLabel.displayName = "FormLabel";
+const FormControl = React.forwardRef(({ ...props }, ref) => {
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+  return /* @__PURE__ */ jsx(
+    Slot,
+    {
+      ref,
+      id: formItemId,
+      "aria-describedby": !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`,
+      "aria-invalid": !!error,
+      ...props
+    }
+  );
+});
+FormControl.displayName = "FormControl";
+const FormDescription = React.forwardRef(({ className, ...props }, ref) => {
+  const { formDescriptionId } = useFormField();
+  return /* @__PURE__ */ jsx(
+    "p",
+    {
+      ref,
+      id: formDescriptionId,
+      className: cn$4("text-[0.8rem] text-neutral-500 dark:text-neutral-400", className),
+      ...props
+    }
+  );
+});
+FormDescription.displayName = "FormDescription";
+const FormMessage = React.forwardRef(({ className, children, ...props }, ref) => {
+  const { error, formMessageId } = useFormField();
+  const body = error ? String(error == null ? void 0 : error.message) : children;
+  if (!body) {
+    return null;
+  }
+  return /* @__PURE__ */ jsx(
+    "p",
+    {
+      ref,
+      id: formMessageId,
+      className: cn$4("text-[0.8rem] font-medium text-red-500 dark:text-red-900", className),
+      ...props,
+      children: body
+    }
+  );
+});
+FormMessage.displayName = "FormMessage";
+function v$3() {
+  return v$3 = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var i2 = 1; i2 < arguments.length; i2++) {
+      var o2 = arguments[i2];
+      for (var n2 in o2) Object.prototype.hasOwnProperty.call(o2, n2) && (t2[n2] = o2[n2]);
+    }
+    return t2;
+  }, v$3.apply(this, arguments);
+}
+var x$3 = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m$3 = function(t2, i2) {
+  return "translate(" + t2 + "px, " + i2 + "px)";
+}, b$4 = memo(function(t2) {
+  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt(), d = Ur(), y2 = d.animate, f2 = d.config, b2 = kt(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
+  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m$3(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
+  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v$3({}, x$3, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m$3(j2, N2), opacity: O2.transform ? 1 : 0 });
+  return jsx(animated.div, { ref: g2, style: V2, children: e3 });
+});
+b$4.displayName = "TooltipWrapper";
+var g$2 = memo(function(t2) {
+  var i2 = t2.size, o2 = void 0 === i2 ? 12 : i2, n2 = t2.color, r2 = t2.style;
+  return jsx("span", { style: v$3({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
+});
+memo(function(t2) {
+  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt(), u2 = Ot(r2);
+  if ("function" == typeof c2) i2 = c2();
+  else {
+    var f2 = n2;
+    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g$2, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
+  }
+  return jsx("div", { style: h.tooltip.container, children: i2 });
+});
+var T$4 = { width: "100%", borderCollapse: "collapse" }, C$4 = memo(function(t2) {
+  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt();
+  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v$3({}, T$4, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
+    return jsx("tr", { children: t3.map(function(t4, i4) {
+      return jsx("td", { style: l2.tooltip.tableCell, children: t4 }, i4);
+    }) }, i3);
+  }) }) })] }), jsx("div", { style: l2.tooltip.container, children: i2 })) : null;
+});
+C$4.displayName = "TableTooltip";
+var E$3 = memo(function(t2) {
+  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt(), u2 = Ur(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
+    return v$3({}, l2.crosshair.line, { pointerEvents: "none" });
+  }, [l2.crosshair.line]), x2 = useSpring({ x1: i2, x2: n2, y1: r2, y2: e3, config: y2, immediate: !d });
+  return jsx(animated.line, v$3({}, x2, { fill: "none", style: f2 }));
+});
+E$3.displayName = "CrosshairLine";
+var P$4 = memo(function(t2) {
+  var i2, o2, n2 = t2.width, r2 = t2.height, e3 = t2.type, l2 = t2.x, a2 = t2.y;
+  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$3, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$3, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
+});
+P$4.displayName = "Crosshair";
+var j$3 = createContext({ showTooltipAt: function() {
+}, showTooltipFromEvent: function() {
+}, hideTooltip: function() {
+} }), N$2 = { isVisible: false, position: [null, null], content: null, anchor: null }, O$2 = createContext(N$2), V = function(t2) {
+  var i2 = useState(N$2), n2 = i2[0], l2 = i2[1], a2 = useCallback(function(t3, i3, o2) {
+    var n3 = i3[0], r2 = i3[1];
+    void 0 === o2 && (o2 = "top"), l2({ isVisible: true, position: [n3, r2], anchor: o2, content: t3 });
+  }, [l2]), c2 = useCallback(function(i3, o2, n3) {
+    void 0 === n3 && (n3 = "top");
+    var r2 = t2.current.getBoundingClientRect(), e3 = t2.current.offsetWidth, a3 = e3 === r2.width ? 1 : e3 / r2.width, c3 = "touches" in o2 ? o2.touches[0] : o2, s2 = c3.clientX, h = c3.clientY, u2 = (s2 - r2.left) * a3, d = (h - r2.top) * a3;
+    "left" !== n3 && "right" !== n3 || (n3 = u2 < r2.width / 2 ? "right" : "left"), l2({ isVisible: true, position: [u2, d], anchor: n3, content: i3 });
+  }, [t2, l2]), s = useCallback(function() {
+    l2(N$2);
+  }, [l2]);
+  return { actions: useMemo(function() {
+    return { showTooltipAt: a2, showTooltipFromEvent: c2, hideTooltip: s };
+  }, [a2, c2, s]), state: n2 };
+}, z$2 = function() {
+  var t2 = useContext(O$2);
+  if (void 0 === t2) throw new Error("useTooltipState must be used within a TooltipProvider");
+  return t2;
+}, A$1 = function(t2) {
+  return t2.isVisible;
+}, F = function() {
+  var t2 = z$2();
+  return A$1(t2) ? jsx(b$4, { position: t2.position, anchor: t2.anchor, children: t2.content }) : null;
+}, M = function(t2) {
+  var i2 = t2.container, o2 = t2.children, n2 = V(i2), r2 = n2.actions, e3 = n2.state;
+  return jsx(j$3.Provider, { value: r2, children: jsx(O$2.Provider, { value: e3, children: o2 }) });
+};
 var Pr = { background: "transparent", text: { fontFamily: "sans-serif", fontSize: 11, fill: "#333333", outlineWidth: 0, outlineColor: "transparent", outlineOpacity: 1 }, axis: { domain: { line: { stroke: "transparent", strokeWidth: 1 } }, ticks: { line: { stroke: "#777777", strokeWidth: 1 }, text: {} }, legend: { text: { fontSize: 12 } } }, grid: { line: { stroke: "#dddddd", strokeWidth: 1 } }, legends: { hidden: { symbol: { fill: "#333333", opacity: 0.6 }, text: { fill: "#333333", opacity: 0.6 } }, text: {}, ticks: { line: { stroke: "#777777", strokeWidth: 1 }, text: { fontSize: 10 } }, title: { text: {} } }, labels: { text: {} }, markers: { lineColor: "#000000", lineStrokeWidth: 1, text: {} }, dots: { text: {} }, tooltip: { container: { background: "white", color: "inherit", fontSize: "inherit", borderRadius: "2px", boxShadow: "0 1px 2px rgba(0, 0, 0, 0.25)", padding: "5px 9px" }, basic: { whiteSpace: "pre", display: "flex", alignItems: "center" }, chip: { marginRight: 7 }, table: {}, tableCell: { padding: "3px 5px" }, tableCellValue: { fontWeight: "bold" } }, crosshair: { line: { stroke: "#000000", strokeWidth: 1, strokeOpacity: 0.75, strokeDasharray: "6 6" } }, annotations: { text: { fontSize: 13, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, link: { stroke: "#000000", strokeWidth: 1, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, outline: { fill: "none", stroke: "#000000", strokeWidth: 2, outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 }, symbol: { fill: "#000000", outlineWidth: 2, outlineColor: "#ffffff", outlineOpacity: 1 } } };
 function jr() {
   return jr = Object.assign ? Object.assign.bind() : function(e3) {
@@ -4401,13 +7079,13 @@ function Br(e3, r2) {
 var Gr = ["axis.ticks.text", "axis.legend.text", "legends.title.text", "legends.text", "legends.ticks.text", "legends.title.text", "labels.text", "dots.text", "markers.text", "annotations.text"], Lr = function(e3, r2) {
   return jr({}, r2, e3);
 }, Ir = function(e3, r2) {
-  var t2 = m$2({}, e3, r2);
+  var t2 = m$7({}, e3, r2);
   return Gr.forEach(function(e4) {
-    v$3(t2, e4, Lr(y$1(t2, e4), t2.text));
+    v$8(t2, e4, Lr(y$2(t2, e4), t2.text));
   }), t2;
 }, Yr = createContext(), Ar = function(e3) {
   var t2 = e3.children, n2 = e3.animate, i2 = void 0 === n2 || n2, o2 = e3.config, l2 = void 0 === o2 ? "default" : o2, a2 = useMemo(function() {
-    var e4 = O$4(l2) ? config[l2] : l2;
+    var e4 = O$6(l2) ? config[l2] : l2;
     return { animate: i2, config: e4 };
   }, [i2, l2]);
   return jsx(Yr.Provider, { value: a2, children: t2 });
@@ -4422,13 +7100,13 @@ var Ur = function() {
       r2.current = e4;
     }, [e4]), r2.current;
   }(e3), d = useMemo(function() {
-    return _$3(a2, e3);
+    return _$4(a2, e3);
   }, [a2, e3]), s = useSpring({ from: { value: 0 }, to: { value: 1 }, reset: true, config: l2, immediate: !o2 }).value;
   return to(s, d);
-}, Xr = { nivo: ["#d76445", "#f47560", "#e8c1a0", "#97e3d5", "#61cdbb", "#00b0a7"], BrBG: W$4(scheme$q), PRGn: W$4(scheme$p), PiYG: W$4(scheme$o), PuOr: W$4(scheme$n), RdBu: W$4(scheme$m), RdGy: W$4(scheme$l), RdYlBu: W$4(scheme$k), RdYlGn: W$4(scheme$j), spectral: W$4(scheme$i), blues: W$4(scheme$5), greens: W$4(scheme$4), greys: W$4(scheme$3), oranges: W$4(scheme), purples: W$4(scheme$2), reds: W$4(scheme$1), BuGn: W$4(scheme$h), BuPu: W$4(scheme$g), GnBu: W$4(scheme$f), OrRd: W$4(scheme$e), PuBuGn: W$4(scheme$d), PuBu: W$4(scheme$c), PuRd: W$4(scheme$b), RdPu: W$4(scheme$a), YlGnBu: W$4(scheme$9), YlGn: W$4(scheme$8), YlOrBr: W$4(scheme$7), YlOrRd: W$4(scheme$6) }, Hr = Object.keys(Xr);
-({ nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$1, set2: a, set3: l, brown_blueGreen: W$4(scheme$q), purpleRed_green: W$4(scheme$p), pink_yellowGreen: W$4(scheme$o), purple_orange: W$4(scheme$n), red_blue: W$4(scheme$m), red_grey: W$4(scheme$l), red_yellow_blue: W$4(scheme$k), red_yellow_green: W$4(scheme$j), spectral: W$4(scheme$i), blues: W$4(scheme$5), greens: W$4(scheme$4), greys: W$4(scheme$3), oranges: W$4(scheme), purples: W$4(scheme$2), reds: W$4(scheme$1), blue_green: W$4(scheme$h), blue_purple: W$4(scheme$g), green_blue: W$4(scheme$f), orange_red: W$4(scheme$e), purple_blue_green: W$4(scheme$d), purple_blue: W$4(scheme$c), purple_red: W$4(scheme$b), red_purple: W$4(scheme$a), yellow_green_blue: W$4(scheme$9), yellow_green: W$4(scheme$8), yellow_orange_brown: W$4(scheme$7), yellow_orange_red: W$4(scheme$6) });
-c$3.oneOfType([c$3.oneOf(Hr), c$3.func, c$3.arrayOf(c$3.string)]);
-var rt = { basis: $e$1, basisClosed: er, basisOpen: rr, bundle: tr, cardinal: nr, cardinalClosed: ir, cardinalOpen: or, catmullRom: lr, catmullRomClosed: ar, catmullRomOpen: dr, linear: sr, linearClosed: ur, monotoneX, monotoneY, natural: pr$1, step: hr, stepAfter, stepBefore }, tt = Object.keys(rt);
+}, Xr = { nivo: ["#d76445", "#f47560", "#e8c1a0", "#97e3d5", "#61cdbb", "#00b0a7"], BrBG: W$5(scheme$q), PRGn: W$5(scheme$p), PiYG: W$5(scheme$o), PuOr: W$5(scheme$n), RdBu: W$5(scheme$m), RdGy: W$5(scheme$l), RdYlBu: W$5(scheme$k), RdYlGn: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), BuGn: W$5(scheme$h), BuPu: W$5(scheme$g), GnBu: W$5(scheme$f), OrRd: W$5(scheme$e), PuBuGn: W$5(scheme$d), PuBu: W$5(scheme$c), PuRd: W$5(scheme$b), RdPu: W$5(scheme$a), YlGnBu: W$5(scheme$9), YlGn: W$5(scheme$8), YlOrBr: W$5(scheme$7), YlOrRd: W$5(scheme$6) }, Nr = Object.keys(Xr);
+({ nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, brown_blueGreen: W$5(scheme$q), purpleRed_green: W$5(scheme$p), pink_yellowGreen: W$5(scheme$o), purple_orange: W$5(scheme$n), red_blue: W$5(scheme$m), red_grey: W$5(scheme$l), red_yellow_blue: W$5(scheme$k), red_yellow_green: W$5(scheme$j), spectral: W$5(scheme$i), blues: W$5(scheme$5), greens: W$5(scheme$4), greys: W$5(scheme$3), oranges: W$5(scheme), purples: W$5(scheme$2), reds: W$5(scheme$1), blue_green: W$5(scheme$h), blue_purple: W$5(scheme$g), green_blue: W$5(scheme$f), orange_red: W$5(scheme$e), purple_blue_green: W$5(scheme$d), purple_blue: W$5(scheme$c), purple_red: W$5(scheme$b), red_purple: W$5(scheme$a), yellow_green_blue: W$5(scheme$9), yellow_green: W$5(scheme$8), yellow_orange_brown: W$5(scheme$7), yellow_orange_red: W$5(scheme$6) });
+c$3.oneOfType([c$3.oneOf(Nr), c$3.func, c$3.arrayOf(c$3.string)]);
+var rt = { basis: $e$3, basisClosed: er, basisOpen: rr, bundle: tr, cardinal: nr, cardinalClosed: ir, cardinalOpen: or, catmullRom: lr, catmullRomClosed: ar, catmullRomOpen: dr, linear: sr, linearClosed: ur, monotoneX, monotoneY, natural: pr$2, step: hr, stepAfter, stepBefore }, tt = Object.keys(rt);
 tt.filter(function(e3) {
   return e3.endsWith("Closed");
 });
@@ -4489,8 +7167,8 @@ var jt = { position: "relative" }, St = function(e3) {
   var r2 = e3.children, t2 = e3.theme, i2 = e3.renderWrapper, o2 = void 0 === i2 || i2, l2 = e3.isInteractive, a2 = void 0 === l2 || l2, d = e3.animate, s = e3.motionConfig, u2 = useRef(null);
   return jsx(Wt, { theme: t2, children: jsx(Ar, { animate: d, config: s, children: jsx(M, { container: u2, children: jsxs(Pt, { condition: o2, wrapper: jsx("div", { style: jt, ref: u2 }), children: [r2, a2 && jsx(F, {})] }) }) }) });
 };
-St.propTypes = { children: c$3.element.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object, animate: c$3.bool, motionConfig: c$3.string };
-({ children: c$3.func.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object.isRequired, animate: c$3.bool.isRequired, motionConfig: c$3.string });
+St.propTypes = { children: c$3.element.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object, animate: c$3.bool, motionConfig: c$3.oneOfType([c$3.string, Er.motionConfig]) };
+({ children: c$3.func.isRequired, isInteractive: c$3.bool, renderWrapper: c$3.bool, theme: c$3.object.isRequired, animate: c$3.bool.isRequired, motionConfig: c$3.oneOfType([c$3.string, Er.motionConfig]) });
 var It = function(e3) {
   var r2 = e3.children, t2 = kt(), n2 = t2[0], i2 = t2[1], o2 = i2.width > 0 && i2.height > 0;
   return jsx("div", { ref: n2, style: { width: "100%", height: "100%" }, children: o2 && r2({ width: i2.width, height: i2.height }) });
@@ -4509,13 +7187,13 @@ var Et = { linearGradient: Dt }, Ut = { color: "#000000", background: "#ffffff",
   return true === c2 && (f2 = 2 * a2 + 2 * s), jsxs("pattern", { id: r2, width: f2, height: f2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: f2, height: f2, fill: n2 }), jsx("circle", { cx: h + p2, cy: h + p2, r: p2, fill: o2 }), c2 && jsx("circle", { cx: 1.5 * s + a2 + p2, cy: 1.5 * s + a2 + p2, r: p2, fill: o2 })] });
 });
 Ft.displayName = "PatternDots", Ft.propTypes = { id: c$3.string.isRequired, color: c$3.string.isRequired, background: c$3.string.isRequired, size: c$3.number.isRequired, padding: c$3.number.isRequired, stagger: c$3.bool.isRequired };
-var Kt = function(e3) {
+var Ht = function(e3) {
   return e3 * Math.PI / 180;
 }, rn$1 = { svg: { align: { left: "start", center: "middle", right: "end", start: "start", middle: "middle", end: "end" }, baseline: { top: "text-before-edge", center: "central", bottom: "alphabetic" } }, canvas: { align: { left: "left", center: "center", right: "right", start: "left", middle: "center", end: "right" }, baseline: { top: "top", center: "middle", bottom: "bottom" } } }, nn$1 = { spacing: 5, rotation: 0, background: "#000000", color: "#ffffff", lineWidth: 2 }, on$1 = memo(function(e3) {
   var r2 = e3.id, t2 = e3.spacing, n2 = void 0 === t2 ? nn$1.spacing : t2, i2 = e3.rotation, o2 = void 0 === i2 ? nn$1.rotation : i2, l2 = e3.background, a2 = void 0 === l2 ? nn$1.background : l2, d = e3.color, s = void 0 === d ? nn$1.color : d, u2 = e3.lineWidth, c2 = void 0 === u2 ? nn$1.lineWidth : u2, f2 = Math.round(o2) % 360, p2 = Math.abs(n2);
   f2 > 180 ? f2 -= 360 : f2 > 90 ? f2 -= 180 : f2 < -180 ? f2 += 360 : f2 < -90 && (f2 += 180);
   var h, g2 = p2, b2 = p2;
-  return 0 === f2 ? h = "\n                M 0 0 L " + g2 + " 0\n                M 0 " + b2 + " L " + g2 + " " + b2 + "\n            " : 90 === f2 ? h = "\n                M 0 0 L 0 " + b2 + "\n                M " + g2 + " 0 L " + g2 + " " + b2 + "\n            " : (g2 = Math.abs(p2 / Math.sin(Kt(f2))), b2 = p2 / Math.sin(Kt(90 - f2)), h = f2 > 0 ? "\n                    M 0 " + -b2 + " L " + 2 * g2 + " " + b2 + "\n                    M " + -g2 + " " + -b2 + " L " + g2 + " " + b2 + "\n                    M " + -g2 + " 0 L " + g2 + " " + 2 * b2 + "\n                " : "\n                    M " + -g2 + " " + b2 + " L " + g2 + " " + -b2 + "\n                    M " + -g2 + " " + 2 * b2 + " L " + 2 * g2 + " " + -b2 + "\n                    M 0 " + 2 * b2 + " L " + 2 * g2 + " 0\n                "), jsxs("pattern", { id: r2, width: g2, height: b2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: g2, height: b2, fill: a2, stroke: "rgba(255, 0, 0, 0.1)", strokeWidth: 0 }), jsx("path", { d: h, strokeWidth: c2, stroke: s, strokeLinecap: "square" })] });
+  return 0 === f2 ? h = "\n                M 0 0 L " + g2 + " 0\n                M 0 " + b2 + " L " + g2 + " " + b2 + "\n            " : 90 === f2 ? h = "\n                M 0 0 L 0 " + b2 + "\n                M " + g2 + " 0 L " + g2 + " " + b2 + "\n            " : (g2 = Math.abs(p2 / Math.sin(Ht(f2))), b2 = p2 / Math.sin(Ht(90 - f2)), h = f2 > 0 ? "\n                    M 0 " + -b2 + " L " + 2 * g2 + " " + b2 + "\n                    M " + -g2 + " " + -b2 + " L " + g2 + " " + b2 + "\n                    M " + -g2 + " 0 L " + g2 + " " + 2 * b2 + "\n                " : "\n                    M " + -g2 + " " + b2 + " L " + g2 + " " + -b2 + "\n                    M " + -g2 + " " + 2 * b2 + " L " + 2 * g2 + " " + -b2 + "\n                    M 0 " + 2 * b2 + " L " + 2 * g2 + " 0\n                "), jsxs("pattern", { id: r2, width: g2, height: b2, patternUnits: "userSpaceOnUse", children: [jsx("rect", { width: g2, height: b2, fill: a2, stroke: "rgba(255, 0, 0, 0.1)", strokeWidth: 0 }), jsx("path", { d: h, strokeWidth: c2, stroke: s, strokeLinecap: "square" })] });
 });
 on$1.displayName = "PatternLines", on$1.propTypes = { id: c$3.string.isRequired, spacing: c$3.number.isRequired, rotation: c$3.number.isRequired, background: c$3.string.isRequired, color: c$3.string.isRequired, lineWidth: c$3.number.isRequired };
 var an$1 = { color: "#000000", background: "#ffffff", size: 4, padding: 4, stagger: false }, dn$1 = memo(function(e3) {
@@ -4547,11 +7225,9 @@ var mn$1 = memo(bn), yn$1 = function(e3) {
 };
 yn$1.propTypes = { x: c$3.number.isRequired, y: c$3.number.isRequired, datum: c$3.object.isRequired, size: c$3.number.isRequired, color: c$3.string.isRequired, borderWidth: c$3.number.isRequired, borderColor: c$3.string.isRequired, symbol: c$3.oneOfType([c$3.func, c$3.object]), label: c$3.oneOfType([c$3.string, c$3.number]), labelTextAnchor: c$3.oneOf(["start", "middle", "end"]), labelYOffset: c$3.number };
 var vn$1 = memo(yn$1), _n = function(e3) {
-  var r2 = e3.width, t2 = e3.height, n2 = e3.axis, i2 = e3.scale, o2 = e3.value, l2 = e3.lineStyle, a2 = e3.textStyle, d = e3.legend, s = e3.legendPosition, u2 = void 0 === s ? "top-right" : s, c2 = e3.legendOffsetX, f2 = void 0 === c2 ? 14 : c2, p2 = e3.legendOffsetY, h = void 0 === p2 ? 14 : p2, g2 = e3.legendOrientation, b2 = void 0 === g2 ? "horizontal" : g2, m2 = zt(), y2 = 0, v2 = 0, _2 = 0, w2 = 0;
-  "y" === n2 ? (_2 = i2(o2), v2 = r2) : (y2 = i2(o2), w2 = t2);
-  var k2 = null;
-  if (d) {
-    var R2 = function(e4) {
+  var r2 = e3.width, t2 = e3.height, n2 = e3.axis, i2 = e3.scale, o2 = e3.value, l2 = e3.lineStyle, a2 = e3.textStyle, d = e3.legend, s = e3.legendNode, u2 = e3.legendPosition, c2 = void 0 === u2 ? "top-right" : u2, f2 = e3.legendOffsetX, p2 = void 0 === f2 ? 14 : f2, h = e3.legendOffsetY, g2 = void 0 === h ? 14 : h, b2 = e3.legendOrientation, m2 = void 0 === b2 ? "horizontal" : b2, y2 = zt(), v2 = 0, _2 = 0, w2 = 0, k2 = 0;
+  if ("y" === n2 ? (w2 = i2(o2), _2 = r2) : (v2 = i2(o2), k2 = t2), d && !s) {
+    var R = function(e4) {
       var r3 = e4.axis, t3 = e4.width, n3 = e4.height, i3 = e4.position, o3 = e4.offsetX, l3 = e4.offsetY, a3 = e4.orientation, d2 = 0, s2 = 0, u3 = "vertical" === a3 ? -90 : 0, c3 = "start";
       if ("x" === r3) switch (i3) {
         case "top-left":
@@ -4604,10 +7280,10 @@ var vn$1 = memo(yn$1), _n = function(e3) {
           d2 = -o3, c3 = "horizontal" === a3 ? "end" : "middle";
       }
       return { x: d2, y: s2, rotation: u3, textAnchor: c3 };
-    }({ axis: n2, width: r2, height: t2, position: u2, offsetX: f2, offsetY: h, orientation: b2 });
-    k2 = jsx("text", { transform: "translate(" + R2.x + ", " + R2.y + ") rotate(" + R2.rotation + ")", textAnchor: R2.textAnchor, dominantBaseline: "central", style: a2, children: d });
+    }({ axis: n2, width: r2, height: t2, position: c2, offsetX: p2, offsetY: g2, orientation: m2 });
+    s = jsx("text", { transform: "translate(" + R.x + ", " + R.y + ") rotate(" + R.rotation + ")", textAnchor: R.textAnchor, dominantBaseline: "central", style: a2, children: d });
   }
-  return jsxs("g", { transform: "translate(" + y2 + ", " + _2 + ")", children: [jsx("line", { x1: 0, x2: v2, y1: 0, y2: w2, stroke: m2.markers.lineColor, strokeWidth: m2.markers.lineStrokeWidth, style: l2 }), k2] });
+  return jsxs("g", { transform: "translate(" + v2 + ", " + w2 + ")", children: [jsx("line", { x1: 0, x2: _2, y1: 0, y2: k2, stroke: y2.markers.lineColor, strokeWidth: y2.markers.lineStrokeWidth, style: l2 }), s] });
 };
 _n.propTypes = { width: c$3.number.isRequired, height: c$3.number.isRequired, axis: c$3.oneOf(["x", "y"]).isRequired, scale: c$3.func.isRequired, value: c$3.oneOfType([c$3.number, c$3.string, c$3.instanceOf(Date)]).isRequired, lineStyle: c$3.object, textStyle: c$3.object, legend: c$3.string, legendPosition: c$3.oneOf(["top-left", "top", "top-right", "right", "bottom-right", "bottom", "bottom-left", "left"]), legendOffsetX: c$3.number.isRequired, legendOffsetY: c$3.number.isRequired, legendOrientation: c$3.oneOf(["horizontal", "vertical"]).isRequired };
 var wn = memo(_n), kn$1 = function(e3) {
@@ -4630,7 +7306,7 @@ var Rn = memo(kn$1), xn$1 = ["theme", "renderWrapper", "animate", "motionConfig"
   }(Component);
 }, qn = function(e3, r2) {
   var n2 = Qe(e3) ? e3 : function(r3) {
-    return y$1(r3, e3);
+    return y$2(r3, e3);
   };
   return n2;
 }, Mn = function(e3, r2, t2, n2) {
@@ -4645,7 +7321,7 @@ var Rn = memo(kn$1), xn$1 = ["theme", "renderWrapper", "animate", "motionConfig"
   if ("*" === e3) return true;
   if (Qe(e3)) return e3(r2);
   if (je(e3)) {
-    var n2 = t2 ? y$1(r2, t2) : r2;
+    var n2 = t2 ? y$2(r2, t2) : r2;
     return Mr(Tr(n2, Object.keys(e3)), e3);
   }
   return false;
@@ -4660,18 +7336,18 @@ var Rn = memo(kn$1), xn$1 = ["theme", "renderWrapper", "animate", "motionConfig"
         });
         if (f2) {
           if (Gn.includes(f2.type)) if ("inherit" === f2.background || "inherit" === f2.color) {
-            var p2 = y$1(r3, a2), h = f2.background, g2 = f2.color, b2 = l3;
-            "inherit" === f2.background && (b2 = b2 + ".bg." + p2, h = p2), "inherit" === f2.color && (b2 = b2 + ".fg." + p2, g2 = p2), v$3(r3, s, "url(#" + b2 + ")"), c2[b2] || (u2.push(jr({}, f2, { id: b2, background: h, color: g2 })), c2[b2] = 1);
-          } else v$3(r3, s, "url(#" + l3 + ")");
+            var p2 = y$2(r3, a2), h = f2.background, g2 = f2.color, b2 = l3;
+            "inherit" === f2.background && (b2 = b2 + ".bg." + p2, h = p2), "inherit" === f2.color && (b2 = b2 + ".fg." + p2, g2 = p2), v$8(r3, s, "url(#" + b2 + ")"), c2[b2] || (u2.push(jr({}, f2, { id: b2, background: h, color: g2 })), c2[b2] = 1);
+          } else v$8(r3, s, "url(#" + l3 + ")");
           else if (Bn.includes(f2.type)) {
             if (f2.colors.map(function(e4) {
               return e4.color;
             }).includes("inherit")) {
-              var m2 = y$1(r3, a2), _2 = l3, w2 = jr({}, f2, { colors: f2.colors.map(function(e4, r4) {
+              var m2 = y$2(r3, a2), _2 = l3, w2 = jr({}, f2, { colors: f2.colors.map(function(e4, r4) {
                 return "inherit" !== e4.color ? e4 : (_2 = _2 + "." + r4 + "." + m2, jr({}, e4, { color: "inherit" === e4.color ? m2 : e4.color }));
               }) });
-              w2.id = _2, v$3(r3, s, "url(#" + _2 + ")"), c2[_2] || (u2.push(w2), c2[_2] = 1);
-            } else v$3(r3, s, "url(#" + l3 + ")");
+              w2.id = _2, v$8(r3, s, "url(#" + _2 + ")"), c2[_2] || (u2.push(w2), c2[_2] = 1);
+            } else v$8(r3, s, "url(#" + l3 + ")");
           }
         }
         return "break";
@@ -4713,7 +7389,7 @@ function Ge(e3, r2) {
   }
   throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
-var Re = { nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$1, set2: a, set3: l, tableau10: c$2 }, Ve = Object.keys(Re), Pe = { brown_blueGreen: scheme$q, purpleRed_green: scheme$p, pink_yellowGreen: scheme$o, purple_orange: scheme$n, red_blue: scheme$m, red_grey: scheme$l, red_yellow_blue: scheme$k, red_yellow_green: scheme$j, spectral: scheme$i }, Te = Object.keys(Pe), Ue = { brown_blueGreen: v$1, purpleRed_green: _$2, pink_yellowGreen: w$3, purple_orange: k$1, red_blue: j$1, red_grey: A$1, red_yellow_blue: O$2, red_yellow_green: z$2, spectral: E$1 }, De = { blues: scheme$5, greens: scheme$4, greys: scheme$3, oranges: scheme, purples: scheme$2, reds: scheme$1, blue_green: scheme$h, blue_purple: scheme$g, green_blue: scheme$f, orange_red: scheme$e, purple_blue_green: scheme$d, purple_blue: scheme$c, purple_red: scheme$b, red_purple: scheme$a, yellow_green_blue: scheme$9, yellow_green: scheme$8, yellow_orange_brown: scheme$7, yellow_orange_red: scheme$6 }, Me = Object.keys(De), $e = { blues: K$1, greens: L$2, greys: N, oranges: Q$2, purples: W$3, reds: X$3, turbo: Y$3, viridis: Z$1, inferno, magma, plasma, cividis: te$1, warm, cool, cubehelixDefault: ue$1, blue_green: ae$1, blue_purple: le$1, green_blue: ce$1, orange_red: se$1, purple_blue_green: fe$1, purple_blue: pe$1, purple_red: de$1, red_purple: me$1, yellow_green_blue: he$1, yellow_green: ge$1, yellow_orange_brown: ye, yellow_orange_red: be }, Be = qe({}, Re, Pe, De), He = function(e3) {
+var Re = { nivo: ["#e8c1a0", "#f47560", "#f1e15b", "#e8a838", "#61cdbb", "#97e3d5"], category10: e, accent: r, dark2: n, paired: t, pastel1: o, pastel2: i, set1: u$2, set2: a, set3: l, tableau10: c$2 }, Ve = Object.keys(Re), Pe = { brown_blueGreen: scheme$q, purpleRed_green: scheme$p, pink_yellowGreen: scheme$o, purple_orange: scheme$n, red_blue: scheme$m, red_grey: scheme$l, red_yellow_blue: scheme$k, red_yellow_green: scheme$j, spectral: scheme$i }, Te = Object.keys(Pe), Ue = { brown_blueGreen: v$6, purpleRed_green: _$3, pink_yellowGreen: w$5, purple_orange: k$5, red_blue: j$6, red_grey: A$2, red_yellow_blue: O$4, red_yellow_green: z$4, spectral: E$7 }, De = { blues: scheme$5, greens: scheme$4, greys: scheme$3, oranges: scheme, purples: scheme$2, reds: scheme$1, blue_green: scheme$h, blue_purple: scheme$g, green_blue: scheme$f, orange_red: scheme$e, purple_blue_green: scheme$d, purple_blue: scheme$c, purple_red: scheme$b, red_purple: scheme$a, yellow_green_blue: scheme$9, yellow_green: scheme$8, yellow_orange_brown: scheme$7, yellow_orange_red: scheme$6 }, Me = Object.keys(De), $e = { blues: K$3, greens: L$3, greys: N$6, oranges: Q$4, purples: W$4, reds: X$5, turbo: Y$6, viridis: Z$2, inferno, magma, plasma, cividis: te$1, warm, cool, cubehelixDefault: ue$1, blue_green: ae$1, blue_purple: le$1, green_blue: ce$1, orange_red: se$1, purple_blue_green: fe$1, purple_blue: pe$1, purple_red: de$1, red_purple: me$1, yellow_green_blue: he$1, yellow_green: ge$1, yellow_orange_brown: ye, yellow_orange_red: be }, Be = qe({}, Re, Pe, De), He = function(e3) {
   return Ve.includes(e3);
 }, Je = function(e3) {
   return Te.includes(e3);
@@ -4728,7 +7404,7 @@ var We = function(e3, r2) {
       return void 0 !== e4.theme;
     }(e3)) {
       if (void 0 === r2) throw new Error("Unable to use color from theme as no theme was provided");
-      var n2 = y$1(r2, e3.theme);
+      var n2 = y$2(r2, e3.theme);
       if (void 0 === n2) throw new Error("Color from theme is undefined at path: '" + e3.theme + "'");
       return function() {
         return n2;
@@ -4738,7 +7414,7 @@ var We = function(e3, r2) {
       return void 0 !== e4.from;
     }(e3)) {
       var t2 = function(r3) {
-        return y$1(r3, e3.from);
+        return y$2(r3, e3.from);
       };
       if (Array.isArray(e3.modifiers)) {
         for (var o2, i2 = [], u2 = function() {
@@ -4778,7 +7454,7 @@ c$3.oneOfType([c$3.string, c$3.func, c$3.shape({ theme: c$3.string.isRequired })
 var fr = function(e3, r2) {
   if ("function" == typeof e3) return e3;
   var n2 = function(e4) {
-    return y$1(e4, r2);
+    return y$2(e4, r2);
   };
   if (Array.isArray(e3)) {
     var t2 = ordinal(e3), o2 = function(e4) {
@@ -4790,7 +7466,7 @@ var fr = function(e3, r2) {
     if (function(e4) {
       return void 0 !== e4.datum;
     }(e3)) return function(r3) {
-      return y$1(r3, e3.datum);
+      return y$2(r3, e3.datum);
     };
     if (function(e4) {
       return void 0 !== e4.scheme;
@@ -4997,10 +7673,10 @@ var sn = function(n2, t2, r2) {
       }).slice(0).sort(function(n2, t2) {
         return t2.getTime() - n2.getTime();
       }).reverse();
-      return { all: p2, min: p2[0], max: W$4(p2) };
+      return { all: p2, min: p2[0], max: W$5(p2) };
     default:
       var h = n$1(v2);
-      return { all: h, min: h[0], max: W$4(h) };
+      return { all: h, min: h[0], max: W$5(h) };
   }
 }, mn = function(n2, t2, r2) {
   var i2 = an(n2), o2 = [];
@@ -5012,7 +7688,7 @@ var sn = function(n2, t2, r2) {
       }), s = null, d = null;
       if (void 0 !== a2) {
         if (null !== (s = a2.data[n2])) {
-          var f2 = W$4(c2);
+          var f2 = W$5(c2);
           void 0 === f2 ? d = s : null !== f2 && (d = f2 + s);
         }
         a2.data["x" === n2 ? "xStacked" : "yStacked"] = d;
@@ -5080,7 +7756,7 @@ function p$1() {
     return t2;
   }, p$1.apply(this, arguments);
 }
-var b$1 = function(t2) {
+var b$3 = function(t2) {
   var e3, i2 = t2.axis, n2 = t2.scale, r2 = t2.ticksPosition, o2 = t2.tickValues, l2 = t2.tickSize, s = t2.tickPadding, c2 = t2.tickRotation, f2 = t2.truncateTickAt, u2 = t2.engine, d = void 0 === u2 ? "svg" : u2, x2 = kn(n2, o2), m2 = rn$1[d], k2 = "bandwidth" in n2 ? pn(n2) : n2, g2 = { lineX: 0, lineY: 0 }, v2 = { textX: 0, textY: 0 }, b2 = "object" == typeof document && "rtl" === document.dir, P2 = m2.align.center, T2 = m2.baseline.center;
   "x" === i2 ? (e3 = function(t3) {
     var e4;
@@ -5096,7 +7772,7 @@ var b$1 = function(t2) {
     }(t3) : t3;
     return p$1({ key: t3 instanceof Date ? "" + t3.valueOf() : "" + t3, value: i3 }, e3(t3), g2, v2);
   }), textAlign: P2, textBaseline: T2 };
-}, P$1 = function(t2, e3) {
+}, P$3 = function(t2, e3) {
   if (void 0 === t2 || "function" == typeof t2) return t2;
   if ("time" === e3.type) {
     var i2 = timeFormat(t2);
@@ -5105,7 +7781,7 @@ var b$1 = function(t2) {
     };
   }
   return format(t2);
-}, T$1 = function(t2) {
+}, T$3 = function(t2) {
   var e3, i2 = t2.width, n2 = t2.height, r2 = t2.scale, a2 = t2.axis, o2 = t2.values, l2 = (e3 = o2, Array.isArray(e3) ? o2 : void 0) || kn(r2, o2), s = "bandwidth" in r2 ? pn(r2) : r2, c2 = "x" === a2 ? l2.map(function(t3) {
     var e4, i3;
     return { key: t3 instanceof Date ? "" + t3.valueOf() : "" + t3, x1: null != (e4 = s(t3)) ? e4 : 0, x2: null != (i3 = s(t3)) ? i3 : 0, y1: 0, y2: n2 };
@@ -5123,26 +7799,26 @@ var b$1 = function(t2) {
   }, [x2.opacity, c2, v2]);
   return jsxs(animated.g, p$1({ transform: x2.transform }, b2, { children: [jsx("line", { x1: 0, x2: a2, y1: 0, y2: s, style: y2 }), h.outlineWidth > 0 && jsx(animated.text, { dominantBaseline: u2, textAnchor: d, transform: x2.textTransform, style: h, strokeWidth: 2 * h.outlineWidth, stroke: h.outlineColor, strokeLinejoin: "round", children: "" + v2 }), jsx(animated.text, { dominantBaseline: u2, textAnchor: d, transform: x2.textTransform, style: Mt(h), children: "" + v2 })] }));
 }), S$1 = function(e3) {
-  var r2 = e3.axis, a2 = e3.scale, l2 = e3.x, c2 = void 0 === l2 ? 0 : l2, x2 = e3.y, m2 = void 0 === x2 ? 0 : x2, y2 = e3.length, h = e3.ticksPosition, T2 = e3.tickValues, S2 = e3.tickSize, W2 = void 0 === S2 ? 5 : S2, w2 = e3.tickPadding, B2 = void 0 === w2 ? 5 : w2, X2 = e3.tickRotation, Y2 = void 0 === X2 ? 0 : X2, C2 = e3.format, O2 = e3.renderTick, j2 = void 0 === O2 ? A : O2, z2 = e3.truncateTickAt, V2 = e3.legend, D2 = e3.legendPosition, R2 = void 0 === D2 ? "end" : D2, E2 = e3.legendOffset, q = void 0 === E2 ? 0 : E2, F2 = e3.onClick, L2 = e3.ariaHidden, N2 = zt(), H2 = N2.axis.legend.text, I2 = useMemo(function() {
-    return P$1(C2, a2);
-  }, [C2, a2]), J2 = b$1({ axis: r2, scale: a2, ticksPosition: h, tickValues: T2, tickSize: W2, tickPadding: B2, tickRotation: Y2, truncateTickAt: z2 }), G = J2.ticks, K2 = J2.textAlign, M2 = J2.textBaseline, Q2 = null;
+  var r2 = e3.axis, a2 = e3.scale, l2 = e3.x, c2 = void 0 === l2 ? 0 : l2, x2 = e3.y, m2 = void 0 === x2 ? 0 : x2, y2 = e3.length, h = e3.ticksPosition, T2 = e3.tickValues, S2 = e3.tickSize, W2 = void 0 === S2 ? 5 : S2, w2 = e3.tickPadding, B2 = void 0 === w2 ? 5 : w2, X2 = e3.tickRotation, Y2 = void 0 === X2 ? 0 : X2, C2 = e3.format, O2 = e3.renderTick, j2 = void 0 === O2 ? A : O2, z2 = e3.truncateTickAt, V2 = e3.legend, D2 = e3.legendPosition, R = void 0 === D2 ? "end" : D2, E2 = e3.legendOffset, q2 = void 0 === E2 ? 0 : E2, F2 = e3.onClick, L2 = e3.ariaHidden, N2 = zt(), H2 = N2.axis.legend.text, I2 = useMemo(function() {
+    return P$3(C2, a2);
+  }, [C2, a2]), J2 = b$3({ axis: r2, scale: a2, ticksPosition: h, tickValues: T2, tickSize: W2, tickPadding: B2, tickRotation: Y2, truncateTickAt: z2 }), G2 = J2.ticks, K2 = J2.textAlign, M2 = J2.textBaseline, Q2 = null;
   if (void 0 !== V2) {
     var U2, Z2 = 0, $2 = 0, _2 = 0;
-    "y" === r2 ? (_2 = -90, Z2 = q, "start" === R2 ? (U2 = "start", $2 = y2) : "middle" === R2 ? (U2 = "middle", $2 = y2 / 2) : "end" === R2 && (U2 = "end")) : ($2 = q, "start" === R2 ? U2 = "start" : "middle" === R2 ? (U2 = "middle", Z2 = y2 / 2) : "end" === R2 && (U2 = "end", Z2 = y2)), Q2 = jsxs(Fragment, { children: [H2.outlineWidth > 0 && jsx("text", { transform: "translate(" + Z2 + ", " + $2 + ") rotate(" + _2 + ")", textAnchor: U2, style: p$1({ dominantBaseline: "central" }, H2), strokeWidth: 2 * H2.outlineWidth, stroke: H2.outlineColor, strokeLinejoin: "round", children: V2 }), jsx("text", { transform: "translate(" + Z2 + ", " + $2 + ") rotate(" + _2 + ")", textAnchor: U2, style: p$1({ dominantBaseline: "central" }, H2), children: V2 })] });
+    "y" === r2 ? (_2 = -90, Z2 = q2, "start" === R ? (U2 = "start", $2 = y2) : "middle" === R ? (U2 = "middle", $2 = y2 / 2) : "end" === R && (U2 = "end")) : ($2 = q2, "start" === R ? U2 = "start" : "middle" === R ? (U2 = "middle", Z2 = y2 / 2) : "end" === R && (U2 = "end", Z2 = y2)), Q2 = jsxs(Fragment, { children: [H2.outlineWidth > 0 && jsx("text", { transform: "translate(" + Z2 + ", " + $2 + ") rotate(" + _2 + ")", textAnchor: U2, style: p$1({ dominantBaseline: "central" }, H2), strokeWidth: 2 * H2.outlineWidth, stroke: H2.outlineColor, strokeLinejoin: "round", children: V2 }), jsx("text", { transform: "translate(" + Z2 + ", " + $2 + ") rotate(" + _2 + ")", textAnchor: U2, style: p$1({ dominantBaseline: "central" }, H2), children: V2 })] });
   }
-  var tt2 = Ur(), et = tt2.animate, it = tt2.config, nt = useSpring({ transform: "translate(" + c2 + "," + m2 + ")", lineX2: "x" === r2 ? y2 : 0, lineY2: "x" === r2 ? 0 : y2, config: it, immediate: !et }), rt2 = useCallback(function(t2) {
+  var tt2 = Ur(), et2 = tt2.animate, it2 = tt2.config, nt2 = useSpring({ transform: "translate(" + c2 + "," + m2 + ")", lineX2: "x" === r2 ? y2 : 0, lineY2: "x" === r2 ? 0 : y2, config: it2, immediate: !et2 }), rt2 = useCallback(function(t2) {
     return { opacity: 1, transform: "translate(" + t2.x + "," + t2.y + ")", textTransform: "translate(" + t2.textX + "," + t2.textY + ") rotate(" + Y2 + ")" };
   }, [Y2]), at = useCallback(function(t2) {
     return { opacity: 0, transform: "translate(" + t2.x + "," + t2.y + ")", textTransform: "translate(" + t2.textX + "," + t2.textY + ") rotate(" + Y2 + ")" };
-  }, [Y2]), ot = useTransition(G, { keys: function(t2) {
+  }, [Y2]), ot = useTransition(G2, { keys: function(t2) {
     return t2.key;
-  }, initial: rt2, from: at, enter: rt2, update: rt2, leave: { opacity: 0 }, config: it, immediate: !et });
-  return jsxs(animated.g, { transform: nt.transform, "aria-hidden": L2, children: [ot(function(e4, i2, n2, r3) {
+  }, initial: rt2, from: at, enter: rt2, update: rt2, leave: { opacity: 0 }, config: it2, immediate: !et2 });
+  return jsxs(animated.g, { transform: nt2.transform, "aria-hidden": L2, children: [ot(function(e4, i2, n2, r3) {
     return React.createElement(j2, p$1({ tickIndex: r3, format: I2, rotate: Y2, textBaseline: M2, textAnchor: K2, truncateTickAt: z2, animatedProps: e4 }, i2, F2 ? { onClick: F2 } : {}));
-  }), jsx(animated.line, { style: N2.axis.domain.line, x1: 0, x2: nt.lineX2, y1: 0, y2: nt.lineY2 }), Q2] });
-}, W$1 = memo(S$1), w$2 = ["top", "right", "bottom", "left"], B$1 = memo(function(t2) {
+  }), jsx(animated.line, { style: N2.axis.domain.line, x1: 0, x2: nt2.lineX2, y1: 0, y2: nt2.lineY2 }), Q2] });
+}, W$1 = memo(S$1), w$3 = ["top", "right", "bottom", "left"], B$1 = memo(function(t2) {
   var e3 = t2.xScale, i2 = t2.yScale, n2 = t2.width, r2 = t2.height, a2 = { top: t2.top, right: t2.right, bottom: t2.bottom, left: t2.left };
-  return jsx(Fragment, { children: w$2.map(function(t3) {
+  return jsx(Fragment, { children: w$3.map(function(t3) {
     var o2 = a2[t3];
     if (!o2) return null;
     var l2 = "top" === t3 || "bottom" === t3;
@@ -5166,15 +7842,15 @@ var b$1 = function(t2) {
   return jsx("g", { children: o2(function(t3, e4) {
     return createElement(X$1, p$1({}, e4, { key: e4.key, animatedProps: t3 }));
   }) });
-}), C$1 = memo(function(t2) {
+}), C$3 = memo(function(t2) {
   var e3 = t2.width, n2 = t2.height, r2 = t2.xScale, a2 = t2.yScale, o2 = t2.xValues, l2 = t2.yValues, s = useMemo(function() {
-    return !!r2 && T$1({ width: e3, height: n2, scale: r2, axis: "x", values: o2 });
+    return !!r2 && T$3({ width: e3, height: n2, scale: r2, axis: "x", values: o2 });
   }, [r2, o2, e3, n2]), c2 = useMemo(function() {
-    return !!a2 && T$1({ width: e3, height: n2, scale: a2, axis: "y", values: l2 });
+    return !!a2 && T$3({ width: e3, height: n2, scale: a2, axis: "y", values: l2 });
   }, [n2, e3, a2, l2]);
   return jsxs(Fragment, { children: [s && jsx(Y$1, { lines: s }), c2 && jsx(Y$1, { lines: c2 })] });
 }), O$1 = function(t2, e3) {
-  var i2, n2 = e3.axis, r2 = e3.scale, a2 = e3.x, o2 = void 0 === a2 ? 0 : a2, l2 = e3.y, s = void 0 === l2 ? 0 : l2, f2 = e3.length, u2 = e3.ticksPosition, d = e3.tickValues, x2 = e3.tickSize, m2 = void 0 === x2 ? 5 : x2, y2 = e3.tickPadding, h = void 0 === y2 ? 5 : y2, k2 = e3.tickRotation, g2 = void 0 === k2 ? 0 : k2, v2 = e3.format, p2 = e3.legend, P2 = e3.legendPosition, T2 = void 0 === P2 ? "end" : P2, A2 = e3.legendOffset, S2 = void 0 === A2 ? 0 : A2, W2 = e3.theme, w2 = b$1({ axis: n2, scale: r2, ticksPosition: u2, tickValues: d, tickSize: m2, tickPadding: h, tickRotation: g2, engine: "canvas" }), B2 = w2.ticks, X2 = w2.textAlign, Y2 = w2.textBaseline;
+  var i2, n2 = e3.axis, r2 = e3.scale, a2 = e3.x, o2 = void 0 === a2 ? 0 : a2, l2 = e3.y, s = void 0 === l2 ? 0 : l2, f2 = e3.length, u2 = e3.ticksPosition, d = e3.tickValues, x2 = e3.tickSize, m2 = void 0 === x2 ? 5 : x2, y2 = e3.tickPadding, h = void 0 === y2 ? 5 : y2, k2 = e3.tickRotation, g2 = void 0 === k2 ? 0 : k2, v2 = e3.format, p2 = e3.legend, P2 = e3.legendPosition, T2 = void 0 === P2 ? "end" : P2, A2 = e3.legendOffset, S2 = void 0 === A2 ? 0 : A2, W2 = e3.theme, w2 = b$3({ axis: n2, scale: r2, ticksPosition: u2, tickValues: d, tickSize: m2, tickPadding: h, tickRotation: g2, engine: "canvas" }), B2 = w2.ticks, X2 = w2.textAlign, Y2 = w2.textBaseline;
   t2.save(), t2.translate(o2, s), t2.textAlign = X2, t2.textBaseline = Y2;
   var C2 = W2.axis.ticks.text;
   t2.font = (C2.fontWeight ? C2.fontWeight + " " : "") + C2.fontSize + "px " + C2.fontFamily, (null != (i2 = W2.axis.domain.line.strokeWidth) ? i2 : 0) > 0 && (t2.lineWidth = Number(W2.axis.domain.line.strokeWidth), t2.lineCap = "square", W2.axis.domain.line.stroke && (t2.strokeStyle = W2.axis.domain.line.stroke), t2.beginPath(), t2.moveTo(0, 0), t2.lineTo("x" === n2 ? f2 : 0, "x" === n2 ? 0 : f2), t2.stroke());
@@ -5185,33 +7861,33 @@ var b$1 = function(t2) {
     var i3;
     (null != (i3 = W2.axis.ticks.line.strokeWidth) ? i3 : 0) > 0 && (t2.lineWidth = Number(W2.axis.ticks.line.strokeWidth), t2.lineCap = "square", W2.axis.ticks.line.stroke && (t2.strokeStyle = W2.axis.ticks.line.stroke), t2.beginPath(), t2.moveTo(e4.x, e4.y), t2.lineTo(e4.x + e4.lineX, e4.y + e4.lineY), t2.stroke());
     var n3 = O2(e4.value);
-    t2.save(), t2.translate(e4.x + e4.textX, e4.y + e4.textY), t2.rotate(Kt(g2)), C2.outlineWidth > 0 && (t2.strokeStyle = C2.outlineColor, t2.lineWidth = 2 * C2.outlineWidth, t2.lineJoin = "round", t2.strokeText("" + n3, 0, 0)), W2.axis.ticks.text.fill && (t2.fillStyle = C2.fill), t2.fillText("" + n3, 0, 0), t2.restore();
+    t2.save(), t2.translate(e4.x + e4.textX, e4.y + e4.textY), t2.rotate(Ht(g2)), C2.outlineWidth > 0 && (t2.strokeStyle = C2.outlineColor, t2.lineWidth = 2 * C2.outlineWidth, t2.lineJoin = "round", t2.strokeText("" + n3, 0, 0)), W2.axis.ticks.text.fill && (t2.fillStyle = C2.fill), t2.fillText("" + n3, 0, 0), t2.restore();
   }), void 0 !== p2) {
     var j2 = 0, z2 = 0, V2 = 0, D2 = "center";
-    "y" === n2 ? (V2 = -90, j2 = S2, "start" === T2 ? (D2 = "start", z2 = f2) : "middle" === T2 ? (D2 = "center", z2 = f2 / 2) : "end" === T2 && (D2 = "end")) : (z2 = S2, "start" === T2 ? D2 = "start" : "middle" === T2 ? (D2 = "center", j2 = f2 / 2) : "end" === T2 && (D2 = "end", j2 = f2)), t2.translate(j2, z2), t2.rotate(Kt(V2)), t2.font = (W2.axis.legend.text.fontWeight ? W2.axis.legend.text.fontWeight + " " : "") + W2.axis.legend.text.fontSize + "px " + W2.axis.legend.text.fontFamily, W2.axis.legend.text.fill && (t2.fillStyle = W2.axis.legend.text.fill), t2.textAlign = D2, t2.textBaseline = "middle", t2.fillText(p2, 0, 0);
+    "y" === n2 ? (V2 = -90, j2 = S2, "start" === T2 ? (D2 = "start", z2 = f2) : "middle" === T2 ? (D2 = "center", z2 = f2 / 2) : "end" === T2 && (D2 = "end")) : (z2 = S2, "start" === T2 ? D2 = "start" : "middle" === T2 ? (D2 = "center", j2 = f2 / 2) : "end" === T2 && (D2 = "end", j2 = f2)), t2.translate(j2, z2), t2.rotate(Ht(V2)), t2.font = (W2.axis.legend.text.fontWeight ? W2.axis.legend.text.fontWeight + " " : "") + W2.axis.legend.text.fontSize + "px " + W2.axis.legend.text.fontFamily, W2.axis.legend.text.fill && (t2.fillStyle = W2.axis.legend.text.fill), t2.textAlign = D2, t2.textBaseline = "middle", t2.fillText(p2, 0, 0);
   }
   t2.restore();
-}, j = function(t2, e3) {
+}, j$2 = function(t2, e3) {
   var i2 = e3.xScale, n2 = e3.yScale, r2 = e3.width, a2 = e3.height, o2 = e3.top, l2 = e3.right, s = e3.bottom, c2 = e3.left, f2 = e3.theme, u2 = { top: o2, right: l2, bottom: s, left: c2 };
-  w$2.forEach(function(e4) {
+  w$3.forEach(function(e4) {
     var o3 = u2[e4];
     if (!o3) return null;
-    var l3 = "top" === e4 || "bottom" === e4, s2 = "top" === e4 || "left" === e4 ? "before" : "after", c3 = l3 ? i2 : n2, d = P$1(o3.format, c3);
+    var l3 = "top" === e4 || "bottom" === e4, s2 = "top" === e4 || "left" === e4 ? "before" : "after", c3 = l3 ? i2 : n2, d = P$3(o3.format, c3);
     O$1(t2, p$1({}, o3, { axis: l3 ? "x" : "y", x: "right" === e4 ? r2 : 0, y: "bottom" === e4 ? a2 : 0, scale: c3, format: d, length: l3 ? r2 : a2, ticksPosition: s2, theme: f2 }));
   });
 }, z$1 = function(t2, e3) {
   var i2 = e3.width, n2 = e3.height, r2 = e3.scale, a2 = e3.axis, o2 = e3.values;
-  T$1({ width: i2, height: n2, scale: r2, axis: a2, values: o2 }).forEach(function(e4) {
+  T$3({ width: i2, height: n2, scale: r2, axis: a2, values: o2 }).forEach(function(e4) {
     t2.beginPath(), t2.moveTo(e4.x1, e4.y1), t2.lineTo(e4.x2, e4.y2), t2.stroke();
   });
 };
 var f = function(e3) {
   var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
   return jsx("circle", { r: o2 / 2, cx: i2 + o2 / 2, cy: n2 + o2 / 2, fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, style: { pointerEvents: "none" } });
-}, m = function(e3) {
+}, m$2 = function(e3) {
   var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
   return jsx("g", { transform: "translate(" + i2 + "," + n2 + ")", children: jsx("path", { d: "\n                    M" + o2 / 2 + " 0\n                    L" + 0.8 * o2 + " " + o2 / 2 + "\n                    L" + o2 / 2 + " " + o2 + "\n                    L" + 0.2 * o2 + " " + o2 / 2 + "\n                    L" + o2 / 2 + " 0\n                ", fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, style: { pointerEvents: "none" } }) });
-}, v = function(e3) {
+}, v$2 = function(e3) {
   var i2 = e3.x, n2 = e3.y, o2 = e3.size, r2 = e3.fill, l2 = e3.opacity, a2 = void 0 === l2 ? 1 : l2, c2 = e3.borderWidth, d = void 0 === c2 ? 0 : c2, s = e3.borderColor;
   return jsx("rect", { x: i2, y: n2, fill: r2, opacity: a2, strokeWidth: d, stroke: void 0 === s ? "transparent" : s, width: o2, height: o2, style: { pointerEvents: "none" } });
 }, u = function(e3) {
@@ -5227,12 +7903,12 @@ function p() {
     return t2;
   }, p.apply(this, arguments);
 }
-var k = { top: 0, right: 0, bottom: 0, left: 0 }, x = function(t2) {
+var k$2 = { top: 0, right: 0, bottom: 0, left: 0 }, x$2 = function(t2) {
   var e3, i2 = t2.direction, n2 = t2.itemsSpacing, o2 = t2.padding, r2 = t2.itemCount, l2 = t2.itemWidth, a2 = t2.itemHeight;
   if ("number" != typeof o2 && ("object" != typeof (e3 = o2) || Array.isArray(e3) || null === e3)) throw new Error("Invalid property padding, must be one of: number, object");
-  var c2 = "number" == typeof o2 ? { top: o2, right: o2, bottom: o2, left: o2 } : p({}, k, o2), d = c2.left + c2.right, s = c2.top + c2.bottom, h = l2 + d, g2 = a2 + s, f2 = (r2 - 1) * n2;
+  var c2 = "number" == typeof o2 ? { top: o2, right: o2, bottom: o2, left: o2 } : p({}, k$2, o2), d = c2.left + c2.right, s = c2.top + c2.bottom, h = l2 + d, g2 = a2 + s, f2 = (r2 - 1) * n2;
   return "row" === i2 ? h = l2 * r2 + f2 + d : "column" === i2 && (g2 = a2 * r2 + f2 + s), { width: h, height: g2, padding: c2 };
-}, b = function(t2) {
+}, b$2 = function(t2) {
   var e3 = t2.anchor, i2 = t2.translateX, n2 = t2.translateY, o2 = t2.containerWidth, r2 = t2.containerHeight, l2 = t2.width, a2 = t2.height, c2 = i2, d = n2;
   switch (e3) {
     case "top":
@@ -5276,8 +7952,8 @@ var k = { top: 0, right: 0, bottom: 0, left: 0 }, x = function(t2) {
       e3 = (h - d) / 2, i2 = g2 - d, n2 = h / 2, r2 = "middle", c2 ? (o2 = 0, l2 = "text-before-edge") : (o2 = g2 - d - s, l2 = "alphabetic");
   }
   return { symbolX: e3, symbolY: i2, labelX: n2, labelY: o2, labelAnchor: r2, labelAlignment: l2 };
-}, w$1 = { circle: f, diamond: m, square: v, triangle: u }, X = function(i2) {
-  var n2, l2, a2, d, g2, f2, m2, v2, u2, y2, k2, x2 = i2.x, b2 = i2.y, A2 = i2.width, W2 = i2.height, z2 = i2.data, C2 = i2.direction, X2 = void 0 === C2 ? "left-to-right" : C2, Y2 = i2.justify, O2 = void 0 !== Y2 && Y2, B2 = i2.textColor, H2 = i2.background, E2 = void 0 === H2 ? "transparent" : H2, j2 = i2.opacity, L2 = void 0 === j2 ? 1 : j2, M2 = i2.symbolShape, F2 = void 0 === M2 ? "square" : M2, T2 = i2.symbolSize, P2 = void 0 === T2 ? 16 : T2, V2 = i2.symbolSpacing, R2 = void 0 === V2 ? 8 : V2, D2 = i2.symbolBorderWidth, q = void 0 === D2 ? 0 : D2, G = i2.symbolBorderColor, I2 = void 0 === G ? "transparent" : G, N2 = i2.onClick, _2 = i2.onMouseEnter, J2 = i2.onMouseLeave, K2 = i2.toggleSerie, Q2 = i2.effects, U2 = useState({}), Z2 = U2[0], $2 = U2[1], tt2 = zt(), et = useCallback(function(t2) {
+}, w$2 = { circle: f, diamond: m$2, square: v$2, triangle: u }, X = function(i2) {
+  var n2, l2, a2, d, g2, f2, m2, v2, u2, y2, k2, x2 = i2.x, b2 = i2.y, A2 = i2.width, W2 = i2.height, z2 = i2.data, C2 = i2.direction, X2 = void 0 === C2 ? "left-to-right" : C2, Y2 = i2.justify, O2 = void 0 !== Y2 && Y2, B2 = i2.textColor, H2 = i2.background, E2 = void 0 === H2 ? "transparent" : H2, j2 = i2.opacity, L2 = void 0 === j2 ? 1 : j2, M2 = i2.symbolShape, F2 = void 0 === M2 ? "square" : M2, T2 = i2.symbolSize, P2 = void 0 === T2 ? 16 : T2, V2 = i2.symbolSpacing, R = void 0 === V2 ? 8 : V2, D2 = i2.symbolBorderWidth, q2 = void 0 === D2 ? 0 : D2, G2 = i2.symbolBorderColor, I2 = void 0 === G2 ? "transparent" : G2, N2 = i2.onClick, _2 = i2.onMouseEnter, J2 = i2.onMouseLeave, K2 = i2.toggleSerie, Q2 = i2.effects, U2 = useState({}), Z2 = U2[0], $2 = U2[1], tt2 = zt(), et2 = useCallback(function(t2) {
     if (Q2) {
       var e3 = Q2.filter(function(t3) {
         return "hover" === t3.on;
@@ -5287,7 +7963,7 @@ var k = { top: 0, right: 0, bottom: 0, left: 0 }, x = function(t2) {
       $2(e3);
     }
     null == _2 || _2(z2, t2);
-  }, [_2, z2, Q2]), it = useCallback(function(t2) {
+  }, [_2, z2, Q2]), it2 = useCallback(function(t2) {
     if (Q2) {
       var e3 = Q2.filter(function(t3) {
         return "hover" !== t3.on;
@@ -5297,26 +7973,86 @@ var k = { top: 0, right: 0, bottom: 0, left: 0 }, x = function(t2) {
       $2(e3);
     }
     null == J2 || J2(z2, t2);
-  }, [J2, z2, Q2]), nt = S({ direction: X2, justify: O2, symbolSize: null != (n2 = Z2.symbolSize) ? n2 : P2, symbolSpacing: R2, width: A2, height: W2 }), ot = nt.symbolX, rt2 = nt.symbolY, lt2 = nt.labelX, at = nt.labelY, ct = nt.labelAnchor, dt = nt.labelAlignment, st = [N2, _2, J2, K2].some(function(t2) {
+  }, [J2, z2, Q2]), nt2 = S({ direction: X2, justify: O2, symbolSize: null != (n2 = Z2.symbolSize) ? n2 : P2, symbolSpacing: R, width: A2, height: W2 }), ot = nt2.symbolX, rt2 = nt2.symbolY, lt2 = nt2.labelX, at = nt2.labelY, ct = nt2.labelAnchor, dt = nt2.labelAlignment, st = [N2, _2, J2, K2].some(function(t2) {
     return void 0 !== t2;
-  }), ht2 = "function" == typeof F2 ? F2 : w$1[F2];
+  }), ht2 = "function" == typeof F2 ? F2 : w$2[F2];
   return jsxs("g", { transform: "translate(" + x2 + "," + b2 + ")", style: { opacity: null != (l2 = Z2.itemOpacity) ? l2 : L2 }, children: [jsx("rect", { width: A2, height: W2, fill: null != (a2 = Z2.itemBackground) ? a2 : E2, style: { cursor: st ? "pointer" : "auto" }, onClick: function(t2) {
     null == N2 || N2(z2, t2), null == K2 || K2(z2.id);
-  }, onMouseEnter: et, onMouseLeave: it }), React.createElement(ht2, p({ id: z2.id, x: ot, y: rt2, size: null != (d = Z2.symbolSize) ? d : P2, fill: null != (g2 = null != (f2 = z2.fill) ? f2 : z2.color) ? g2 : "black", borderWidth: null != (m2 = Z2.symbolBorderWidth) ? m2 : q, borderColor: null != (v2 = Z2.symbolBorderColor) ? v2 : I2 }, z2.hidden ? tt2.legends.hidden.symbol : void 0)), jsx("text", { textAnchor: ct, style: p({}, Mt(tt2.legends.text), { fill: null != (u2 = null != (y2 = null != (k2 = Z2.itemTextColor) ? k2 : B2) ? y2 : tt2.legends.text.fill) ? u2 : "black", dominantBaseline: dt, pointerEvents: "none", userSelect: "none" }, z2.hidden ? tt2.legends.hidden.text : void 0), x: lt2, y: at, children: z2.label })] });
+  }, onMouseEnter: et2, onMouseLeave: it2 }), React.createElement(ht2, p({ id: z2.id, x: ot, y: rt2, size: null != (d = Z2.symbolSize) ? d : P2, fill: null != (g2 = null != (f2 = z2.fill) ? f2 : z2.color) ? g2 : "black", borderWidth: null != (m2 = Z2.symbolBorderWidth) ? m2 : q2, borderColor: null != (v2 = Z2.symbolBorderColor) ? v2 : I2 }, z2.hidden ? tt2.legends.hidden.symbol : void 0)), jsx("text", { textAnchor: ct, style: p({}, Mt(tt2.legends.text), { fill: null != (u2 = null != (y2 = null != (k2 = Z2.itemTextColor) ? k2 : B2) ? y2 : tt2.legends.text.fill) ? u2 : "black", dominantBaseline: dt, pointerEvents: "none", userSelect: "none" }, z2.hidden ? tt2.legends.hidden.text : void 0), x: lt2, y: at, children: z2.label })] });
 }, Y = function(e3) {
-  var i2 = e3.data, n2 = e3.x, o2 = e3.y, r2 = e3.direction, l2 = e3.padding, a2 = void 0 === l2 ? 0 : l2, c2 = e3.justify, d = e3.effects, s = e3.itemWidth, h = e3.itemHeight, g2 = e3.itemDirection, f2 = void 0 === g2 ? "left-to-right" : g2, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemTextColor, p2 = e3.itemBackground, y2 = void 0 === p2 ? "transparent" : p2, k2 = e3.itemOpacity, b2 = void 0 === k2 ? 1 : k2, S2 = e3.symbolShape, A2 = e3.symbolSize, W2 = e3.symbolSpacing, z2 = e3.symbolBorderWidth, C2 = e3.symbolBorderColor, w2 = e3.onClick, Y2 = e3.onMouseEnter, O2 = e3.onMouseLeave, B2 = e3.toggleSerie, H2 = x({ itemCount: i2.length, itemWidth: s, itemHeight: h, itemsSpacing: v2, direction: r2, padding: a2 }).padding, E2 = "row" === r2 ? s + v2 : 0, j2 = "column" === r2 ? h + v2 : 0;
+  var i2 = e3.data, n2 = e3.x, o2 = e3.y, r2 = e3.direction, l2 = e3.padding, a2 = void 0 === l2 ? 0 : l2, c2 = e3.justify, d = e3.effects, s = e3.itemWidth, h = e3.itemHeight, g2 = e3.itemDirection, f2 = void 0 === g2 ? "left-to-right" : g2, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemTextColor, p2 = e3.itemBackground, y2 = void 0 === p2 ? "transparent" : p2, k2 = e3.itemOpacity, b2 = void 0 === k2 ? 1 : k2, S2 = e3.symbolShape, A2 = e3.symbolSize, W2 = e3.symbolSpacing, z2 = e3.symbolBorderWidth, C2 = e3.symbolBorderColor, w2 = e3.onClick, Y2 = e3.onMouseEnter, O2 = e3.onMouseLeave, B2 = e3.toggleSerie, H2 = x$2({ itemCount: i2.length, itemWidth: s, itemHeight: h, itemsSpacing: v2, direction: r2, padding: a2 }).padding, E2 = "row" === r2 ? s + v2 : 0, j2 = "column" === r2 ? h + v2 : 0;
   return jsx("g", { transform: "translate(" + n2 + "," + o2 + ")", children: i2.map(function(e4, i3) {
     return jsx(X, { data: e4, x: i3 * E2 + H2.left, y: i3 * j2 + H2.top, width: s, height: h, direction: f2, justify: c2, effects: d, textColor: u2, background: y2, opacity: b2, symbolShape: S2, symbolSize: A2, symbolSpacing: W2, symbolBorderWidth: z2, symbolBorderColor: C2, onClick: w2, onMouseEnter: Y2, onMouseLeave: O2, toggleSerie: B2 }, i3);
   }) });
 }, O = function(e3) {
-  var i2 = e3.data, n2 = e3.containerWidth, o2 = e3.containerHeight, r2 = e3.translateX, l2 = void 0 === r2 ? 0 : r2, a2 = e3.translateY, c2 = void 0 === a2 ? 0 : a2, d = e3.anchor, s = e3.direction, h = e3.padding, g2 = void 0 === h ? 0 : h, f2 = e3.justify, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemWidth, p2 = e3.itemHeight, y2 = e3.itemDirection, k2 = e3.itemTextColor, S2 = e3.itemBackground, A2 = e3.itemOpacity, W2 = e3.symbolShape, z2 = e3.symbolSize, C2 = e3.symbolSpacing, w2 = e3.symbolBorderWidth, X2 = e3.symbolBorderColor, O2 = e3.onClick, B2 = e3.onMouseEnter, H2 = e3.onMouseLeave, E2 = e3.toggleSerie, j2 = e3.effects, L2 = x({ itemCount: i2.length, itemsSpacing: v2, itemWidth: u2, itemHeight: p2, direction: s, padding: g2 }), M2 = L2.width, F2 = L2.height, T2 = b({ anchor: d, translateX: l2, translateY: c2, containerWidth: n2, containerHeight: o2, width: M2, height: F2 }), P2 = T2.x, V2 = T2.y;
+  var i2 = e3.data, n2 = e3.containerWidth, o2 = e3.containerHeight, r2 = e3.translateX, l2 = void 0 === r2 ? 0 : r2, a2 = e3.translateY, c2 = void 0 === a2 ? 0 : a2, d = e3.anchor, s = e3.direction, h = e3.padding, g2 = void 0 === h ? 0 : h, f2 = e3.justify, m2 = e3.itemsSpacing, v2 = void 0 === m2 ? 0 : m2, u2 = e3.itemWidth, p2 = e3.itemHeight, y2 = e3.itemDirection, k2 = e3.itemTextColor, S2 = e3.itemBackground, A2 = e3.itemOpacity, W2 = e3.symbolShape, z2 = e3.symbolSize, C2 = e3.symbolSpacing, w2 = e3.symbolBorderWidth, X2 = e3.symbolBorderColor, O2 = e3.onClick, B2 = e3.onMouseEnter, H2 = e3.onMouseLeave, E2 = e3.toggleSerie, j2 = e3.effects, L2 = x$2({ itemCount: i2.length, itemsSpacing: v2, itemWidth: u2, itemHeight: p2, direction: s, padding: g2 }), M2 = L2.width, F2 = L2.height, T2 = b$2({ anchor: d, translateX: l2, translateY: c2, containerWidth: n2, containerHeight: o2, width: M2, height: F2 }), P2 = T2.x, V2 = T2.y;
   return jsx(Y, { data: i2, x: P2, y: V2, direction: s, padding: g2, justify: f2, effects: j2, itemsSpacing: v2, itemWidth: u2, itemHeight: p2, itemDirection: y2, itemTextColor: k2, itemBackground: S2, itemOpacity: A2, symbolShape: W2, symbolSize: z2, symbolSpacing: C2, symbolBorderWidth: w2, symbolBorderColor: X2, onClick: O2, onMouseEnter: B2, onMouseLeave: H2, toggleSerie: "boolean" == typeof E2 ? void 0 : E2 });
 }, B = { start: "left", middle: "center", end: "right" }, H$1 = function(t2, e3) {
-  var i2 = e3.data, n2 = e3.containerWidth, o2 = e3.containerHeight, r2 = e3.translateX, l2 = void 0 === r2 ? 0 : r2, a2 = e3.translateY, c2 = void 0 === a2 ? 0 : a2, d = e3.anchor, s = e3.direction, h = e3.padding, g2 = void 0 === h ? 0 : h, f2 = e3.justify, m2 = void 0 !== f2 && f2, v2 = e3.itemsSpacing, u2 = void 0 === v2 ? 0 : v2, p2 = e3.itemWidth, y2 = e3.itemHeight, k2 = e3.itemDirection, A2 = void 0 === k2 ? "left-to-right" : k2, W2 = e3.itemTextColor, z2 = e3.symbolSize, C2 = void 0 === z2 ? 16 : z2, w2 = e3.symbolSpacing, X2 = void 0 === w2 ? 8 : w2, Y2 = e3.theme, O2 = x({ itemCount: i2.length, itemWidth: p2, itemHeight: y2, itemsSpacing: u2, direction: s, padding: g2 }), H2 = O2.width, E2 = O2.height, j2 = O2.padding, L2 = b({ anchor: d, translateX: l2, translateY: c2, containerWidth: n2, containerHeight: o2, width: H2, height: E2 }), M2 = L2.x, F2 = L2.y, T2 = "row" === s ? p2 + u2 : 0, P2 = "column" === s ? y2 + u2 : 0;
+  var i2 = e3.data, n2 = e3.containerWidth, o2 = e3.containerHeight, r2 = e3.translateX, l2 = void 0 === r2 ? 0 : r2, a2 = e3.translateY, c2 = void 0 === a2 ? 0 : a2, d = e3.anchor, s = e3.direction, h = e3.padding, g2 = void 0 === h ? 0 : h, f2 = e3.justify, m2 = void 0 !== f2 && f2, v2 = e3.itemsSpacing, u2 = void 0 === v2 ? 0 : v2, p2 = e3.itemWidth, y2 = e3.itemHeight, k2 = e3.itemDirection, A2 = void 0 === k2 ? "left-to-right" : k2, W2 = e3.itemTextColor, z2 = e3.symbolSize, C2 = void 0 === z2 ? 16 : z2, w2 = e3.symbolSpacing, X2 = void 0 === w2 ? 8 : w2, Y2 = e3.theme, O2 = x$2({ itemCount: i2.length, itemWidth: p2, itemHeight: y2, itemsSpacing: u2, direction: s, padding: g2 }), H2 = O2.width, E2 = O2.height, j2 = O2.padding, L2 = b$2({ anchor: d, translateX: l2, translateY: c2, containerWidth: n2, containerHeight: o2, width: H2, height: E2 }), M2 = L2.x, F2 = L2.y, T2 = "row" === s ? p2 + u2 : 0, P2 = "column" === s ? y2 + u2 : 0;
   t2.save(), t2.translate(M2, F2), t2.font = Y2.legends.text.fontSize + "px " + (Y2.legends.text.fontFamily || "sans-serif"), i2.forEach(function(e4, i3) {
     var n3, o3, r3 = i3 * T2 + j2.left, l3 = i3 * P2 + j2.top, a3 = S({ direction: A2, justify: m2, symbolSize: C2, symbolSpacing: X2, width: p2, height: y2 }), c3 = a3.symbolX, d2 = a3.symbolY, s2 = a3.labelX, h2 = a3.labelY, g3 = a3.labelAnchor, f3 = a3.labelAlignment;
     t2.fillStyle = null != (n3 = e4.color) ? n3 : "black", t2.fillRect(r3 + c3, l3 + d2, C2, C2), t2.textAlign = B[g3], "central" === f3 && (t2.textBaseline = "middle"), t2.fillStyle = null != (o3 = null != W2 ? W2 : Y2.legends.text.fill) ? o3 : "black", t2.fillText(String(e4.label), r3 + s2, l3 + h2);
   }), t2.restore();
+};
+function v$1() {
+  return v$1 = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var i2 = 1; i2 < arguments.length; i2++) {
+      var o2 = arguments[i2];
+      for (var n2 in o2) Object.prototype.hasOwnProperty.call(o2, n2) && (t2[n2] = o2[n2]);
+    }
+    return t2;
+  }, v$1.apply(this, arguments);
+}
+var x$1 = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m$1 = function(t2, i2) {
+  return "translate(" + t2 + "px, " + i2 + "px)";
+}, b$1 = memo(function(t2) {
+  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt(), d = Ur(), y2 = d.animate, f2 = d.config, b2 = kt(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
+  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m$1(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
+  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v$1({}, x$1, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m$1(j2, N2), opacity: O2.transform ? 1 : 0 });
+  return jsx(animated.div, { ref: g2, style: V2, children: e3 });
+});
+b$1.displayName = "TooltipWrapper";
+var g$1 = memo(function(t2) {
+  var i2 = t2.size, o2 = void 0 === i2 ? 12 : i2, n2 = t2.color, r2 = t2.style;
+  return jsx("span", { style: v$1({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
+}), w$1 = memo(function(t2) {
+  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt(), u2 = Ot(r2);
+  if ("function" == typeof c2) i2 = c2();
+  else {
+    var f2 = n2;
+    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g$1, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
+  }
+  return jsx("div", { style: h.tooltip.container, children: i2 });
+}), T$2 = { width: "100%", borderCollapse: "collapse" }, C$2 = memo(function(t2) {
+  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt();
+  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v$1({}, T$2, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
+    return jsx("tr", { children: t3.map(function(t4, i4) {
+      return jsx("td", { style: l2.tooltip.tableCell, children: t4 }, i4);
+    }) }, i3);
+  }) }) })] }), jsx("div", { style: l2.tooltip.container, children: i2 })) : null;
+});
+C$2.displayName = "TableTooltip";
+var E$2 = memo(function(t2) {
+  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt(), u2 = Ur(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
+    return v$1({}, l2.crosshair.line, { pointerEvents: "none" });
+  }, [l2.crosshair.line]), x2 = useSpring({ x1: i2, x2: n2, y1: r2, y2: e3, config: y2, immediate: !d });
+  return jsx(animated.line, v$1({}, x2, { fill: "none", style: f2 }));
+});
+E$2.displayName = "CrosshairLine";
+var P$2 = memo(function(t2) {
+  var i2, o2, n2 = t2.width, r2 = t2.height, e3 = t2.type, l2 = t2.x, a2 = t2.y;
+  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$2, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$2, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
+});
+P$2.displayName = "Crosshair";
+var j$1 = createContext({ showTooltipAt: function() {
+}, showTooltipFromEvent: function() {
+}, hideTooltip: function() {
+} }), N$1 = { isVisible: false, position: [null, null], content: null, anchor: null };
+createContext(N$1);
+var k$1 = function() {
+  var t2 = useContext(j$1);
+  if (void 0 === t2) throw new Error("useTooltip must be used within a TooltipProvider");
+  return t2;
 };
 const epsilon = 1e-6;
 class Path2 {
@@ -5905,6 +8641,68 @@ function* flatIterable(points, fx, fy, that) {
     ++i2;
   }
 }
+function v() {
+  return v = Object.assign ? Object.assign.bind() : function(t2) {
+    for (var i2 = 1; i2 < arguments.length; i2++) {
+      var o2 = arguments[i2];
+      for (var n2 in o2) Object.prototype.hasOwnProperty.call(o2, n2) && (t2[n2] = o2[n2]);
+    }
+    return t2;
+  }, v.apply(this, arguments);
+}
+var x = { pointerEvents: "none", position: "absolute", zIndex: 10, top: 0, left: 0 }, m = function(t2, i2) {
+  return "translate(" + t2 + "px, " + i2 + "px)";
+}, b = memo(function(t2) {
+  var o2, n2 = t2.position, r2 = t2.anchor, e3 = t2.children, l2 = zt(), d = Ur(), y2 = d.animate, f2 = d.config, b2 = kt(), g2 = b2[0], w2 = b2[1], T2 = useRef(false), C2 = void 0, E2 = false, P2 = w2.width > 0 && w2.height > 0, j2 = Math.round(n2[0]), N2 = Math.round(n2[1]);
+  P2 && ("top" === r2 ? (j2 -= w2.width / 2, N2 -= w2.height + 14) : "right" === r2 ? (j2 += 14, N2 -= w2.height / 2) : "bottom" === r2 ? (j2 -= w2.width / 2, N2 += 14) : "left" === r2 ? (j2 -= w2.width + 14, N2 -= w2.height / 2) : "center" === r2 && (j2 -= w2.width / 2, N2 -= w2.height / 2), C2 = { transform: m(j2, N2) }, T2.current || (E2 = true), T2.current = [j2, N2]);
+  var O2 = useSpring({ to: C2, config: f2, immediate: !y2 || E2 }), V2 = v({}, x, l2.tooltip.wrapper, { transform: null != (o2 = O2.transform) ? o2 : m(j2, N2), opacity: O2.transform ? 1 : 0 });
+  return jsx(animated.div, { ref: g2, style: V2, children: e3 });
+});
+b.displayName = "TooltipWrapper";
+var g = memo(function(t2) {
+  var i2 = t2.size, o2 = void 0 === i2 ? 12 : i2, n2 = t2.color, r2 = t2.style;
+  return jsx("span", { style: v({ display: "block", width: o2, height: o2, background: n2 }, void 0 === r2 ? {} : r2) });
+});
+memo(function(t2) {
+  var i2, o2 = t2.id, n2 = t2.value, r2 = t2.format, e3 = t2.enableChip, l2 = void 0 !== e3 && e3, a2 = t2.color, c2 = t2.renderContent, h = zt(), u2 = Ot(r2);
+  if ("function" == typeof c2) i2 = c2();
+  else {
+    var f2 = n2;
+    void 0 !== u2 && void 0 !== f2 && (f2 = u2(f2)), i2 = jsxs("div", { style: h.tooltip.basic, children: [l2 && jsx(g, { color: a2, style: h.tooltip.chip }), void 0 !== f2 ? jsxs("span", { children: [o2, ": ", jsx("strong", { children: "" + f2 })] }) : o2] });
+  }
+  return jsx("div", { style: h.tooltip.container, children: i2 });
+});
+var T$1 = { width: "100%", borderCollapse: "collapse" }, C$1 = memo(function(t2) {
+  var i2, o2 = t2.title, n2 = t2.rows, r2 = void 0 === n2 ? [] : n2, e3 = t2.renderContent, l2 = zt();
+  return r2.length ? (i2 = "function" == typeof e3 ? e3() : jsxs("div", { children: [o2 && o2, jsx("table", { style: v({}, T$1, l2.tooltip.table), children: jsx("tbody", { children: r2.map(function(t3, i3) {
+    return jsx("tr", { children: t3.map(function(t4, i4) {
+      return jsx("td", { style: l2.tooltip.tableCell, children: t4 }, i4);
+    }) }, i3);
+  }) }) })] }), jsx("div", { style: l2.tooltip.container, children: i2 })) : null;
+});
+C$1.displayName = "TableTooltip";
+var E$1 = memo(function(t2) {
+  var i2 = t2.x0, n2 = t2.x1, r2 = t2.y0, e3 = t2.y1, l2 = zt(), u2 = Ur(), d = u2.animate, y2 = u2.config, f2 = useMemo(function() {
+    return v({}, l2.crosshair.line, { pointerEvents: "none" });
+  }, [l2.crosshair.line]), x2 = useSpring({ x1: i2, x2: n2, y1: r2, y2: e3, config: y2, immediate: !d });
+  return jsx(animated.line, v({}, x2, { fill: "none", style: f2 }));
+});
+E$1.displayName = "CrosshairLine";
+var P$1 = memo(function(t2) {
+  var i2, o2, n2 = t2.width, r2 = t2.height, e3 = t2.type, l2 = t2.x, a2 = t2.y;
+  return "cross" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: r2 }, o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }) : "top-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "top" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: a2 } : "top-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: 0, y1: a2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "right" === e3 ? o2 = { x0: l2, x1: n2, y0: a2, y1: a2 } : "bottom-right" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: l2, x1: n2, y0: a2, y1: a2 }) : "bottom" === e3 ? i2 = { x0: l2, x1: l2, y0: a2, y1: r2 } : "bottom-left" === e3 ? (i2 = { x0: l2, x1: l2, y0: a2, y1: r2 }, o2 = { x0: 0, x1: l2, y0: a2, y1: a2 }) : "left" === e3 ? o2 = { x0: 0, x1: l2, y0: a2, y1: a2 } : "x" === e3 ? i2 = { x0: l2, x1: l2, y0: 0, y1: r2 } : "y" === e3 && (o2 = { x0: 0, x1: n2, y0: a2, y1: a2 }), jsxs(Fragment, { children: [i2 && jsx(E$1, { x0: i2.x0, x1: i2.x1, y0: i2.y0, y1: i2.y1 }), o2 && jsx(E$1, { x0: o2.x0, x1: o2.x1, y0: o2.y0, y1: o2.y1 })] });
+});
+P$1.displayName = "Crosshair";
+var j = createContext({ showTooltipAt: function() {
+}, showTooltipFromEvent: function() {
+}, hideTooltip: function() {
+} }), N = { isVisible: false, position: [null, null], content: null, anchor: null };
+createContext(N);
+var k = function() {
+  var t2 = useContext(j);
+  if (void 0 === t2) throw new Error("useTooltip must be used within a TooltipProvider");
+  return t2;
+};
 var C = function(n2) {
   return [n2.x, n2.y];
 }, L = _t, T = "cursor", P = "top", w = function(n2) {
@@ -5922,11 +8720,11 @@ var C = function(n2) {
     return E({ points: w({ points: e3, margin: a2, getNodePosition: t2 }), width: r2, height: l2, margin: a2, debug: d });
   }, [e3, r2, l2, a2, d]);
 }, D = function(r2) {
-  var l2 = r2.elementRef, u2 = r2.nodes, s = r2.getNodePosition, c2 = void 0 === s ? C : s, h = r2.delaunay, v2 = r2.setCurrent, f2 = r2.margin, p2 = void 0 === f2 ? L : f2, m2 = r2.detectionRadius, M2 = void 0 === m2 ? 1 / 0 : m2, b2 = r2.isInteractive, k2 = void 0 === b2 || b2, y2 = r2.onMouseEnter, w2 = r2.onMouseMove, E2 = r2.onMouseLeave, W2 = r2.onClick, x2 = r2.onTouchStart, S2 = r2.onTouchMove, D2 = r2.onTouchEnd, R2 = r2.enableTouchCrosshair, A2 = void 0 !== R2 && R2, N2 = r2.tooltip, O2 = r2.tooltipPosition, j2 = void 0 === O2 ? T : O2, I2 = r2.tooltipAnchor, z2 = void 0 === I2 ? P : I2, F2 = useState(null), H2 = F2[0], B2 = F2[1], q = useRef(null);
+  var l2 = r2.elementRef, u2 = r2.nodes, s = r2.getNodePosition, c2 = void 0 === s ? C : s, h = r2.delaunay, v2 = r2.setCurrent, f2 = r2.margin, p2 = void 0 === f2 ? L : f2, m2 = r2.detectionRadius, M2 = void 0 === m2 ? 1 / 0 : m2, b2 = r2.isInteractive, k$12 = void 0 === b2 || b2, y2 = r2.onMouseEnter, w2 = r2.onMouseMove, E2 = r2.onMouseLeave, W2 = r2.onClick, x2 = r2.onTouchStart, S2 = r2.onTouchMove, D2 = r2.onTouchEnd, R = r2.enableTouchCrosshair, A2 = void 0 !== R && R, N2 = r2.tooltip, O2 = r2.tooltipPosition, j2 = void 0 === O2 ? T : O2, I2 = r2.tooltipAnchor, z2 = void 0 === I2 ? P : I2, F2 = useState(null), H2 = F2[0], B2 = F2[1], q2 = useRef(null);
   useEffect(function() {
-    q.current = H2;
-  }, [q, H2]);
-  var G = useCallback(function(n2) {
+    q2.current = H2;
+  }, [q2, H2]);
+  var G2 = useCallback(function(n2) {
     if (!l2.current) return null;
     var o2 = Sn(l2.current, n2), e3 = o2[0], i2 = o2[1], t2 = h.find(e3, i2), r3 = void 0 !== t2 ? u2[t2] : null;
     if (r3 && M2 !== 1 / 0) {
@@ -5934,7 +8732,7 @@ var C = function(n2) {
       Mn(e3, i2, v3 + p2.left, f3 + p2.top) > M2 && (t2 = null, r3 = null);
     }
     return null === t2 || null === r3 ? null : [t2, r3];
-  }, [l2, h, u2, c2, p2, M2]), J2 = k$2(), K2 = J2.showTooltipAt, Q2 = J2.showTooltipFromEvent, U2 = J2.hideTooltip, V2 = useMemo(function() {
+  }, [l2, h, u2, c2, p2, M2]), J2 = k(), K2 = J2.showTooltipAt, Q2 = J2.showTooltipFromEvent, U2 = J2.hideTooltip, V2 = useMemo(function() {
     if (N2) return "cursor" === j2 ? function(n2, o2) {
       Q2(N2(n2), o2, z2);
     } : function(n2) {
@@ -5942,40 +8740,40 @@ var C = function(n2) {
       K2(N2(n2), [e3 + p2.left, i2 + p2.top], z2);
     };
   }, [K2, Q2, N2, j2, z2, c2, p2]), X2 = useCallback(function(n2) {
-    var o2 = G(n2);
+    var o2 = G2(n2);
     if (B2(o2), null == v2 || v2(o2 ? o2[1] : null), o2) {
       var e3 = o2[1];
       null == V2 || V2(e3, n2), null == y2 || y2(o2[1], n2);
     }
-  }, [G, B2, v2, V2, y2]), Y2 = useCallback(function(n2) {
-    var o2 = G(n2);
+  }, [G2, B2, v2, V2, y2]), Y2 = useCallback(function(n2) {
+    var o2 = G2(n2);
     if (B2(o2), o2) {
       var e3 = o2[0], i2 = o2[1];
-      if (null == v2 || v2(i2), null == V2 || V2(i2, n2), q.current) {
-        var t2 = q.current, r3 = t2[0], l3 = t2[1];
+      if (null == v2 || v2(i2), null == V2 || V2(i2, n2), q2.current) {
+        var t2 = q2.current, r3 = t2[0], l3 = t2[1];
         e3 !== r3 ? null == E2 || E2(l3, n2) : null == w2 || w2(i2, n2);
       } else null == y2 || y2(i2, n2);
-    } else null == v2 || v2(null), null == U2 || U2(), q.current && (null == E2 || E2(q.current[1], n2));
-  }, [G, B2, q, y2, w2, E2, V2, U2]), Z2 = useCallback(function(n2) {
-    B2(null), null == v2 || v2(null), U2(), E2 && q.current && E2(q.current[1], n2);
-  }, [B2, v2, q, U2, E2]), $2 = useCallback(function(n2) {
-    var o2 = G(n2);
+    } else null == v2 || v2(null), null == U2 || U2(), q2.current && (null == E2 || E2(q2.current[1], n2));
+  }, [G2, B2, q2, y2, w2, E2, V2, U2]), Z2 = useCallback(function(n2) {
+    B2(null), null == v2 || v2(null), U2(), E2 && q2.current && E2(q2.current[1], n2);
+  }, [B2, v2, q2, U2, E2]), $2 = useCallback(function(n2) {
+    var o2 = G2(n2);
     B2(o2), o2 && (null == W2 || W2(o2[1], n2));
-  }, [G, B2, W2]), _2 = useCallback(function(n2) {
-    var o2 = G(n2);
+  }, [G2, B2, W2]), _2 = useCallback(function(n2) {
+    var o2 = G2(n2);
     A2 && (B2(o2), null == v2 || v2(o2 ? o2[1] : null)), o2 && (null == x2 || x2(o2[1], n2));
-  }, [G, B2, v2, A2, x2]), nn2 = useCallback(function(n2) {
-    var o2 = G(n2);
+  }, [G2, B2, v2, A2, x2]), nn2 = useCallback(function(n2) {
+    var o2 = G2(n2);
     A2 && (B2(o2), null == v2 || v2(o2 ? o2[1] : null)), o2 && (null == S2 || S2(o2[1], n2));
-  }, [G, B2, v2, A2, S2]), on2 = useCallback(function(n2) {
-    A2 && (B2(null), null == v2 || v2(null)), D2 && q.current && D2(q.current[1], n2);
-  }, [A2, B2, v2, D2, q]);
-  return { current: H2, handleMouseEnter: k2 ? X2 : void 0, handleMouseMove: k2 ? Y2 : void 0, handleMouseLeave: k2 ? Z2 : void 0, handleClick: k2 ? $2 : void 0, handleTouchStart: k2 ? _2 : void 0, handleTouchMove: k2 ? nn2 : void 0, handleTouchEnd: k2 ? on2 : void 0 };
+  }, [G2, B2, v2, A2, S2]), on2 = useCallback(function(n2) {
+    A2 && (B2(null), null == v2 || v2(null)), D2 && q2.current && D2(q2.current[1], n2);
+  }, [A2, B2, v2, D2, q2]);
+  return { current: H2, handleMouseEnter: k$12 ? X2 : void 0, handleMouseMove: k$12 ? Y2 : void 0, handleMouseLeave: k$12 ? Z2 : void 0, handleClick: k$12 ? $2 : void 0, handleTouchStart: k$12 ? _2 : void 0, handleTouchMove: k$12 ? nn2 : void 0, handleTouchEnd: k$12 ? on2 : void 0 };
 }, I = function(o2) {
-  var i2 = o2.nodes, t2 = o2.width, r2 = o2.height, l2 = o2.margin, u2 = void 0 === l2 ? L : l2, a2 = o2.getNodePosition, d = o2.setCurrent, s = o2.onMouseEnter, c2 = o2.onMouseMove, h = o2.onMouseLeave, v2 = o2.onClick, f2 = o2.onTouchStart, p2 = o2.onTouchMove, g2 = o2.onTouchEnd, k2 = o2.enableTouchCrosshair, y2 = void 0 !== k2 && k2, C2 = o2.detectionRadius, w2 = void 0 === C2 ? 1 / 0 : C2, E2 = o2.tooltip, x2 = o2.tooltipPosition, S2 = void 0 === x2 ? T : x2, R2 = o2.tooltipAnchor, A2 = void 0 === R2 ? P : R2, N2 = o2.debug, O2 = useRef(null), j2 = W({ points: i2, getNodePosition: a2, width: t2, height: r2, margin: u2, debug: N2 }), I2 = j2.delaunay, z2 = j2.voronoi, F2 = D({ elementRef: O2, nodes: i2, delaunay: I2, margin: u2, detectionRadius: w2, setCurrent: d, onMouseEnter: s, onMouseMove: c2, onMouseLeave: h, onClick: v2, onTouchStart: f2, onTouchMove: p2, onTouchEnd: g2, enableTouchCrosshair: y2, tooltip: E2, tooltipPosition: S2, tooltipAnchor: A2 }), H2 = F2.current, B2 = F2.handleMouseEnter, q = F2.handleMouseMove, G = F2.handleMouseLeave, J2 = F2.handleClick, K2 = F2.handleTouchStart, Q2 = F2.handleTouchMove, U2 = F2.handleTouchEnd, V2 = useMemo(function() {
+  var i2 = o2.nodes, t2 = o2.width, r2 = o2.height, l2 = o2.margin, u2 = void 0 === l2 ? L : l2, a2 = o2.getNodePosition, d = o2.setCurrent, s = o2.onMouseEnter, c2 = o2.onMouseMove, h = o2.onMouseLeave, v2 = o2.onClick, f2 = o2.onTouchStart, p2 = o2.onTouchMove, g2 = o2.onTouchEnd, k2 = o2.enableTouchCrosshair, y2 = void 0 !== k2 && k2, C2 = o2.detectionRadius, w2 = void 0 === C2 ? 1 / 0 : C2, E2 = o2.tooltip, x2 = o2.tooltipPosition, S2 = void 0 === x2 ? T : x2, R = o2.tooltipAnchor, A2 = void 0 === R ? P : R, N2 = o2.debug, O2 = useRef(null), j2 = W({ points: i2, getNodePosition: a2, width: t2, height: r2, margin: u2, debug: N2 }), I2 = j2.delaunay, z2 = j2.voronoi, F2 = D({ elementRef: O2, nodes: i2, delaunay: I2, margin: u2, detectionRadius: w2, setCurrent: d, onMouseEnter: s, onMouseMove: c2, onMouseLeave: h, onClick: v2, onTouchStart: f2, onTouchMove: p2, onTouchEnd: g2, enableTouchCrosshair: y2, tooltip: E2, tooltipPosition: S2, tooltipAnchor: A2 }), H2 = F2.current, B2 = F2.handleMouseEnter, q2 = F2.handleMouseMove, G2 = F2.handleMouseLeave, J2 = F2.handleClick, K2 = F2.handleTouchStart, Q2 = F2.handleTouchMove, U2 = F2.handleTouchEnd, V2 = useMemo(function() {
     if (N2 && z2) return z2.render();
   }, [N2, z2]);
-  return jsxs("g", { ref: O2, transform: "translate(" + -u2.left + "," + -u2.top + ")", children: [N2 && z2 && jsxs(Fragment, { children: [jsx("path", { d: V2, stroke: "red", strokeWidth: 1, opacity: 0.75 }), w2 < 1 / 0 && jsx("path", { stroke: "red", strokeWidth: 0.35, fill: "none", d: I2.renderPoints(void 0, w2) }), H2 && jsx("path", { fill: "pink", opacity: 0.35, d: z2.renderCell(H2[0]) })] }), jsx("rect", { "data-ref": "mesh-interceptor", width: u2.left + t2 + u2.right, height: u2.top + r2 + u2.bottom, fill: "red", opacity: 0, style: { cursor: "auto" }, onMouseEnter: B2, onMouseMove: q, onMouseLeave: G, onTouchStart: K2, onTouchMove: Q2, onTouchEnd: U2, onClick: J2 })] });
+  return jsxs("g", { ref: O2, transform: "translate(" + -u2.left + "," + -u2.top + ")", children: [N2 && z2 && jsxs(Fragment, { children: [jsx("path", { d: V2, stroke: "red", strokeWidth: 1, opacity: 0.75 }), w2 < 1 / 0 && jsx("path", { stroke: "red", strokeWidth: 0.35, fill: "none", d: I2.renderPoints(void 0, w2) }), H2 && jsx("path", { fill: "pink", opacity: 0.35, d: z2.renderCell(H2[0]) })] }), jsx("rect", { "data-ref": "mesh-interceptor", width: u2.left + t2 + u2.right, height: u2.top + r2 + u2.bottom, fill: "red", opacity: 0, style: { cursor: "auto" }, onMouseEnter: B2, onMouseMove: q2, onMouseLeave: G2, onTouchStart: K2, onTouchMove: Q2, onTouchEnd: U2, onClick: J2 })] });
 }, z = function(n2, o2) {
   n2.save(), n2.globalAlpha = 0.75, n2.beginPath(), o2.render(n2), n2.strokeStyle = "red", n2.lineWidth = 1, n2.stroke(), n2.restore();
 }, H = function(n2, o2, e3) {
@@ -5992,18 +8790,18 @@ function Q() {
 }
 var U = memo(function(e3) {
   var o2 = e3.point;
-  return jsx(w$4, { id: jsxs("span", { children: ["x: ", jsx("strong", { children: o2.data.xFormatted }), ", y:", " ", jsx("strong", { children: o2.data.yFormatted })] }), enableChip: true, color: o2.serieColor });
+  return jsx(w$1, { id: jsxs("span", { children: ["x: ", jsx("strong", { children: o2.data.xFormatted }), ", y:", " ", jsx("strong", { children: o2.data.yFormatted })] }), enableChip: true, color: o2.serieColor });
 }), Z = memo(function(e3) {
   var o2 = e3.slice, i2 = e3.axis, t2 = zt(), n2 = "x" === i2 ? "y" : "x";
-  return jsx(C$3, { rows: o2.points.map(function(e4) {
-    return [jsx(g, { color: e4.serieColor, style: t2.tooltip.chip }, "chip"), e4.serieId, jsx("span", { style: t2.tooltip.tableCellValue, children: e4.data[n2 + "Formatted"] }, "value")];
+  return jsx(C$2, { rows: o2.points.map(function(e4) {
+    return [jsx(g$1, { color: e4.serieColor, style: t2.tooltip.chip }, "chip"), e4.serieId, jsx("span", { style: t2.tooltip.tableCellValue, children: e4.data[n2 + "Formatted"] }, "value")];
   }) });
-}), $ = { curve: "linear", xScale: { type: "point" }, yScale: { type: "linear", min: 0, max: "auto" }, layers: ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"], axisBottom: {}, axisLeft: {}, enableGridX: true, enableGridY: true, enablePoints: true, pointSize: 6, pointColor: { from: "color" }, pointBorderWidth: 0, pointBorderColor: { theme: "background" }, enablePointLabel: false, pointLabel: "yFormatted", colors: { scheme: "nivo" }, enableArea: false, areaBaselineValue: 0, areaOpacity: 0.2, areaBlendMode: "normal", lineWidth: 2, legends: [], isInteractive: true, tooltip: U, enableSlices: false, debugSlices: false, sliceTooltip: Z, debugMesh: false, enableCrosshair: true, crosshairType: "bottom-left" }, _ = Q({}, $, { enablePointLabel: false, useMesh: false, enableTouchCrosshair: false, animate: true, motionConfig: "gentle", defs: [], fill: [], role: "img" });
+}), $ = { curve: "linear", xScale: { type: "point" }, yScale: { type: "linear", min: 0, max: "auto" }, layers: ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"], axisBottom: {}, axisLeft: {}, enableGridX: true, enableGridY: true, enablePoints: true, pointSize: 6, pointColor: { from: "color" }, pointBorderWidth: 0, pointBorderColor: { theme: "background" }, enablePointLabel: false, pointLabel: "yFormatted", colors: { scheme: "nivo" }, enableArea: false, areaBaselineValue: 0, areaOpacity: 0.2, areaBlendMode: "normal", lineWidth: 2, legends: [], isInteractive: true, tooltip: U, enableSlices: false, debugSlices: false, sliceTooltip: Z, debugMesh: false, enableCrosshair: true, crosshairType: "bottom-left" }, _ = Q({}, $, { enablePointLabel: false, useMesh: false, enableTouchCrosshair: false, animate: true, motionConfig: "gentle", defs: [], fill: [], role: "img", initialHiddenIds: [] });
 Q({}, $, { pixelRatio: "undefined" != typeof window && window.devicePixelRatio || 1 });
 var oe = function(e3) {
   var i2 = e3.curve;
   return useMemo(function() {
-    return R().defined(function(e4) {
+    return H$4().defined(function(e4) {
       return null !== e4.x && null !== e4.y;
     }).x(function(e4) {
       return e4.x;
@@ -6014,7 +8812,7 @@ var oe = function(e3) {
 }, ie = function(e3) {
   var i2 = e3.curve, t2 = e3.yScale, n2 = e3.areaBaselineValue;
   return useMemo(function() {
-    return I$1().defined(function(e4) {
+    return Y$5().defined(function(e4) {
       return null !== e4.x && null !== e4.y;
     }).x(function(e4) {
       return e4.x;
@@ -6033,8 +8831,8 @@ var oe = function(e3) {
       }), Array.from(e4.entries()).sort(function(e6, o3) {
         return e6[0] - o3[0];
       }).map(function(e6, o3, t3) {
-        var n3, l2, s = e6[0], c2 = e6[1], u2 = t3[o3 - 1], d = t3[o3 + 1];
-        return n3 = u2 ? s - (s - u2[0]) / 2 : s, l2 = d ? s - n3 + (d[0] - s) / 2 : r2 - n3, { id: "slice:" + i2 + ":" + s, x0: n3, x: s, y0: 0, y: 0, width: l2, height: a2, points: c2.reverse() };
+        var n3, l2, s = e6[0], d = e6[1], c2 = t3[o3 - 1], u2 = t3[o3 + 1];
+        return n3 = c2 ? s - (s - c2[0]) / 2 : s, l2 = u2 ? s - n3 + (u2[0] - s) / 2 : r2 - n3, { id: "slice:" + i2 + ":" + s, x0: n3, x: s, y0: 0, y: 0, width: l2, height: a2, points: d.reverse() };
       });
     }
     if ("y" === t2) {
@@ -6044,21 +8842,21 @@ var oe = function(e3) {
       }), Array.from(o2.entries()).sort(function(e6, o3) {
         return e6[0] - o3[0];
       }).map(function(e6, o3, i3) {
-        var t3, n3, l2 = e6[0], s = e6[1], c2 = i3[o3 - 1], u2 = i3[o3 + 1];
-        return t3 = c2 ? l2 - (l2 - c2[0]) / 2 : l2, n3 = u2 ? l2 - t3 + (u2[0] - l2) / 2 : a2 - t3, { id: l2, x0: 0, x: 0, y0: t3, y: l2, width: r2, height: n3, points: s.reverse() };
+        var t3, n3, l2 = e6[0], s = e6[1], d = i3[o3 - 1], c2 = i3[o3 + 1];
+        return t3 = d ? l2 - (l2 - d[0]) / 2 : l2, n3 = c2 ? l2 - t3 + (c2[0] - l2) / 2 : a2 - t3, { id: l2, x0: 0, x: 0, y0: t3, y: l2, width: r2, height: n3, points: s.reverse() };
       });
     }
   }, [i2, t2, a2, n2, r2]);
 }, ne = "line", re = function(e3) {
-  var n2 = e3.data, r2 = e3.xScale, a2 = void 0 === r2 ? _.xScale : r2, l2 = e3.xFormat, s = e3.yScale, u2 = void 0 === s ? _.yScale : s, h = e3.yFormat, f2 = e3.width, v2 = e3.height, p2 = e3.colors, m2 = void 0 === p2 ? _.colors : p2, g2 = e3.curve, y2 = void 0 === g2 ? _.curve : g2, x2 = e3.areaBaselineValue, b2 = void 0 === x2 ? _.areaBaselineValue : x2, S2 = e3.pointColor, M2 = void 0 === S2 ? _.pointColor : S2, C2 = e3.pointBorderColor, k2 = void 0 === C2 ? _.pointBorderColor : C2, B2 = e3.enableSlices, W2 = void 0 === B2 ? _.enableSlicesTooltip : B2, E2 = useState(H$2(ne))[0], L2 = Ot(l2), G = Ot(h), P2 = pr(m2, "id"), F2 = zt(), O2 = Xe(M2, F2), V2 = Xe(k2, F2), Y2 = useState([]), R2 = Y2[0], I2 = Y2[1], X2 = useMemo(function() {
+  var n2 = e3.data, r2 = e3.xScale, a2 = void 0 === r2 ? _.xScale : r2, l2 = e3.xFormat, s = e3.yScale, c2 = void 0 === s ? _.yScale : s, h = e3.yFormat, f2 = e3.width, v2 = e3.height, p2 = e3.colors, m2 = void 0 === p2 ? _.colors : p2, g2 = e3.curve, y2 = void 0 === g2 ? _.curve : g2, x2 = e3.areaBaselineValue, b2 = void 0 === x2 ? _.areaBaselineValue : x2, S2 = e3.pointColor, M2 = void 0 === S2 ? _.pointColor : S2, C2 = e3.pointBorderColor, k2 = void 0 === C2 ? _.pointBorderColor : C2, B2 = e3.enableSlices, W2 = void 0 === B2 ? _.enableSlicesTooltip : B2, E2 = e3.initialHiddenIds, L2 = void 0 === E2 ? _.initialHiddenIds : E2, G2 = useState(A$5(ne))[0], P2 = Ot(l2), F2 = Ot(h), O2 = pr(m2, "id"), V2 = zt(), I2 = Xe(M2, V2), H2 = Xe(k2, V2), Y2 = useState(null != L2 ? L2 : []), X2 = Y2[0], z2 = Y2[1], j2 = useMemo(function() {
     return dn(n2.filter(function(e4) {
-      return -1 === R2.indexOf(e4.id);
-    }), a2, u2, f2, v2);
-  }, [n2, R2, a2, u2, f2, v2]), z2 = X2.xScale, j2 = X2.yScale, D2 = X2.series, q = useMemo(function() {
+      return -1 === X2.indexOf(e4.id);
+    }), a2, c2, f2, v2);
+  }, [n2, X2, a2, c2, f2, v2]), D2 = j2.xScale, q2 = j2.yScale, J2 = j2.series, K2 = useMemo(function() {
     var e4 = n2.map(function(e6) {
-      return { id: e6.id, label: e6.id, color: P2(e6) };
+      return { id: e6.id, label: e6.id, color: O2(e6) };
     }), o2 = e4.map(function(e6) {
-      return Q({}, D2.find(function(o3) {
+      return Q({}, J2.find(function(o3) {
         return o3.id === e6.id;
       }), { color: e6.color });
     }).filter(function(e6) {
@@ -6069,13 +8867,13 @@ var oe = function(e3) {
         return o3.id === e6.id;
       }) });
     }).reverse(), series: o2 };
-  }, [n2, D2, P2]), J2 = q.legendData, K2 = q.series, N2 = useCallback(function(e4) {
-    I2(function(o2) {
+  }, [n2, J2, O2]), N2 = K2.legendData, U2 = K2.series, Z2 = useCallback(function(e4) {
+    z2(function(o2) {
       return o2.indexOf(e4) > -1 ? o2.filter(function(o3) {
         return o3 !== e4;
       }) : [].concat(o2, [e4]);
     });
-  }, []), U2 = function(e4) {
+  }, []), $2 = function(e4) {
     var i2 = e4.series, t2 = e4.getPointColor, n3 = e4.getPointBorderColor, r3 = e4.formatX, a3 = e4.formatY;
     return useMemo(function() {
       return i2.reduce(function(e6, o2) {
@@ -6087,11 +8885,11 @@ var oe = function(e3) {
         }));
       }, []);
     }, [i2, t2, n3, r3, a3]);
-  }({ series: K2, getPointColor: O2, getPointBorderColor: V2, formatX: L2, formatY: G }), Z2 = te({ componentId: E2, enableSlices: W2, points: U2, width: f2, height: v2 });
-  return { legendData: J2, toggleSerie: N2, lineGenerator: oe({ curve: y2 }), areaGenerator: ie({ curve: y2, yScale: j2, areaBaselineValue: b2 }), getColor: P2, series: K2, xScale: z2, yScale: j2, slices: Z2, points: U2 };
+  }({ series: U2, getPointColor: I2, getPointBorderColor: H2, formatX: P2, formatY: F2 }), ee = te({ componentId: G2, enableSlices: W2, points: $2, width: f2, height: v2 });
+  return { legendData: N2, toggleSerie: Z2, lineGenerator: oe({ curve: y2 }), areaGenerator: ie({ curve: y2, yScale: q2, areaBaselineValue: b2 }), getColor: O2, series: U2, xScale: D2, yScale: q2, slices: ee, points: $2 };
 }, ae = function(e3) {
-  var o2 = e3.areaBlendMode, i2 = e3.areaOpacity, t2 = e3.color, n2 = e3.fill, r2 = e3.path, a2 = Ur(), l2 = a2.animate, s = a2.config, c2 = Fr(r2), u2 = useSpring({ color: t2, config: s, immediate: !l2 });
-  return jsx(animated.path, { d: c2, fill: n2 || u2.color, fillOpacity: i2, strokeWidth: 0, style: { mixBlendMode: o2 } });
+  var o2 = e3.areaBlendMode, i2 = e3.areaOpacity, t2 = e3.color, n2 = e3.fill, r2 = e3.path, a2 = Ur(), l2 = a2.animate, s = a2.config, d = Fr(r2), c2 = useSpring({ color: t2, config: s, immediate: !l2 });
+  return jsx(animated.path, { d, fill: n2 || c2.color, fillOpacity: i2, strokeWidth: 0, style: { mixBlendMode: o2 } });
 }, le = memo(function(e3) {
   var o2 = e3.areaGenerator, i2 = e3.areaOpacity, t2 = e3.areaBlendMode, n2 = e3.lines.slice(0).reverse();
   return jsx("g", { children: n2.map(function(e4) {
@@ -6104,7 +8902,7 @@ var oe = function(e3) {
     return i2(t2);
   }, [i2, t2]), l2 = Fr(a2);
   return jsx(animated.path, { d: l2, fill: "none", strokeWidth: r2, stroke: n2 });
-}), ce = memo(function(e3) {
+}), de = memo(function(e3) {
   var o2 = e3.lines, i2 = e3.lineGenerator, t2 = e3.lineWidth;
   return o2.slice(0).reverse().map(function(e4) {
     var o3 = e4.id, n2 = e4.data, r2 = e4.color;
@@ -6112,52 +8910,52 @@ var oe = function(e3) {
       return e6.position;
     }), lineGenerator: i2, color: r2, thickness: t2 }, o3);
   });
-}), ue = memo(function(e3) {
-  var o2 = e3.slice, i2 = e3.slices, r2 = e3.axis, a2 = e3.debug, l2 = e3.tooltip, s = e3.isCurrent, c2 = e3.setCurrent, u2 = e3.onMouseEnter, d = e3.onMouseMove, h = e3.onMouseLeave, f2 = e3.onClick, v2 = e3.onTouchStart, p2 = e3.onTouchMove, m2 = e3.onTouchEnd, g2 = k$2(), y2 = g2.showTooltipFromEvent, x2 = g2.hideTooltip, b2 = useCallback(function(e4) {
-    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), c2(o2), u2 && u2(o2, e4);
-  }, [y2, l2, o2, r2, c2, u2]), S2 = useCallback(function(e4) {
-    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), d && d(o2, e4);
-  }, [y2, l2, o2, r2, d]), M2 = useCallback(function(e4) {
-    x2(), c2(null), h && h(o2, e4);
-  }, [x2, c2, h, o2]), C2 = useCallback(function(e4) {
+}), ce = memo(function(e3) {
+  var o2 = e3.slice, i2 = e3.slices, r2 = e3.axis, a2 = e3.debug, l2 = e3.tooltip, s = e3.isCurrent, d = e3.setCurrent, c2 = e3.onMouseEnter, u2 = e3.onMouseMove, h = e3.onMouseLeave, f2 = e3.onClick, v2 = e3.onTouchStart, p2 = e3.onTouchMove, m2 = e3.onTouchEnd, g2 = k$1(), y2 = g2.showTooltipFromEvent, x2 = g2.hideTooltip, b2 = useCallback(function(e4) {
+    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), d(o2), c2 && c2(o2, e4);
+  }, [y2, l2, o2, r2, d, c2]), S2 = useCallback(function(e4) {
+    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), u2 && u2(o2, e4);
+  }, [y2, l2, o2, r2, u2]), M2 = useCallback(function(e4) {
+    x2(), d(null), h && h(o2, e4);
+  }, [x2, d, h, o2]), C2 = useCallback(function(e4) {
     f2 && f2(o2, e4);
   }, [o2, f2]), w2 = useCallback(function(e4) {
-    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), c2(o2), v2 && v2(o2, e4);
-  }, [r2, v2, c2, y2, o2, l2]), T2 = useCallback(function(e4) {
+    y2(createElement(l2, { slice: o2, axis: r2 }), e4, "right"), d(o2), v2 && v2(o2, e4);
+  }, [r2, v2, d, y2, o2, l2]), T2 = useCallback(function(e4) {
     var t2 = e4.touches[0], a3 = document.elementFromPoint(t2.clientX, t2.clientY), s2 = null == a3 ? void 0 : a3.getAttribute("data-ref");
     if (s2) {
-      var u3 = i2.find(function(e6) {
+      var c3 = i2.find(function(e6) {
         return e6.id === s2;
       });
-      u3 && (y2(createElement(l2, { slice: u3, axis: r2 }), e4, "right"), c2(u3));
+      c3 && (y2(createElement(l2, { slice: c3, axis: r2 }), e4, "right"), d(c3));
     }
     p2 && p2(o2, e4);
-  }, [r2, p2, c2, y2, o2, i2, l2]), k2 = useCallback(function(e4) {
-    x2(), c2(null), m2 && m2(o2, e4);
-  }, [x2, c2, m2, o2]);
+  }, [r2, p2, d, y2, o2, i2, l2]), k2 = useCallback(function(e4) {
+    x2(), d(null), m2 && m2(o2, e4);
+  }, [x2, d, m2, o2]);
   return jsx("rect", { x: o2.x0, y: o2.y0, width: o2.width, height: o2.height, stroke: "red", strokeWidth: a2 ? 1 : 0, strokeOpacity: 0.75, fill: "red", fillOpacity: s && a2 ? 0.35 : 0, onMouseEnter: b2, onMouseMove: S2, onMouseLeave: M2, onClick: C2, onTouchStart: w2, onTouchMove: T2, onTouchEnd: k2, "data-ref": o2.id });
-}), de = memo(function(e3) {
-  var o2 = e3.slices, i2 = e3.axis, t2 = e3.debug, n2 = e3.height, r2 = e3.tooltip, a2 = e3.current, l2 = e3.setCurrent, s = e3.onMouseEnter, c2 = e3.onMouseMove, u2 = e3.onMouseLeave, d = e3.onClick, h = e3.onTouchStart, f2 = e3.onTouchMove, v2 = e3.onTouchEnd;
+}), ue = memo(function(e3) {
+  var o2 = e3.slices, i2 = e3.axis, t2 = e3.debug, n2 = e3.height, r2 = e3.tooltip, a2 = e3.current, l2 = e3.setCurrent, s = e3.onMouseEnter, d = e3.onMouseMove, c2 = e3.onMouseLeave, u2 = e3.onClick, h = e3.onTouchStart, f2 = e3.onTouchMove, v2 = e3.onTouchEnd;
   return o2.map(function(e4) {
-    return jsx(ue, { slice: e4, slices: o2, axis: i2, debug: t2, height: n2, tooltip: r2, setCurrent: l2, isCurrent: null !== a2 && a2.id === e4.id, onMouseEnter: s, onMouseMove: c2, onMouseLeave: u2, onClick: d, onTouchStart: h, onTouchMove: f2, onTouchEnd: v2 }, e4.id);
+    return jsx(ce, { slice: e4, slices: o2, axis: i2, debug: t2, height: n2, tooltip: r2, setCurrent: l2, isCurrent: null !== a2 && a2.id === e4.id, onMouseEnter: s, onMouseMove: d, onMouseLeave: c2, onClick: u2, onTouchStart: h, onTouchMove: f2, onTouchEnd: v2 }, e4.id);
   });
 }), he = memo(function(e3) {
-  var o2 = e3.points, i2 = e3.symbol, t2 = e3.size, n2 = e3.borderWidth, r2 = e3.enableLabel, a2 = e3.label, l2 = e3.labelYOffset, s = zt(), u2 = qn(a2), d = o2.slice(0).reverse().map(function(e4) {
-    return { id: e4.id, x: e4.x, y: e4.y, datum: e4.data, fill: e4.color, stroke: e4.borderColor, label: r2 ? u2(e4) : null };
+  var o2 = e3.points, i2 = e3.symbol, t2 = e3.size, n2 = e3.borderWidth, r2 = e3.enableLabel, a2 = e3.label, l2 = e3.labelYOffset, s = zt(), c2 = qn(a2), u2 = o2.slice(0).reverse().map(function(e4) {
+    return { id: e4.id, x: e4.x, y: e4.y, datum: e4.data, fill: e4.color, stroke: e4.borderColor, label: r2 ? c2(e4) : null };
   });
-  return jsx("g", { children: d.map(function(e4) {
+  return jsx("g", { children: u2.map(function(e4) {
     return jsx(vn$1, { x: e4.x, y: e4.y, datum: e4.datum, symbol: i2, size: t2, color: e4.fill, borderWidth: n2, borderColor: e4.stroke, label: e4.label, labelYOffset: l2, theme: s }, e4.id);
   }) });
 }), fe = memo(function(e3) {
-  var o2 = e3.points, i2 = e3.width, r2 = e3.height, a2 = e3.margin, l2 = e3.setCurrent, s = e3.onMouseEnter, c2 = e3.onMouseMove, u2 = e3.onMouseLeave, d = e3.onClick, h = e3.onTouchStart, f2 = e3.onTouchMove, v2 = e3.onTouchEnd, p2 = e3.tooltip, m2 = e3.debug, g2 = e3.enableTouchCrosshair, y2 = k$2(), x2 = y2.showTooltipAt, b2 = y2.hideTooltip, S2 = useCallback(function(e4, o3) {
+  var o2 = e3.points, i2 = e3.width, r2 = e3.height, a2 = e3.margin, l2 = e3.setCurrent, s = e3.onMouseEnter, d = e3.onMouseMove, c2 = e3.onMouseLeave, u2 = e3.onClick, h = e3.onTouchStart, f2 = e3.onTouchMove, v2 = e3.onTouchEnd, p2 = e3.tooltip, m2 = e3.debug, g2 = e3.enableTouchCrosshair, y2 = k$1(), x2 = y2.showTooltipAt, b2 = y2.hideTooltip, S2 = useCallback(function(e4, o3) {
     x2(createElement(p2, { point: e4 }), [e4.x + a2.left, e4.y + a2.top], "top"), s && s(e4, o3);
   }, [x2, p2, s, a2]), M2 = useCallback(function(e4, o3) {
-    x2(createElement(p2, { point: e4 }), [e4.x + a2.left, e4.y + a2.top], "top"), c2 && c2(e4, o3);
-  }, [x2, p2, a2.left, a2.top, c2]), C2 = useCallback(function(e4, o3) {
-    b2(), u2 && u2(e4, o3);
-  }, [b2, u2]), w2 = useCallback(function(e4, o3) {
-    d && d(e4, o3);
-  }, [d]), T2 = useCallback(function(e4, o3) {
+    x2(createElement(p2, { point: e4 }), [e4.x + a2.left, e4.y + a2.top], "top"), d && d(e4, o3);
+  }, [x2, p2, a2.left, a2.top, d]), C2 = useCallback(function(e4, o3) {
+    b2(), c2 && c2(e4, o3);
+  }, [b2, c2]), w2 = useCallback(function(e4, o3) {
+    u2 && u2(e4, o3);
+  }, [u2]), T2 = useCallback(function(e4, o3) {
     x2(createElement(p2, { point: e4 }), [e4.x + a2.left, e4.y + a2.top], "top"), h && h(e4, o3);
   }, [a2.left, a2.top, h, x2, p2]), k2 = useCallback(function(e4, o3) {
     x2(createElement(p2, { point: e4 }), [e4.x + a2.left, e4.y + a2.top], "top"), f2 && f2(e4, o3);
@@ -6166,11 +8964,11 @@ var oe = function(e3) {
   }, [v2, b2]);
   return jsx(I, { nodes: o2, width: i2, height: r2, setCurrent: l2, onMouseEnter: S2, onMouseMove: M2, onMouseLeave: C2, onClick: w2, onTouchStart: T2, onTouchMove: k2, onTouchEnd: B2, enableTouchCrosshair: g2, debug: m2 });
 }), ve = On(function(e3) {
-  var o2 = e3.data, t2 = e3.xScale, n2 = void 0 === t2 ? { type: "point" } : t2, a2 = e3.xFormat, l2 = e3.yScale, s = void 0 === l2 ? { type: "linear", min: 0, max: "auto" } : l2, u2 = e3.yFormat, d = e3.layers, h = void 0 === d ? ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"] : d, f2 = e3.curve, v2 = void 0 === f2 ? "linear" : f2, p2 = e3.areaBaselineValue, m2 = void 0 === p2 ? 0 : p2, S2 = e3.colors, M2 = void 0 === S2 ? { scheme: "nivo" } : S2, C2 = e3.margin, w2 = e3.width, W2 = e3.height, E2 = e3.axisTop, G = e3.axisRight, P2 = e3.axisBottom, F2 = void 0 === P2 ? {} : P2, O$12 = e3.axisLeft, V2 = void 0 === O$12 ? {} : O$12, R2 = e3.enableGridX, I2 = void 0 === R2 || R2, A2 = e3.enableGridY, H2 = void 0 === A2 || A2, z2 = e3.gridXValues, j2 = e3.gridYValues, D2 = e3.lineWidth, q = void 0 === D2 ? 2 : D2, J2 = e3.enableArea, K2 = void 0 !== J2 && J2, N2 = e3.areaOpacity, $2 = void 0 === N2 ? 0.2 : N2, _2 = e3.areaBlendMode, ee = void 0 === _2 ? "normal" : _2, oe2 = e3.enablePoints, ie2 = void 0 === oe2 || oe2, te2 = e3.pointSymbol, ne2 = e3.pointSize, ae2 = void 0 === ne2 ? 6 : ne2, se2 = e3.pointColor, ue2 = void 0 === se2 ? { from: "color" } : se2, ve2 = e3.pointBorderWidth, pe2 = void 0 === ve2 ? 0 : ve2, me2 = e3.pointBorderColor, ge2 = void 0 === me2 ? { theme: "background" } : me2, ye2 = e3.enablePointLabel, xe = void 0 !== ye2 && ye2, be2 = e3.pointLabel, Se = void 0 === be2 ? "data.yFormatted" : be2, Me2 = e3.pointLabelYOffset, Ce2 = e3.defs, we = void 0 === Ce2 ? [] : Ce2, Te2 = e3.fill, ke = void 0 === Te2 ? [] : Te2, Be2 = e3.markers, We2 = e3.legends, Ee = void 0 === We2 ? [] : We2, Le2 = e3.isInteractive, Ge2 = void 0 === Le2 || Le2, Pe2 = e3.useMesh, Fe = void 0 !== Pe2 && Pe2, Oe = e3.debugMesh, Ve2 = void 0 !== Oe && Oe, Ye = e3.onMouseEnter, Re2 = e3.onMouseMove, Ie = e3.onMouseLeave, Ae = e3.onClick, He2 = e3.onTouchStart, Xe$1 = e3.onTouchMove, ze = e3.onTouchEnd, je2 = e3.tooltip, De2 = void 0 === je2 ? U : je2, qe2 = e3.enableSlices, Je2 = void 0 !== qe2 && qe2, Ke2 = e3.debugSlices, Ne = void 0 !== Ke2 && Ke2, Qe2 = e3.sliceTooltip, Ue2 = void 0 === Qe2 ? Z : Qe2, Ze2 = e3.enableCrosshair, $e2 = void 0 === Ze2 || Ze2, _e2 = e3.crosshairType, eo = void 0 === _e2 ? "bottom-left" : _e2, oo = e3.enableTouchCrosshair, io = void 0 !== oo && oo, to2 = e3.role, no = void 0 === to2 ? "img" : to2, ro = wt(w2, W2, C2), ao = ro.margin, lo = ro.innerWidth, so = ro.innerHeight, co = ro.outerWidth, uo = ro.outerHeight, ho = re({ data: o2, xScale: n2, xFormat: a2, yScale: s, yFormat: u2, width: lo, height: so, colors: M2, curve: v2, areaBaselineValue: m2, pointColor: ue2, pointBorderColor: ge2, enableSlices: Je2 }), fo = ho.legendData, vo = ho.toggleSerie, po = ho.lineGenerator, mo = ho.areaGenerator, go = ho.series, yo = ho.xScale, xo = ho.yScale, bo = ho.slices, So = ho.points, Mo = zt(), Co = Xe(ue2, Mo), wo = Xe(ge2, Mo), To = useState(null), ko = To[0], Bo = To[1], Wo = useState(null), Eo = Wo[0], Lo = Wo[1], Go = { grid: jsx(C$1, { theme: Mo, width: lo, height: so, xScale: I2 ? yo : null, yScale: H2 ? xo : null, xValues: z2, yValues: j2 }, "grid"), markers: jsx(Rn, { markers: Be2, width: lo, height: so, xScale: yo, yScale: xo, theme: Mo }, "markers"), axes: jsx(B$1, { xScale: yo, yScale: xo, width: lo, height: so, theme: Mo, top: E2, right: G, bottom: F2, left: V2 }, "axes"), areas: null, lines: jsx(ce, { lines: go, lineGenerator: po, lineWidth: q }, "lines"), slices: null, points: null, crosshair: null, mesh: null, legends: Ee.map(function(e4, o3) {
-    return jsx(O, Q({}, e4, { containerWidth: lo, containerHeight: so, data: e4.data || fo, theme: Mo, toggleSerie: e4.toggleSerie ? vo : void 0 }), "legend." + o3);
-  }) }, Po = In(we, go, ke);
-  return K2 && (Go.areas = jsx(le, { areaGenerator: mo, areaOpacity: $2, areaBlendMode: ee, lines: go }, "areas")), Ge2 && false !== Je2 && (Go.slices = jsx(de, { slices: bo, axis: Je2, debug: Ne, height: so, tooltip: Ue2, current: Eo, setCurrent: Lo, onMouseEnter: Ye, onMouseMove: Re2, onMouseLeave: Ie, onClick: Ae, onTouchStart: He2, onTouchMove: Xe$1, onTouchEnd: ze }, "slices")), ie2 && (Go.points = jsx(he, { points: So, symbol: te2, size: ae2, color: Co, borderWidth: pe2, borderColor: wo, enableLabel: xe, label: Se, labelYOffset: Me2 }, "points")), Ge2 && $e2 && (null !== ko && (Go.crosshair = jsx(P$2, { width: lo, height: so, x: ko.x, y: ko.y, type: eo }, "crosshair")), null !== Eo && (Go.crosshair = jsx(P$2, { width: lo, height: so, x: Eo.x, y: Eo.y, type: Je2 }, "crosshair"))), Ge2 && Fe && false === Je2 && (Go.mesh = jsx(fe, { points: So, width: lo, height: so, margin: ao, current: ko, setCurrent: Bo, onMouseEnter: Ye, onMouseMove: Re2, onMouseLeave: Ie, onClick: Ae, onTouchStart: He2, onTouchMove: Xe$1, onTouchEnd: ze, tooltip: De2, enableTouchCrosshair: io, debug: Ve2 }, "mesh")), jsx(gn$1, { defs: Po, width: co, height: uo, margin: ao, role: no, children: h.map(function(o3, i2) {
-    return "function" == typeof o3 ? jsx(Fragment$1, { children: o3(Q({}, e3, { innerWidth: lo, innerHeight: so, series: go, slices: bo, points: So, xScale: yo, yScale: xo, lineGenerator: po, areaGenerator: mo, currentPoint: ko, setCurrentPoint: Bo, currentSlice: Eo, setCurrentSlice: Lo })) }, i2) : Go[o3];
+  var o2 = e3.data, t2 = e3.xScale, n2 = void 0 === t2 ? { type: "point" } : t2, a2 = e3.xFormat, l2 = e3.yScale, s = void 0 === l2 ? { type: "linear", min: 0, max: "auto" } : l2, c2 = e3.yFormat, u2 = e3.layers, h = void 0 === u2 ? ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"] : u2, f2 = e3.curve, v2 = void 0 === f2 ? "linear" : f2, p2 = e3.areaBaselineValue, m2 = void 0 === p2 ? 0 : p2, S2 = e3.colors, M2 = void 0 === S2 ? { scheme: "nivo" } : S2, C2 = e3.margin, w2 = e3.width, W2 = e3.height, E2 = e3.axisTop, G2 = e3.axisRight, P2 = e3.axisBottom, F2 = void 0 === P2 ? {} : P2, O$12 = e3.axisLeft, V2 = void 0 === O$12 ? {} : O$12, H2 = e3.enableGridX, Y2 = void 0 === H2 || H2, R = e3.enableGridY, A2 = void 0 === R || R, z2 = e3.gridXValues, j2 = e3.gridYValues, D2 = e3.lineWidth, q2 = void 0 === D2 ? 2 : D2, J2 = e3.enableArea, K2 = void 0 !== J2 && J2, N2 = e3.areaOpacity, $2 = void 0 === N2 ? 0.2 : N2, _2 = e3.areaBlendMode, ee = void 0 === _2 ? "normal" : _2, oe2 = e3.enablePoints, ie2 = void 0 === oe2 || oe2, te2 = e3.pointSymbol, ne2 = e3.pointSize, ae2 = void 0 === ne2 ? 6 : ne2, se2 = e3.pointColor, ce2 = void 0 === se2 ? { from: "color" } : se2, ve2 = e3.pointBorderWidth, pe2 = void 0 === ve2 ? 0 : ve2, me2 = e3.pointBorderColor, ge2 = void 0 === me2 ? { theme: "background" } : me2, ye2 = e3.enablePointLabel, xe = void 0 !== ye2 && ye2, be2 = e3.pointLabel, Se = void 0 === be2 ? "data.yFormatted" : be2, Me2 = e3.pointLabelYOffset, Ce2 = e3.defs, we = void 0 === Ce2 ? [] : Ce2, Te2 = e3.fill, ke = void 0 === Te2 ? [] : Te2, Be2 = e3.markers, We2 = e3.legends, Ee = void 0 === We2 ? [] : We2, Le2 = e3.isInteractive, Ge2 = void 0 === Le2 || Le2, Pe2 = e3.useMesh, Fe = void 0 !== Pe2 && Pe2, Oe = e3.debugMesh, Ve2 = void 0 !== Oe && Oe, Ie = e3.onMouseEnter, He2 = e3.onMouseMove, Ye = e3.onMouseLeave, Re2 = e3.onClick, Ae = e3.onTouchStart, Xe$12 = e3.onTouchMove, ze = e3.onTouchEnd, je2 = e3.tooltip, De2 = void 0 === je2 ? U : je2, qe2 = e3.enableSlices, Je2 = void 0 !== qe2 && qe2, Ke2 = e3.debugSlices, Ne = void 0 !== Ke2 && Ke2, Qe2 = e3.sliceTooltip, Ue2 = void 0 === Qe2 ? Z : Qe2, Ze2 = e3.enableCrosshair, $e2 = void 0 === Ze2 || Ze2, _e2 = e3.crosshairType, eo = void 0 === _e2 ? "bottom-left" : _e2, oo = e3.enableTouchCrosshair, io = void 0 !== oo && oo, to2 = e3.role, no = void 0 === to2 ? "img" : to2, ro = e3.initialHiddenIds, ao = void 0 === ro ? [] : ro, lo = wt(w2, W2, C2), so = lo.margin, co = lo.innerWidth, uo = lo.innerHeight, ho = lo.outerWidth, fo = lo.outerHeight, vo = re({ data: o2, xScale: n2, xFormat: a2, yScale: s, yFormat: c2, width: co, height: uo, colors: M2, curve: v2, areaBaselineValue: m2, pointColor: ce2, pointBorderColor: ge2, enableSlices: Je2, initialHiddenIds: ao }), po = vo.legendData, mo = vo.toggleSerie, go = vo.lineGenerator, yo = vo.areaGenerator, xo = vo.series, bo = vo.xScale, So = vo.yScale, Mo = vo.slices, Co = vo.points, wo = zt(), To = Xe(ce2, wo), ko = Xe(ge2, wo), Bo = useState(null), Wo = Bo[0], Eo = Bo[1], Lo = useState(null), Go = Lo[0], Po = Lo[1], Fo = { grid: jsx(C$3, { theme: wo, width: co, height: uo, xScale: Y2 ? bo : null, yScale: A2 ? So : null, xValues: z2, yValues: j2 }, "grid"), markers: jsx(Rn, { markers: Be2, width: co, height: uo, xScale: bo, yScale: So, theme: wo }, "markers"), axes: jsx(B$1, { xScale: bo, yScale: So, width: co, height: uo, theme: wo, top: E2, right: G2, bottom: F2, left: V2 }, "axes"), areas: null, lines: jsx(de, { lines: xo, lineGenerator: go, lineWidth: q2 }, "lines"), slices: null, points: null, crosshair: null, mesh: null, legends: Ee.map(function(e4, o3) {
+    return jsx(O, Q({}, e4, { containerWidth: co, containerHeight: uo, data: e4.data || po, theme: wo, toggleSerie: e4.toggleSerie ? mo : void 0 }), "legend." + o3);
+  }) }, Oo = In(we, xo, ke);
+  return K2 && (Fo.areas = jsx(le, { areaGenerator: yo, areaOpacity: $2, areaBlendMode: ee, lines: xo }, "areas")), Ge2 && false !== Je2 && (Fo.slices = jsx(ue, { slices: Mo, axis: Je2, debug: Ne, height: uo, tooltip: Ue2, current: Go, setCurrent: Po, onMouseEnter: Ie, onMouseMove: He2, onMouseLeave: Ye, onClick: Re2, onTouchStart: Ae, onTouchMove: Xe$12, onTouchEnd: ze }, "slices")), ie2 && (Fo.points = jsx(he, { points: Co, symbol: te2, size: ae2, color: To, borderWidth: pe2, borderColor: ko, enableLabel: xe, label: Se, labelYOffset: Me2 }, "points")), Ge2 && $e2 && (null !== Wo && (Fo.crosshair = jsx(P$2, { width: co, height: uo, x: Wo.x, y: Wo.y, type: eo }, "crosshair")), null !== Go && (Fo.crosshair = jsx(P$2, { width: co, height: uo, x: Go.x, y: Go.y, type: Je2 }, "crosshair"))), Ge2 && Fe && false === Je2 && (Fo.mesh = jsx(fe, { points: Co, width: co, height: uo, margin: so, current: Wo, setCurrent: Eo, onMouseEnter: Ie, onMouseMove: He2, onMouseLeave: Ye, onClick: Re2, onTouchStart: Ae, onTouchMove: Xe$12, onTouchEnd: ze, tooltip: De2, enableTouchCrosshair: io, debug: Ve2 }, "mesh")), jsx(gn$1, { defs: Oo, width: ho, height: fo, margin: so, role: no, children: h.map(function(o3, i2) {
+    return "function" == typeof o3 ? jsx(Fragment$1, { children: o3(Q({}, e3, { innerWidth: co, innerHeight: uo, series: xo, slices: Mo, points: Co, xScale: bo, yScale: So, lineGenerator: go, areaGenerator: yo, currentPoint: Wo, setCurrentPoint: Eo, currentSlice: Go, setCurrentSlice: Po })) }, i2) : Fo[o3];
   }) });
 }), pe = function(e3) {
   return jsx(It, { children: function(o2) {
@@ -6178,26 +8976,26 @@ var oe = function(e3) {
     return jsx(ve, Q({ width: i2, height: t2 }, e3));
   } });
 }, me = On(function(e3) {
-  var o2 = useRef(null), r2 = e3.width, a2 = e3.height, u2 = e3.margin, d = e3.pixelRatio, h = void 0 === d ? "undefined" != typeof window && window.devicePixelRatio || 1 : d, f2 = e3.data, v2 = e3.xScale, p2 = void 0 === v2 ? { type: "point" } : v2, m2 = e3.xFormat, y2 = e3.yScale, x2 = void 0 === y2 ? { type: "linear", min: 0, max: "auto" } : y2, b2 = e3.yFormat, S2 = e3.curve, w2 = void 0 === S2 ? "linear" : S2, T2 = e3.layers, k2 = void 0 === T2 ? ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"] : T2, B2 = e3.colors, L2 = void 0 === B2 ? { scheme: "nivo" } : B2, P2 = e3.lineWidth, F2 = void 0 === P2 ? 2 : P2, O2 = e3.enableArea, Y2 = void 0 !== O2 && O2, R2 = e3.areaBaselineValue, I2 = void 0 === R2 ? 0 : R2, A2 = e3.areaOpacity, H$22 = void 0 === A2 ? 0.2 : A2, z$22 = e3.enablePoints, j$12 = void 0 === z$22 || z$22, D2 = e3.pointSize, q = void 0 === D2 ? 6 : D2, Z2 = e3.pointColor, $2 = void 0 === Z2 ? { from: "color" } : Z2, _2 = e3.pointBorderWidth, ee = void 0 === _2 ? 0 : _2, oe2 = e3.pointBorderColor, ie2 = void 0 === oe2 ? { theme: "background" } : oe2, te2 = e3.enableGridX, ne2 = void 0 === te2 || te2, ae2 = e3.gridXValues, le2 = e3.enableGridY, se2 = void 0 === le2 || le2, ce2 = e3.gridYValues, ue2 = e3.axisTop, de2 = e3.axisRight, he2 = e3.axisBottom, fe2 = void 0 === he2 ? {} : he2, ve2 = e3.axisLeft, pe2 = void 0 === ve2 ? {} : ve2, me2 = e3.legends, ge2 = void 0 === me2 ? [] : me2, ye2 = e3.isInteractive, xe = void 0 === ye2 || ye2, be2 = e3.debugMesh, Se = void 0 !== be2 && be2, Me2 = e3.onMouseLeave, Ce2 = e3.onClick, we = e3.tooltip, Te2 = void 0 === we ? U : we, ke = e3.canvasRef, Be2 = wt(r2, a2, u2), We2 = Be2.margin, Ee = Be2.innerWidth, Le2 = Be2.innerHeight, Ge2 = Be2.outerWidth, Pe2 = Be2.outerHeight, Fe = zt(), Oe = useState(null), Ve2 = Oe[0], Ye = Oe[1], Re2 = re({ data: f2, xScale: p2, xFormat: m2, yScale: x2, yFormat: b2, width: Ee, height: Le2, colors: L2, curve: w2, areaBaselineValue: I2, pointColor: $2, pointBorderColor: ie2 }), Ie = Re2.lineGenerator, Ae = Re2.areaGenerator, He2 = Re2.series, Xe2 = Re2.xScale, ze = Re2.yScale, je2 = Re2.points, De2 = W({ points: je2, width: Ee, height: Le2, debug: Se }), qe2 = De2.delaunay, Je2 = De2.voronoi;
+  var o2 = useRef(null), r2 = e3.width, a2 = e3.height, c2 = e3.margin, u2 = e3.pixelRatio, h = void 0 === u2 ? "undefined" != typeof window && window.devicePixelRatio || 1 : u2, f2 = e3.data, v2 = e3.xScale, p2 = void 0 === v2 ? { type: "point" } : v2, m2 = e3.xFormat, y2 = e3.yScale, x2 = void 0 === y2 ? { type: "linear", min: 0, max: "auto" } : y2, b2 = e3.yFormat, S2 = e3.curve, w2 = void 0 === S2 ? "linear" : S2, T2 = e3.layers, k2 = void 0 === T2 ? ["grid", "markers", "axes", "areas", "crosshair", "lines", "points", "slices", "mesh", "legends"] : T2, B2 = e3.colors, L2 = void 0 === B2 ? { scheme: "nivo" } : B2, P2 = e3.lineWidth, F2 = void 0 === P2 ? 2 : P2, O2 = e3.enableArea, I2 = void 0 !== O2 && O2, H$22 = e3.areaBaselineValue, Y2 = void 0 === H$22 ? 0 : H$22, R = e3.areaOpacity, A2 = void 0 === R ? 0.2 : R, z$22 = e3.enablePoints, j2 = void 0 === z$22 || z$22, D2 = e3.pointSize, q2 = void 0 === D2 ? 6 : D2, Z2 = e3.pointColor, $2 = void 0 === Z2 ? { from: "color" } : Z2, _2 = e3.pointBorderWidth, ee = void 0 === _2 ? 0 : _2, oe2 = e3.pointBorderColor, ie2 = void 0 === oe2 ? { theme: "background" } : oe2, te2 = e3.enableGridX, ne2 = void 0 === te2 || te2, ae2 = e3.gridXValues, le2 = e3.enableGridY, se2 = void 0 === le2 || le2, de2 = e3.gridYValues, ce2 = e3.axisTop, ue2 = e3.axisRight, he2 = e3.axisBottom, fe2 = void 0 === he2 ? {} : he2, ve2 = e3.axisLeft, pe2 = void 0 === ve2 ? {} : ve2, me2 = e3.legends, ge2 = void 0 === me2 ? [] : me2, ye2 = e3.isInteractive, xe = void 0 === ye2 || ye2, be2 = e3.debugMesh, Se = void 0 !== be2 && be2, Me2 = e3.onMouseLeave, Ce2 = e3.onClick, we = e3.tooltip, Te2 = void 0 === we ? U : we, ke = e3.canvasRef, Be2 = wt(r2, a2, c2), We2 = Be2.margin, Ee = Be2.innerWidth, Le2 = Be2.innerHeight, Ge2 = Be2.outerWidth, Pe2 = Be2.outerHeight, Fe = zt(), Oe = useState(null), Ve2 = Oe[0], Ie = Oe[1], He2 = re({ data: f2, xScale: p2, xFormat: m2, yScale: x2, yFormat: b2, width: Ee, height: Le2, colors: L2, curve: w2, areaBaselineValue: Y2, pointColor: $2, pointBorderColor: ie2 }), Ye = He2.lineGenerator, Re2 = He2.areaGenerator, Ae = He2.series, Xe2 = He2.xScale, ze = He2.yScale, je2 = He2.points, De2 = W({ points: je2, width: Ee, height: Le2, debug: Se }), qe2 = De2.delaunay, Je2 = De2.voronoi;
   useEffect(function() {
     ke && (ke.current = o2.current), o2.current.width = Ge2 * h, o2.current.height = Pe2 * h;
     var e4 = o2.current.getContext("2d");
     e4.scale(h, h), e4.fillStyle = Fe.background, e4.fillRect(0, 0, Ge2, Pe2), e4.translate(We2.left, We2.top), k2.forEach(function(o3) {
-      if ("function" == typeof o3 && o3({ ctx: e4, innerWidth: Ee, innerHeight: Le2, series: He2, points: je2, xScale: Xe2, yScale: ze, lineWidth: F2, lineGenerator: Ie, areaGenerator: Ae, currentPoint: Ve2, setCurrentPoint: Ye }), "grid" === o3 && Fe.grid.line.strokeWidth > 0 && (e4.lineWidth = Fe.grid.line.strokeWidth, e4.strokeStyle = Fe.grid.line.stroke, ne2 && z$1(e4, { width: Ee, height: Le2, scale: Xe2, axis: "x", values: ae2 }), se2 && z$1(e4, { width: Ee, height: Le2, scale: ze, axis: "y", values: ce2 })), "axes" === o3 && j(e4, { xScale: Xe2, yScale: ze, width: Ee, height: Le2, top: ue2, right: de2, bottom: fe2, left: pe2, theme: Fe }), "areas" === o3 && true === Y2) {
-        e4.save(), e4.globalAlpha = H$22, Ae.context(e4);
-        for (var i2 = He2.length - 1; i2 >= 0; i2--) e4.fillStyle = He2[i2].color, e4.beginPath(), Ae(He2[i2].data.map(function(e6) {
+      if ("function" == typeof o3 && o3({ ctx: e4, innerWidth: Ee, innerHeight: Le2, series: Ae, points: je2, xScale: Xe2, yScale: ze, lineWidth: F2, lineGenerator: Ye, areaGenerator: Re2, currentPoint: Ve2, setCurrentPoint: Ie }), "grid" === o3 && Fe.grid.line.strokeWidth > 0 && (e4.lineWidth = Fe.grid.line.strokeWidth, e4.strokeStyle = Fe.grid.line.stroke, ne2 && z$1(e4, { width: Ee, height: Le2, scale: Xe2, axis: "x", values: ae2 }), se2 && z$1(e4, { width: Ee, height: Le2, scale: ze, axis: "y", values: de2 })), "axes" === o3 && j$2(e4, { xScale: Xe2, yScale: ze, width: Ee, height: Le2, top: ce2, right: ue2, bottom: fe2, left: pe2, theme: Fe }), "areas" === o3 && true === I2) {
+        e4.save(), e4.globalAlpha = A2, Re2.context(e4);
+        for (var i2 = Ae.length - 1; i2 >= 0; i2--) e4.fillStyle = Ae[i2].color, e4.beginPath(), Re2(Ae[i2].data.map(function(e6) {
           return e6.position;
         })), e4.fill();
         e4.restore();
       }
-      if ("lines" === o3 && (Ie.context(e4), He2.forEach(function(o4) {
-        e4.strokeStyle = o4.color, e4.lineWidth = F2, e4.beginPath(), Ie(o4.data.map(function(e6) {
+      if ("lines" === o3 && (Ye.context(e4), Ae.forEach(function(o4) {
+        e4.strokeStyle = o4.color, e4.lineWidth = F2, e4.beginPath(), Ye(o4.data.map(function(e6) {
           return e6.position;
         })), e4.stroke();
-      })), "points" === o3 && true === j$12 && q > 0 && je2.forEach(function(o4) {
-        e4.fillStyle = o4.color, e4.beginPath(), e4.arc(o4.x, o4.y, q / 2, 0, 2 * Math.PI), e4.fill(), ee > 0 && (e4.strokeStyle = o4.borderColor, e4.lineWidth = ee, e4.stroke());
+      })), "points" === o3 && true === j2 && q2 > 0 && je2.forEach(function(o4) {
+        e4.fillStyle = o4.color, e4.beginPath(), e4.arc(o4.x, o4.y, q2 / 2, 0, 2 * Math.PI), e4.fill(), ee > 0 && (e4.strokeStyle = o4.borderColor, e4.lineWidth = ee, e4.stroke());
       }), "mesh" === o3 && true === Se && (z(e4, Je2), Ve2 && H(e4, Je2, Ve2.index)), "legends" === o3) {
-        var t2 = He2.map(function(e6) {
+        var t2 = Ae.map(function(e6) {
           return { id: e6.id, label: e6.id, color: e6.color };
         }).reverse();
         ge2.forEach(function(o4) {
@@ -6205,18 +9003,18 @@ var oe = function(e3) {
         });
       }
     });
-  }, [o2, Ge2, Pe2, k2, Fe, Ie, He2, Xe2, ze, ne2, ae2, se2, ce2, ue2, de2, fe2, pe2, ge2, je2, j$12, q, Ve2]);
+  }, [o2, Ge2, Pe2, k2, Fe, Ye, Ae, Xe2, ze, ne2, ae2, se2, de2, ce2, ue2, fe2, pe2, ge2, je2, j2, q2, Ve2]);
   var Ke2 = useCallback(function(e4) {
     var i2 = Sn(o2.current, e4), t2 = i2[0], n2 = i2[1];
     if (!jn(We2.left, We2.top, Ee, Le2, t2, n2)) return null;
     var r3 = qe2.find(t2 - We2.left, n2 - We2.top);
     return je2[r3];
-  }, [o2, We2, Ee, Le2, qe2]), Ne = k$2(), Qe2 = Ne.showTooltipFromEvent, Ue2 = Ne.hideTooltip, Ze2 = useCallback(function(e4) {
+  }, [o2, We2, Ee, Le2, qe2]), Ne = k$1(), Qe2 = Ne.showTooltipFromEvent, Ue2 = Ne.hideTooltip, Ze2 = useCallback(function(e4) {
     var o3 = Ke2(e4);
-    Ye(o3), o3 ? Qe2(createElement(Te2, { point: o3 }), e4) : Ue2();
-  }, [Ke2, Ye, Qe2, Ue2, Te2]), $e2 = useCallback(function(e4) {
-    Ue2(), Ye(null), Ve2 && Me2 && Me2(Ve2, e4);
-  }, [Ue2, Ye, Me2]), _e2 = useCallback(function(e4) {
+    Ie(o3), o3 ? Qe2(createElement(Te2, { point: o3 }), e4) : Ue2();
+  }, [Ke2, Ie, Qe2, Ue2, Te2]), $e2 = useCallback(function(e4) {
+    Ue2(), Ie(null), Ve2 && Me2 && Me2(Ve2, e4);
+  }, [Ue2, Ie, Me2]), _e2 = useCallback(function(e4) {
     if (Ce2) {
       var o3 = Ke2(e4);
       o3 && Ce2(o3, e4);
@@ -6232,29 +9030,6 @@ forwardRef(function(e3, o2) {
     return jsx(ge, Q({ width: t2, height: n2 }, e3, { ref: o2 }));
   } });
 });
-function ActivePoint({
-  currentSlice,
-  ...props
-}) {
-  const theme = zt();
-  return /* @__PURE__ */ jsx("g", { children: currentSlice == null ? void 0 : currentSlice.points.map((point2) => /* @__PURE__ */ jsx(
-    vn$1,
-    {
-      x: point2.x,
-      y: point2.y,
-      datum: point2.data,
-      symbol: props.pointSymbol,
-      size: 12,
-      color: point2.borderColor,
-      borderWidth: props.pointBorderWidth,
-      borderColor: point2.color,
-      label: point2.label,
-      labelYOffset: props.pointLabelYOffset,
-      theme
-    },
-    point2.id
-  )) });
-}
 const nivoTheme = {
   background: "transparent",
   text: {
@@ -6285,7 +9060,7 @@ const nivoTheme = {
       },
       text: {
         fontSize: 11,
-        fill: "#ffffff",
+        fill: "#333333",
         outlineWidth: 0,
         outlineColor: "transparent"
       }
@@ -6298,95 +9073,796 @@ const nivoTheme = {
     }
   },
   legends: {
-    title: {
-      text: {
-        fontSize: 11,
-        fill: "#333333",
-        outlineWidth: 0,
-        outlineColor: "transparent"
-      }
-    },
     text: {
       fontSize: 11,
-      fill: "#ffffff",
+      fill: "#333333",
       outlineWidth: 0,
       outlineColor: "transparent"
-    },
-    ticks: {
-      line: {},
-      text: {
-        fontSize: 10,
-        fill: "#ffffff",
-        outlineWidth: 0,
-        outlineColor: "transparent"
-      }
     }
   },
-  annotations: {
+  labels: {
     text: {
-      fontSize: 13,
-      fill: "#ffffff",
-      outlineWidth: 2,
-      outlineColor: "#ffffff",
-      outlineOpacity: 1
-    },
-    link: {
-      stroke: "#000000",
-      strokeWidth: 1,
-      outlineWidth: 2,
-      outlineColor: "#ffffff",
-      outlineOpacity: 1
-    },
-    outline: {
-      stroke: "#000000",
-      strokeWidth: 2,
-      outlineWidth: 2,
-      outlineColor: "#ffffff",
-      outlineOpacity: 1
-    },
-    symbol: {
-      fill: "#000000",
-      outlineWidth: 2,
-      outlineColor: "#ffffff",
-      outlineOpacity: 1
-    }
-  },
-  tooltip: {
-    wrapper: {},
-    container: {
-      background: "#ffffff",
-      color: "#333333",
-      fontSize: 12
-    },
-    basic: {},
-    chip: {},
-    table: {},
-    tableCell: {},
-    tableCellValue: {}
-  },
-  crosshair: {
-    line: {
-      stroke: "#333333",
-      strokeWidth: 1,
-      strokeOpacity: 1,
-      strokeDasharray: "0"
+      fontSize: 11,
+      fill: "#333333",
+      outlineWidth: 0,
+      outlineColor: "transparent"
     }
   }
+  // markers: {
+  //   fontSize: 11,
+  //   fill: "#333333",
+  //   outlineWidth: 0,
+  //   outlineColor: "transparent",
+  // },
 };
-function transformData(chartData, timeframe) {
-  if (!chartData || !chartData.results || chartData.results.length === 0) {
+async function fetch5YearReturns(ticker2) {
+  console.log("Fetching 5-year returns for", ticker2);
+  const apiKey = "2PSVgNTDY7FjQZobFDb7zZI3wfbVtzAi";
+  const url = new URL(
+    `https://financialmodelingprep.com/api/v3/stock-price-change/${ticker2}`
+  );
+  url.searchParams.append("apikey", apiKey);
+  const response = await fetch(url.toString());
+  const data = await response.json();
+  const fiveYearTotal = data[0]["5Y"];
+  const annualizedReturn = calculateAnnualizedReturn(fiveYearTotal, 5);
+  return {
+    annualizedReturn
+  };
+}
+function calculateAnnualizedReturn(totalReturnPercentage, years) {
+  const totalReturnDecimal = totalReturnPercentage / 100;
+  const annualizedReturn = (Math.pow(1 + totalReturnDecimal, 1 / years) - 1) * 100;
+  return annualizedReturn;
+}
+function ETFList({ tickers, onRemove, onReturnsUpdate }) {
+  const { etfData } = useLoaderData();
+  const [returnsData, setReturnsData] = useState([]);
+  const [fetchedTickers, setFetchedTickers] = useState(/* @__PURE__ */ new Set());
+  const [fetchingTickers, setFetchingTickers] = useState(
+    /* @__PURE__ */ new Set()
+  );
+  useEffect(() => {
+    const newTickers = tickers.filter(
+      (ticker2) => !fetchedTickers.has(ticker2) && !fetchingTickers.has(ticker2)
+    );
+    if (newTickers.length === 0) return;
+    const fetchReturns = async () => {
+      setFetchingTickers((prev) => /* @__PURE__ */ new Set([...prev, ...newTickers]));
+      const newReturnsData = await Promise.all(
+        newTickers.map(async (ticker2) => {
+          try {
+            const { annualizedReturn } = await fetch5YearReturns(ticker2);
+            return {
+              ticker: ticker2,
+              returns: annualizedReturn,
+              isLoading: false
+            };
+          } catch (error) {
+            console.error(`Error fetching returns for ${ticker2}:`, error);
+            return {
+              ticker: ticker2,
+              returns: null,
+              isLoading: false,
+              error: "Failed to fetch returns"
+            };
+          }
+        })
+      );
+      setReturnsData((prev) => {
+        const existingData = prev.filter(
+          (data) => tickers.includes(data.ticker)
+        );
+        return [...existingData, ...newReturnsData];
+      });
+      setFetchedTickers((prev) => {
+        const next = new Set(prev);
+        newTickers.forEach((ticker2) => next.add(ticker2));
+        return next;
+      });
+      onReturnsUpdate([...newReturnsData]);
+      setFetchingTickers((prev) => {
+        newTickers.forEach((ticker2) => prev.delete(ticker2));
+        return new Set(prev);
+      });
+    };
+    fetchReturns();
+  }, [tickers, fetchedTickers, fetchingTickers, onReturnsUpdate]);
+  useEffect(() => {
+    setFetchedTickers((prev) => {
+      const next = new Set(prev);
+      Array.from(prev).forEach((ticker2) => {
+        if (!tickers.includes(ticker2)) {
+          next.delete(ticker2);
+        }
+      });
+      return next;
+    });
+  }, [tickers]);
+  return /* @__PURE__ */ jsx("div", { className: "space-y-2", children: tickers.map((ticker2, index) => {
+    var _a;
+    const returnData = returnsData.find((d) => d.ticker === ticker2);
+    return /* @__PURE__ */ jsxs(
+      "div",
+      {
+        className: "flex items-center justify-between bg-stone-700 p-4 rounded-lg w-full",
+        children: [
+          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsx("div", { className: "font-medium text-white", children: ticker2 }),
+            /* @__PURE__ */ jsx("div", { className: "text-sm text-stone-300", children: etfData[ticker2] || "Loading..." })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
+            /* @__PURE__ */ jsx("div", { className: "text-sm text-stone-300", children: (returnData == null ? void 0 : returnData.isLoading) ? "Loading..." : (returnData == null ? void 0 : returnData.error) ? returnData.error : `5-Year Total Returns: ${((_a = returnData == null ? void 0 : returnData.returns) == null ? void 0 : _a.toFixed(2)) ?? "N/A"}%` }),
+            /* @__PURE__ */ jsx(
+              Button,
+              {
+                type: "button",
+                variant: "ghost",
+                size: "icon",
+                className: "h-8 w-8 text-stone-400 hover:text-white",
+                onClick: () => onRemove(index),
+                children: /* @__PURE__ */ jsx(X$6, { className: "h-4 w-4" })
+              }
+            )
+          ] })
+        ]
+      },
+      index
+    );
+  }) });
+}
+function FocusableInput({
+  field,
+  isFocused,
+  setIsFocused,
+  formatter,
+  parser
+}) {
+  const handleChange = (e3) => {
+    const rawValue = e3.target.value;
+    const parsedValue = parser(rawValue);
+    if (parsedValue !== "") {
+      const numberValue = parseFloat(parsedValue);
+      if (!isNaN(numberValue)) {
+        field.onChange(numberValue);
+      }
+    }
+  };
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+  const handleFocus = (e3) => {
+    setIsFocused(true);
+    e3.target.select();
+  };
+  return /* @__PURE__ */ jsx(
+    Input,
+    {
+      ...field,
+      type: "text",
+      inputMode: "decimal",
+      value: isFocused ? field.value : formatter(field.value),
+      onChange: handleChange,
+      onFocus: handleFocus,
+      onBlur: handleBlur,
+      onKeyDown: (e3) => {
+        if (e3.key === "Enter") {
+          e3.preventDefault();
+          e3.currentTarget.blur();
+        }
+      }
+    }
+  );
+}
+const formSchema = z$6.object({
+  initialDeposit: z$6.number().positive({ message: "Amount must be greater than 0." }),
+  monthlyDeposit: z$6.number().nonnegative({ message: "Amount cannot be negative." }),
+  timePeriod: z$6.number().positive({ message: "Time period must be at least 1 year." }),
+  userInterest: z$6.number().positive({ message: "Interest rate must be greater than 0." }),
+  compFrequency: z$6.string(),
+  etfTickers: z$6.array(z$6.string()).default([])
+});
+const defaultValues = {
+  initialDeposit: 0,
+  monthlyDeposit: 0,
+  timePeriod: 0,
+  userInterest: 0,
+  compFrequency: "annual",
+  etfTickers: []
+};
+function calculateCompoundInterest({
+  principal,
+  monthlyContribution,
+  annualRate,
+  years,
+  frequency
+}) {
+  const frequencyMap = {
+    annual: 1,
+    semiannual: 2,
+    quarter: 4,
+    month: 12,
+    day: 365
+  };
+  const n2 = frequencyMap[frequency];
+  const r2 = annualRate / 100;
+  const principalFV = principal * Math.pow(1 + r2 / n2, n2 * years);
+  let contributionFV = 0;
+  if (monthlyContribution > 0) {
+    contributionFV = monthlyContribution * 12 * ((Math.pow(1 + r2 / n2, n2 * years) - 1) / (r2 / n2));
+  }
+  const totalContributions = principal + monthlyContribution * 12 * years;
+  return {
+    futureValue: principalFV + contributionFV,
+    totalContributions,
+    initialAmount: principal
+  };
+}
+const Select = SelectPrimitive.Root;
+const SelectValue = SelectPrimitive.Value;
+const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(
+  SelectPrimitive.Trigger,
+  {
+    ref,
+    className: cn$4(
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-neutral-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-white placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 dark:border-neutral-800 dark:ring-offset-neutral-950 dark:placeholder:text-neutral-400 dark:focus:ring-neutral-300",
+      className
+    ),
+    ...props,
+    children: [
+      children,
+      /* @__PURE__ */ jsx(SelectPrimitive.Icon, { asChild: true, children: /* @__PURE__ */ jsx(ChevronDownIcon, { className: "h-4 w-4 opacity-50" }) })
+    ]
+  }
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+const SelectScrollUpButton = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SelectPrimitive.ScrollUpButton,
+  {
+    ref,
+    className: cn$4(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    ),
+    ...props,
+    children: /* @__PURE__ */ jsx(ChevronUpIcon, { className: "h-4 w-4" })
+  }
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+const SelectScrollDownButton = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SelectPrimitive.ScrollDownButton,
+  {
+    ref,
+    className: cn$4(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    ),
+    ...props,
+    children: /* @__PURE__ */ jsx(ChevronDownIcon, { className: "h-4 w-4" })
+  }
+));
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
+const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => /* @__PURE__ */ jsx(SelectPrimitive.Portal, { children: /* @__PURE__ */ jsxs(
+  SelectPrimitive.Content,
+  {
+    ref,
+    className: cn$4(
+      "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-neutral-200 bg-white text-neutral-950 shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
+      position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+      className
+    ),
+    position,
+    ...props,
+    children: [
+      /* @__PURE__ */ jsx(SelectScrollUpButton, {}),
+      /* @__PURE__ */ jsx(
+        SelectPrimitive.Viewport,
+        {
+          className: cn$4(
+            "p-1",
+            position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+          ),
+          children
+        }
+      ),
+      /* @__PURE__ */ jsx(SelectScrollDownButton, {})
+    ]
+  }
+) }));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
+const SelectLabel = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SelectPrimitive.Label,
+  {
+    ref,
+    className: cn$4("px-2 py-1.5 text-sm font-semibold", className),
+    ...props
+  }
+));
+SelectLabel.displayName = SelectPrimitive.Label.displayName;
+const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(
+  SelectPrimitive.Item,
+  {
+    ref,
+    className: cn$4(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-neutral-100 focus:text-neutral-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:focus:bg-neutral-800 dark:focus:text-neutral-50",
+      className
+    ),
+    ...props,
+    children: [
+      /* @__PURE__ */ jsx("span", { className: "absolute right-2 flex h-3.5 w-3.5 items-center justify-center", children: /* @__PURE__ */ jsx(SelectPrimitive.ItemIndicator, { children: /* @__PURE__ */ jsx(CheckIcon, { className: "h-4 w-4" }) }) }),
+      /* @__PURE__ */ jsx(SelectPrimitive.ItemText, { children })
+    ]
+  }
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
+const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SelectPrimitive.Separator,
+  {
+    ref,
+    className: cn$4("-mx-1 my-1 h-px bg-neutral-100 dark:bg-neutral-800", className),
+    ...props
+  }
+));
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+const loader$4 = async ({ request }) => {
+  var _a;
+  const url = new URL(request.url);
+  const tickers = ((_a = url.searchParams.get("tickers")) == null ? void 0 : _a.split(",").filter(Boolean)) || [];
+  if (tickers.length === 0) {
+    return json({ etfData: {} });
+  }
+  const etfDataPromises = tickers.map(async (ticker2) => {
+    const data = await getETFByTicker(ticker2);
+    return {
+      ticker: ticker2,
+      name: (data == null ? void 0 : data.name) || null
+    };
+  });
+  const etfDataResults = await Promise.all(etfDataPromises);
+  const etfData = etfDataResults.reduce((acc, { ticker: ticker2, name }) => {
+    if (name) {
+      acc[ticker2] = name;
+    }
+    return acc;
+  }, {});
+  return json({ etfData });
+};
+function Compound() {
+  var _a;
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showEtfInput, setShowEtfInput] = useState(false);
+  const [currentEtf, setCurrentEtf] = useState("");
+  const [isInitialDepositFocused, setIsInitialDepositFocused] = useState(false);
+  const [isMonthlyDepositFocused, setIsMonthlyDepositFocused] = useState(false);
+  const [isInterestRateFocused, setIsInterestRateFocused] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [initialInvestment, setInitialInvestment] = useState(0);
+  const [monthlyContribution, setMonthlyContribution] = useState(0);
+  const [annualInterestRate, setAnnualInterestRate] = useState(0);
+  const [numberOfYears, setNumberOfYears] = useState(0);
+  const [etfReturns, setEtfReturns] = useState([]);
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      ...defaultValues,
+      etfTickers: ((_a = searchParams.get("tickers")) == null ? void 0 : _a.split(",").filter(Boolean)) || []
+    }
+  });
+  const handleEtfReturnsUpdate = useCallback((returns) => {
+    setEtfReturns((prev) => {
+      const existingTickers = new Set(prev.map((p2) => p2.ticker));
+      const newReturns = returns.filter((r2) => !existingTickers.has(r2.ticker));
+      return [...prev, ...newReturns];
+    });
+  }, []);
+  function onSubmit(data) {
+    setInitialInvestment(data.initialDeposit);
+    setMonthlyContribution(data.monthlyDeposit);
+    setAnnualInterestRate(data.userInterest);
+    setNumberOfYears(data.timePeriod);
+    setSubmitted(true);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }
+  function generateChartData() {
+    const data = [];
+    const futureValueData = [];
+    for (let year2 = 0; year2 <= numberOfYears; year2++) {
+      const result = calculateCompoundInterest({
+        principal: initialInvestment,
+        monthlyContribution,
+        annualRate: annualInterestRate,
+        years: year2,
+        frequency: form.getValues("compFrequency")
+      });
+      futureValueData.push({ x: year2, y: result.futureValue });
+    }
+    data.push({
+      id: `User (${annualInterestRate.toFixed(2)}%)`,
+      color: "#3b82f6",
+      data: futureValueData
+    });
+    etfReturns.forEach((etf) => {
+      if (etf.returns !== null) {
+        const etfData = [];
+        for (let year2 = 0; year2 <= numberOfYears; year2++) {
+          const result = calculateCompoundInterest({
+            principal: initialInvestment,
+            monthlyContribution,
+            annualRate: etf.returns,
+            years: year2,
+            frequency: form.getValues("compFrequency")
+          });
+          etfData.push({ x: year2, y: result.futureValue });
+        }
+        data.push({
+          id: `${etf.ticker} (${etf.returns.toFixed(2)}%)`,
+          data: etfData
+        });
+      }
+    });
+    return data;
+  }
+  const addEtf = () => {
+    if (currentEtf.trim()) {
+      const currentTickers = form.getValues("etfTickers");
+      form.setValue("etfTickers", [
+        ...currentTickers,
+        currentEtf.trim().toUpperCase()
+      ]);
+      setCurrentEtf("");
+      setShowEtfInput(false);
+    }
+  };
+  const removeEtf = (index) => {
+    const currentTickers = form.getValues("etfTickers");
+    const deletedTicker = currentTickers[index];
+    form.setValue(
+      "etfTickers",
+      currentTickers.filter((_2, i2) => i2 !== index)
+    );
+    setEtfReturns((prev) => prev.filter((etf) => etf.ticker !== deletedTicker));
+  };
+  const etfTickers = form.watch("etfTickers");
+  useEffect(() => {
+    const tickers = etfTickers;
+    if (tickers.length > 0) {
+      navigate(`?tickers=${tickers.join(",")}`, { replace: true });
+    } else {
+      navigate("", { replace: true });
+    }
+  }, [etfTickers, navigate]);
+  return /* @__PURE__ */ jsxs("div", { className: "flex m-8 p-4 space-x-4", children: [
+    /* @__PURE__ */ jsx(Form, { ...form, children: /* @__PURE__ */ jsxs(
+      "form",
+      {
+        onSubmit: form.handleSubmit(onSubmit),
+        className: "bg-stone-600 rounded-xl w-2/5 space-y-8 p-4",
+        children: [
+          /* @__PURE__ */ jsx(
+            FormField,
+            {
+              control: form.control,
+              name: "initialDeposit",
+              render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
+                /* @__PURE__ */ jsx(FormLabel, { children: "Initial Deposit" }),
+                /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(
+                  FocusableInput,
+                  {
+                    field,
+                    isFocused: isInitialDepositFocused,
+                    setIsFocused: setIsInitialDepositFocused,
+                    formatter: formatCurrency,
+                    parser: parseCurrencyInput
+                  }
+                ) }),
+                /* @__PURE__ */ jsx(FormMessage, {})
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            FormField,
+            {
+              control: form.control,
+              name: "monthlyDeposit",
+              render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
+                /* @__PURE__ */ jsx(FormLabel, { children: "Monthly Deposit Amount" }),
+                /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(
+                  FocusableInput,
+                  {
+                    field,
+                    isFocused: isMonthlyDepositFocused,
+                    setIsFocused: setIsMonthlyDepositFocused,
+                    formatter: formatCurrency,
+                    parser: parseCurrencyInput
+                  }
+                ) }),
+                /* @__PURE__ */ jsx(FormMessage, {})
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            FormField,
+            {
+              control: form.control,
+              name: "timePeriod",
+              render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
+                /* @__PURE__ */ jsx(FormLabel, { children: "Years to Grow" }),
+                /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(
+                  Input,
+                  {
+                    ...field,
+                    type: "number",
+                    onChange: (e3) => field.onChange(parseFloat(e3.target.value))
+                  }
+                ) }),
+                /* @__PURE__ */ jsx(FormMessage, {})
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            FormField,
+            {
+              control: form.control,
+              name: "userInterest",
+              render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
+                /* @__PURE__ */ jsx(FormLabel, { children: "Interest Rate" }),
+                /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(
+                  FocusableInput,
+                  {
+                    field,
+                    isFocused: isInterestRateFocused,
+                    setIsFocused: setIsInterestRateFocused,
+                    formatter: formatPercentage,
+                    parser: parsePercentageInput
+                  }
+                ) }),
+                /* @__PURE__ */ jsx(FormMessage, {})
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            FormField,
+            {
+              control: form.control,
+              name: "compFrequency",
+              render: ({ field }) => /* @__PURE__ */ jsxs(FormItem, { children: [
+                /* @__PURE__ */ jsx(FormLabel, { children: "Compound Frequency" }),
+                /* @__PURE__ */ jsxs(
+                  Select,
+                  {
+                    onValueChange: field.onChange,
+                    defaultValue: field.value,
+                    children: [
+                      /* @__PURE__ */ jsx(FormControl, { children: /* @__PURE__ */ jsx(SelectTrigger, { children: /* @__PURE__ */ jsx(SelectValue, { placeholder: "Select compound frequency" }) }) }),
+                      /* @__PURE__ */ jsxs(SelectContent, { children: [
+                        /* @__PURE__ */ jsx(SelectItem, { value: "annual", children: "Annually" }),
+                        /* @__PURE__ */ jsx(SelectItem, { value: "semiannual", children: "Semiannually" }),
+                        /* @__PURE__ */ jsx(SelectItem, { value: "quarter", children: "Quarterly" }),
+                        /* @__PURE__ */ jsx(SelectItem, { value: "month", children: "Monthly" }),
+                        /* @__PURE__ */ jsx(SelectItem, { value: "day", children: "Daily" })
+                      ] })
+                    ]
+                  }
+                ),
+                /* @__PURE__ */ jsx(FormMessage, {})
+              ] })
+            }
+          ),
+          /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+            form.watch("etfTickers").length > 0 && /* @__PURE__ */ jsx(
+              ETFList,
+              {
+                tickers: form.watch("etfTickers"),
+                onRemove: removeEtf,
+                onReturnsUpdate: handleEtfReturnsUpdate
+              }
+            ),
+            showEtfInput ? /* @__PURE__ */ jsxs("div", { className: "flex gap-2 w-full", children: [
+              /* @__PURE__ */ jsx(
+                Input,
+                {
+                  value: currentEtf,
+                  onChange: (e3) => setCurrentEtf(e3.target.value),
+                  onKeyDown: (e3) => {
+                    if (e3.key === "Enter") {
+                      e3.preventDefault();
+                      addEtf();
+                    }
+                  },
+                  placeholder: "Enter ETF ticker",
+                  className: "w-full"
+                }
+              ),
+              /* @__PURE__ */ jsx(Button, { type: "button", onClick: addEtf, children: "Add" }),
+              /* @__PURE__ */ jsx(
+                Button,
+                {
+                  type: "button",
+                  variant: "outline",
+                  onClick: () => setShowEtfInput(false),
+                  children: "Cancel"
+                }
+              )
+            ] }) : /* @__PURE__ */ jsx(
+              Button,
+              {
+                type: "button",
+                variant: "outline",
+                onClick: () => setShowEtfInput(true),
+                children: "Add ETF"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsx(Button, { type: "submit", children: "Submit" })
+        ]
+      }
+    ) }),
+    /* @__PURE__ */ jsx("div", { className: "flex flex-col items-center justify-start h-96 w-3/5", children: submitted && /* @__PURE__ */ jsxs(Fragment, { children: [
+      /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-white", children: "Compound Calculator" }),
+      /* @__PURE__ */ jsx("div", { className: "text-stone-300", children: "You can find the results of your compound interest calculation below." }),
+      /* @__PURE__ */ jsx(Card, { className: "w-full p-4 mt-4", children: /* @__PURE__ */ jsx("div", { className: "h-[400px]", children: /* @__PURE__ */ jsx(
+        pe,
+        {
+          data: generateChartData(),
+          margin: { top: 50, right: 110, bottom: 50, left: 80 },
+          xScale: { type: "point" },
+          yScale: {
+            type: "linear",
+            min: "auto",
+            max: "auto",
+            stacked: false,
+            reverse: false
+          },
+          yFormat: (value) => `$${Number(value).toLocaleString(void 0, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`,
+          axisTop: null,
+          axisRight: null,
+          axisBottom: {
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: "Years",
+            legendOffset: 36,
+            legendPosition: "middle"
+          },
+          axisLeft: {
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 0,
+            legend: "US Dollars ($)",
+            legendOffset: -70,
+            legendPosition: "middle",
+            format: (value) => `$${Number(value).toLocaleString(void 0, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            })}`
+          },
+          enablePoints: true,
+          pointSize: 10,
+          pointColor: { theme: "background" },
+          pointBorderWidth: 2,
+          pointBorderColor: { from: "serieColor" },
+          pointLabelYOffset: -12,
+          useMesh: true,
+          theme: nivoTheme,
+          legends: [
+            {
+              anchor: "bottom-right",
+              direction: "column",
+              justify: false,
+              translateX: 195,
+              translateY: 0,
+              itemsSpacing: 0,
+              itemDirection: "left-to-right",
+              itemWidth: 180,
+              itemHeight: 20,
+              itemOpacity: 0.75,
+              symbolSize: 12,
+              symbolShape: "circle",
+              symbolBorderColor: "rgba(0, 0, 0, .5)",
+              effects: [
+                {
+                  on: "hover",
+                  style: {
+                    itemBackground: "rgba(0, 0, 0, .03)",
+                    itemOpacity: 1
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ) }) })
+    ] }) })
+  ] });
+}
+const route8 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Compound,
+  loader: loader$4
+}, Symbol.toStringTag, { value: "Module" }));
+const CHART_COLORS = {
+  POSITIVE: "#22c55e",
+  // Tailwind green-500
+  NEGATIVE: "#ef4444"
+  // Tailwind red-500
+};
+function getChartColor(percentage) {
+  return percentage >= 0 ? CHART_COLORS.POSITIVE : CHART_COLORS.NEGATIVE;
+}
+const ETFCard = ({
+  ticker: ticker2,
+  name,
+  endPrice,
+  priceChangePercentage,
+  chartLines
+}) => {
+  const lineColor = getChartColor(priceChangePercentage);
+  return /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx(Link, { to: `/etf?ticker=${ticker2}`, children: /* @__PURE__ */ jsxs(Card, { className: "w-[350px] !bg-zinc-800 cursor-pointer", children: [
+    /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row justify-between align-items: flex-start", children: [
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx(CardTitle, { children: ticker2 }),
+        /* @__PURE__ */ jsx(CardDescription, { children: name })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "!mt-0", children: [
+        /* @__PURE__ */ jsx(CardTitle, { children: formatPrice(endPrice) }),
+        /* @__PURE__ */ jsxs(CardDescription, { className: "text-neutral-500 dark:text-neutral-400", children: [
+          priceChangePercentage,
+          "%"
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { id: "card_chart", className: "h-20", children: /* @__PURE__ */ jsx(
+      pe,
+      {
+        data: chartLines,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+        xScale: { type: "point" },
+        yScale: {
+          type: "linear",
+          min: "auto",
+          max: "auto",
+          stacked: true,
+          reverse: false
+        },
+        yFormat: " >-.2f",
+        axisTop: null,
+        axisRight: null,
+        axisBottom: null,
+        axisLeft: null,
+        isInteractive: false,
+        colors: [lineColor],
+        enablePoints: false,
+        enableGridX: false,
+        enableGridY: false
+      }
+    ) }) })
+  ] }) }) });
+};
+ETFCard.propTypes = {
+  ticker: c$3.string.isRequired,
+  name: c$3.string.isRequired,
+  endPrice: c$3.number.isRequired,
+  priceChangePercentage: c$3.number.isRequired,
+  chartLines: c$3.array.isRequired
+};
+function transformData(chartData2, timeframe) {
+  if (!chartData2 || !chartData2.results || chartData2.results.length === 0) {
     return {
       chartLines: [],
       priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
     };
   }
-  const results = chartData.results;
+  const results = chartData2.results;
   const startPrice = results[0].c;
   const endPrice = results[results.length - 1].c;
   const priceChange = calculatePriceChange(startPrice, endPrice);
   const transformedData = [
     {
-      id: chartData.ticker || "unknown",
+      id: chartData2.ticker || "unknown",
       data: results.map((result) => ({
         x: formatDateChart(result.t, timeframe),
         y: result.c
@@ -6423,62 +9899,428 @@ function formatDateChart(timestamp, timeframe) {
     case "1W":
     case "1M":
       return date2.toLocaleString("en-US", dayAndTime);
-    case "3M":
     case "YTD":
     case "1Y":
-    case "2Y":
       return date2.toLocaleString("en-US", dateOnly);
     default:
       throw new Error(`Unsupported timeframe: ${timeframe}`);
   }
 }
 function calculatePriceChange(startPrice, endPrice) {
-  const percentage = (endPrice - startPrice) / startPrice * 100;
+  const percentage = parseFloat(
+    ((endPrice - startPrice) / startPrice * 100).toFixed(2)
+  );
   return {
     percentage,
     startPrice,
     endPrice
   };
 }
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-neutral-300",
+async function upsertETFCacheData(ticker2, lastPrice, priceChangePercentage, chartData2, timeframe = "1W") {
+  const client = await pool.connect();
+  try {
+    const priceQuery = `
+      INSERT INTO etf_cache_price (ticker, last_price, price_change_percentage, last_updated)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      ON CONFLICT (ticker) 
+      DO UPDATE SET 
+        last_price = EXCLUDED.last_price,
+        price_change_percentage = EXCLUDED.price_change_percentage,
+        last_updated = CURRENT_TIMESTAMP;
+    `;
+    await client.query(priceQuery, [ticker2, lastPrice, priceChangePercentage]);
+    const chartQuery = `
+      INSERT INTO etf_cache_chart (ticker, timeframe, chart_data, last_updated)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      ON CONFLICT (ticker, timeframe) 
+      DO UPDATE SET 
+        chart_data = EXCLUDED.chart_data,
+        last_updated = CURRENT_TIMESTAMP;
+    `;
+    await client.query(chartQuery, [
+      ticker2,
+      timeframe,
+      JSON.stringify(chartData2)
+    ]);
+    console.log(`Cache generated/updated for ${ticker2}: ${timeframe}`);
+  } catch (error) {
+    console.error(`Error updating cache for ${ticker2}:`, error);
+  } finally {
+    client.release();
+  }
+}
+const ScrollArea = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(
+  ScrollAreaPrimitive.Root,
   {
-    variants: {
-      variant: {
-        default: "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
-        destructive: "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
-        outline: "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        secondary: "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50"
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9"
+    ref,
+    className: cn$4("relative overflow-hidden", className),
+    ...props,
+    children: [
+      /* @__PURE__ */ jsx(ScrollAreaPrimitive.Viewport, { className: "h-full w-full rounded-[inherit]", children }),
+      /* @__PURE__ */ jsx(ScrollBar, {}),
+      /* @__PURE__ */ jsx(ScrollAreaPrimitive.Corner, {})
+    ]
+  }
+));
+ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
+const ScrollBar = React.forwardRef(({ className, orientation = "vertical", ...props }, ref) => /* @__PURE__ */ jsx(
+  ScrollAreaPrimitive.ScrollAreaScrollbar,
+  {
+    ref,
+    orientation,
+    className: cn$4(
+      "flex touch-none select-none transition-colors",
+      orientation === "vertical" && "h-full w-2.5 border-l border-l-transparent p-[1px]",
+      orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent p-[1px]",
+      className
+    ),
+    ...props,
+    children: /* @__PURE__ */ jsx(ScrollAreaPrimitive.ScrollAreaThumb, { className: "relative flex-1 rounded-full bg-neutral-200 dark:bg-neutral-800" })
+  }
+));
+ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
+const ETF_CATEGORIES = {
+  overall: {
+    title: "Most Popular ETFs",
+    tickers: [
+      "SPY",
+      "IVV",
+      "VTI",
+      "QQQ",
+      "VOO",
+      "EEM",
+      "IWM",
+      "EFA",
+      "VEA",
+      "VWO"
+    ]
+  },
+  sp500: {
+    title: "S&P 500",
+    tickers: [
+      "SPY",
+      "IVE",
+      "VOO",
+      "SPLG",
+      "IVW",
+      "SCHX",
+      "IVV",
+      "SDY",
+      "RSP",
+      "DGRO"
+    ]
+  },
+  nasdaq: {
+    title: "Nasdaq",
+    tickers: [
+      "QQQ",
+      "QQQM",
+      "ONEQ",
+      "QQQJ",
+      "QQQN",
+      "TQQQ",
+      "QQEW",
+      "QYLD",
+      "IBB",
+      "TQQQ"
+    ]
+  }
+};
+const loader$3 = async () => {
+  const allTickers = [
+    .../* @__PURE__ */ new Set([
+      ...ETF_CATEGORIES.overall.tickers,
+      ...ETF_CATEGORIES.sp500.tickers,
+      ...ETF_CATEGORIES.nasdaq.tickers
+    ])
+  ];
+  const timeframe = "1M";
+  const apiKey = process.env.POLY_API_KEY;
+  if (!apiKey) {
+    throw new Error("API key is not configured");
+  }
+  const etfDataPromises = allTickers.map(async (ticker2) => {
+    const cachedData = await getCachedETFData(ticker2, timeframe);
+    const isStale = await isCacheStale(ticker2, timeframe);
+    if (!cachedData) {
+      try {
+        const [chartData2, tickerData] = await Promise.all([
+          fetchChartData(ticker2, apiKey, timeframe),
+          getETFByTicker(ticker2)
+        ]);
+        if (!chartData2) {
+          return null;
+        }
+        const { chartLines, priceChange } = transformData(chartData2, timeframe);
+        if (chartLines && priceChange.endPrice !== 0) {
+          await upsertETFCacheData(
+            ticker2,
+            priceChange.endPrice,
+            priceChange.percentage,
+            chartLines,
+            timeframe
+          );
+        }
+        return {
+          ticker: ticker2,
+          name: tickerData == null ? void 0 : tickerData.name,
+          endPrice: priceChange.endPrice,
+          priceChangePercentage: priceChange.percentage,
+          chartLines
+        };
+      } catch (error) {
+        console.error(`${ticker2} API query failed:`, error);
+        return null;
       }
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default"
+    } else if (isStale) {
+      try {
+        const chartData2 = await fetchChartData(ticker2, apiKey, timeframe);
+        if (!chartData2) {
+          return {
+            ticker: cachedData.ticker,
+            name: cachedData.name,
+            endPrice: cachedData.last_price,
+            priceChangePercentage: cachedData.price_change_percentage,
+            chartLines: cachedData.chart_data
+          };
+        }
+        const { chartLines, priceChange } = transformData(chartData2, timeframe);
+        if (chartLines && priceChange.endPrice !== 0) {
+          await upsertETFCacheData(
+            ticker2,
+            priceChange.endPrice,
+            priceChange.percentage,
+            chartLines,
+            timeframe
+          );
+        } else {
+          return {
+            ticker: cachedData.ticker,
+            name: cachedData.name,
+            endPrice: cachedData.last_price,
+            priceChangePercentage: cachedData.price_change_percentage,
+            chartLines: cachedData.chart_data
+          };
+        }
+        return {
+          ticker: ticker2,
+          name: cachedData.name,
+          endPrice: priceChange.endPrice,
+          priceChangePercentage: priceChange.percentage,
+          chartLines
+        };
+      } catch (error) {
+        return {
+          ticker: cachedData.ticker,
+          name: cachedData.name,
+          endPrice: cachedData.last_price,
+          priceChangePercentage: cachedData.price_change_percentage,
+          chartLines: cachedData.chart_data
+        };
+      }
+    } else {
+      return {
+        ticker: cachedData.ticker,
+        name: cachedData.name,
+        endPrice: cachedData.last_price,
+        priceChangePercentage: cachedData.price_change_percentage,
+        chartLines: cachedData.chart_data
+      };
     }
-  }
-);
-const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return /* @__PURE__ */ jsx(
-      Comp,
-      {
-        className: cn$2(buttonVariants({ variant, size, className })),
-        ref,
-        ...props
+  });
+  const etfDataResults = await Promise.all(etfDataPromises);
+  const etfDataMap = etfDataResults.reduce((acc, data) => {
+    if (data) {
+      acc[data.ticker] = data;
+    }
+    return acc;
+  }, {});
+  return {
+    categories: {
+      overall: {
+        title: ETF_CATEGORIES.overall.title,
+        etfs: ETF_CATEGORIES.overall.tickers.map((ticker2) => etfDataMap[ticker2]).filter(Boolean)
+      },
+      sp500: {
+        title: ETF_CATEGORIES.sp500.title,
+        etfs: ETF_CATEGORIES.sp500.tickers.map((ticker2) => etfDataMap[ticker2]).filter(Boolean)
+      },
+      nasdaq: {
+        title: ETF_CATEGORIES.nasdaq.title,
+        etfs: ETF_CATEGORIES.nasdaq.tickers.map((ticker2) => etfDataMap[ticker2]).filter(Boolean)
       }
-    );
+    }
+  };
+};
+function Overview() {
+  const { categories } = useLoaderData();
+  return /* @__PURE__ */ jsx("div", { children: Object.entries(categories).map(([key, category]) => {
+    var _a;
+    return /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("div", { className: "p-5 py-2", children: /* @__PURE__ */ jsx("h1", { className: "my-1 text-2xl font-bold", children: category.title }) }),
+      /* @__PURE__ */ jsxs(ScrollArea, { className: "w-full whitespace-nowrap pb-1", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex w-max space-x-4 p-4", children: (_a = category.etfs) == null ? void 0 : _a.map((etf) => /* @__PURE__ */ jsx(
+          ETFCard,
+          {
+            ticker: etf.ticker,
+            name: etf.name,
+            endPrice: Number(etf.endPrice),
+            priceChangePercentage: Number(etf.priceChangePercentage),
+            chartLines: etf.chartLines
+          },
+          etf.ticker
+        )) }),
+        /* @__PURE__ */ jsx(ScrollBar, { orientation: "horizontal", className: "mb-1 px-4" })
+      ] })
+    ] }, key);
+  }) });
+}
+const route9 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Overview,
+  loader: loader$3
+}, Symbol.toStringTag, { value: "Module" }));
+const Switch = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SwitchPrimitives.Root,
+  {
+    className: cn$4(
+      "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-neutral-900 data-[state=unchecked]:bg-neutral-200 dark:focus-visible:ring-neutral-300 dark:focus-visible:ring-offset-neutral-950 dark:data-[state=checked]:bg-neutral-50 dark:data-[state=unchecked]:bg-neutral-800",
+      className
+    ),
+    ...props,
+    ref,
+    children: /* @__PURE__ */ jsx(
+      SwitchPrimitives.Thumb,
+      {
+        className: cn$4(
+          "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 dark:bg-neutral-950"
+        )
+      }
+    )
   }
-);
-Button.displayName = "Button";
+));
+Switch.displayName = SwitchPrimitives.Root.displayName;
+const DEFAULT_VIEWS = [
+  { label: "Overview", value: "/overview" },
+  { label: "Portfolio", value: "/portfolio" },
+  { label: "Calculator", value: "/compound" }
+];
+function ChronoSettings() {
+  const pageProps = {
+    url: "chrono",
+    label: "Chrono",
+    labelIcon: /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4" })
+  };
+  return /* @__PURE__ */ jsx(UserProfile.Page, { ...pageProps, children: /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
+    /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("h2", { className: "text-lg font-medium", children: "Chrono Preferences" }),
+      /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 dark:text-neutral-400", children: "Customize your experience on Chrono" })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
+          /* @__PURE__ */ jsx(Label, { htmlFor: "defaultView", children: "Default View" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 dark:text-neutral-400", children: "Choose which page to show after logging in" })
+        ] }),
+        /* @__PURE__ */ jsxs(Select, { defaultValue: "/overview", children: [
+          /* @__PURE__ */ jsx(SelectTrigger, { className: "w-[140px]", children: /* @__PURE__ */ jsx(SelectValue, { placeholder: "Select view" }) }),
+          /* @__PURE__ */ jsx(SelectContent, { children: DEFAULT_VIEWS.map((view) => /* @__PURE__ */ jsx(SelectItem, { value: view.value, children: view.label }, view.value)) })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
+          /* @__PURE__ */ jsx(Label, { htmlFor: "currency", children: "Currency" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 dark:text-neutral-400", children: "Select your preferred currency for displaying prices" })
+        ] }),
+        /* @__PURE__ */ jsxs(Select, { defaultValue: "USD", children: [
+          /* @__PURE__ */ jsx(SelectTrigger, { className: "w-[100px]", children: /* @__PURE__ */ jsx(SelectValue, { placeholder: "Select currency" }) }),
+          /* @__PURE__ */ jsxs(SelectContent, { children: [
+            /* @__PURE__ */ jsx(SelectItem, { value: "USD", children: "USD ($)" }),
+            /* @__PURE__ */ jsx(SelectItem, { value: "EUR", children: "EUR (€)" }),
+            /* @__PURE__ */ jsx(SelectItem, { value: "GBP", children: "GBP (£)" })
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
+          /* @__PURE__ */ jsx(Label, { htmlFor: "notifications", children: "Notifications" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 dark:text-neutral-400", children: "Receive notifications about price alerts and portfolio updates" })
+        ] }),
+        /* @__PURE__ */ jsx(
+          Switch,
+          {
+            className: "data-[state=checked]:bg-primary !bg-white !text-black !border-zinc-800 border-spacing-1",
+            id: "notifications"
+          }
+        )
+      ] })
+    ] })
+  ] }) });
+}
+function ProfilePage() {
+  return /* @__PURE__ */ jsx("div", { className: "mt-8 mx-auto max-w-4xl", children: /* @__PURE__ */ jsx(UserProfile, { children: /* @__PURE__ */ jsx(
+    UserProfile.Page,
+    {
+      url: "chrono",
+      label: "Chrono",
+      labelIcon: /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4" }),
+      children: /* @__PURE__ */ jsx(ChronoSettings, {})
+    }
+  ) }) });
+}
+const route10 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: ProfilePage
+}, Symbol.toStringTag, { value: "Module" }));
+const loader$2 = async (args) => {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect("/sign-in");
+  }
+  return {};
+};
+function Index() {
+  const { isLoaded, isSignedIn } = useUser();
+  if (!isLoaded) {
+    return /* @__PURE__ */ jsx("p", { children: "Loading..." });
+  }
+  if (isSignedIn) {
+    window.location.href = "/overview";
+    return null;
+  }
+  return /* @__PURE__ */ jsxs("div", { children: [
+    /* @__PURE__ */ jsx(UserButton, {}),
+    /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-white", children: "Welcome back!" })
+  ] });
+}
+const route11 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Index,
+  loader: loader$2
+}, Symbol.toStringTag, { value: "Module" }));
+function ActivePoint({
+  currentSlice,
+  ...props
+}) {
+  const theme = zt();
+  return /* @__PURE__ */ jsx("g", { children: currentSlice == null ? void 0 : currentSlice.points.map((point2) => /* @__PURE__ */ jsx(
+    vn$1,
+    {
+      x: point2.x,
+      y: point2.y,
+      datum: point2.data,
+      symbol: props.pointSymbol,
+      size: 12,
+      color: point2.borderColor,
+      borderWidth: props.pointBorderWidth,
+      borderColor: point2.color,
+      label: point2.label,
+      labelYOffset: props.pointLabelYOffset,
+      theme
+    },
+    point2.id
+  )) });
+}
 const Separator = React.forwardRef(
   ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
     SeparatorPrimitive.Root,
@@ -6486,7 +10328,7 @@ const Separator = React.forwardRef(
       ref,
       decorative,
       orientation,
-      className: cn$2(
+      className: cn$4(
         "shrink-0 bg-neutral-200 dark:bg-neutral-800",
         orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
         className
@@ -6496,301 +10338,563 @@ const Separator = React.forwardRef(
   )
 );
 Separator.displayName = SeparatorPrimitive.Root.displayName;
-const TIMEFRAMES = {
-  "1D": {
-    multiplier: 5,
-    timespan: "minute",
-    fromDate: (date2) => {
-      const adjustedDate = adjustForWeekend(date2);
-      const yesterday = new Date(adjustedDate);
-      yesterday.setDate(yesterday.getDate() - 1);
-      return formatDate(yesterday);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  "1W": {
-    multiplier: 1,
-    timespan: "hour",
-    fromDate: (date2) => {
-      const weekAgo = new Date(date2);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return formatDate(weekAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  "1M": {
-    multiplier: 6,
-    timespan: "hour",
-    fromDate: (date2) => {
-      const monthAgo = new Date(date2);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return formatDate(monthAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  },
-  // Disabled due to API limitations
-  // "3M": {
-  //   multiplier: 1,
-  //   timespan: "day",
-  //   fromDate: (date: Date) => {
-  //     const threeMonthsAgo = new Date(date);
-  //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  //     return formatDate(threeMonthsAgo);
-  //   },
-  //   toDate: (date: Date) => formatDate(date),
-  // },
-  YTD: {
-    multiplier: 1,
-    timespan: "day",
-    fromDate: (date2) => `${date2.getFullYear()}-01-01`,
-    toDate: (date2) => formatDate(date2)
-  },
-  "1Y": {
-    multiplier: 1,
-    timespan: "day",
-    fromDate: (date2) => {
-      const yearAgo = new Date(date2);
-      yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-      return formatDate(yearAgo);
-    },
-    toDate: (date2) => formatDate(date2)
-  }
-  // Supposed to be 5Y, but API has a 2-year limit
-  // Disabled due to API limitations
-  // "2Y": {
-  //   multiplier: 1,
-  //   timespan: "week",
-  //   fromDate: (date: Date) => {
-  //     const fiveYearsAgo = new Date(date);
-  //     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 2);
-  //     return formatDate(fiveYearsAgo);
-  //   },
-  //   toDate: (date: Date) => formatDate(date),
-  // },
-};
-function formatDate(date2) {
-  return date2.toISOString().split("T")[0];
-}
-function adjustForWeekend(date2) {
-  const estDate = new Date(
-    date2.toLocaleString("en-US", { timeZone: "America/New_York" })
+const MotionNumberFlow = motion.create(NumberFlow);
+const MotionArrowUp = motion.create(ArrowUp);
+function PriceWithDiff({ value, diff }) {
+  const canAnimate = useCanAnimate();
+  return /* @__PURE__ */ jsxs(
+    "span",
+    {
+      style: { "--number-flow-char-height": "0.85em" },
+      className: "flex items-center gap-2",
+      children: [
+        /* @__PURE__ */ jsx(
+          NumberFlow,
+          {
+            value,
+            className: "~text-xl/4xl font-semibold",
+            format: { style: "currency", currency: "USD" }
+          }
+        ),
+        /* @__PURE__ */ jsxs(
+          motion.span,
+          {
+            animate: { backgroundColor: diff > 0 ? "#34d399" : "#ef4444" },
+            initial: false,
+            className: "~text-base/2xl inline-flex items-center px-[0.3em] text-white",
+            style: { borderRadius: 999 },
+            layout: canAnimate,
+            transition: { layout: { duration: 0.9, bounce: 0, type: "spring" } },
+            children: [
+              /* @__PURE__ */ jsx(
+                MotionArrowUp,
+                {
+                  className: "mr-0.5 size-[0.75em]",
+                  absoluteStrokeWidth: true,
+                  strokeWidth: 3,
+                  transition: { rotate: { type: "spring", duration: 0.5, bounce: 0 } },
+                  animate: { rotate: diff > 0 ? 0 : -180 },
+                  initial: false
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                MotionNumberFlow,
+                {
+                  value: diff,
+                  className: "font-semibold",
+                  format: { style: "percent", maximumFractionDigits: 2 },
+                  style: { "--number-flow-mask-height": "0.3em" },
+                  layout: canAnimate,
+                  layoutRoot: canAnimate
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
   );
-  const day2 = estDate.getDay();
-  const hours = estDate.getHours();
-  const minutes = estDate.getMinutes();
-  if (day2 === 1 && (hours < 9 || hours === 9 && minutes < 30)) {
-    estDate.setDate(estDate.getDate() - 2);
-  } else if (day2 === 0) {
-    estDate.setDate(estDate.getDate() - 2);
-  } else if (day2 === 6) {
-    estDate.setDate(estDate.getDate() - 1);
-  }
-  return estDate;
 }
-function getTimeframeConfig(timeframe) {
-  const config2 = TIMEFRAMES[timeframe];
-  const currentDate = /* @__PURE__ */ new Date();
-  return {
-    multiplier: config2.multiplier,
-    timespan: config2.timespan,
-    fromDate: config2.fromDate(currentDate),
-    toDate: config2.toDate(currentDate)
+const AlertDialog = AlertDialogPrimitive.Root;
+const AlertDialogPortal = AlertDialogPrimitive.Portal;
+const AlertDialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Overlay,
+  {
+    className: cn$4(
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    ),
+    ...props,
+    ref
+  }
+));
+AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
+const AlertDialogContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsxs(AlertDialogPortal, { children: [
+  /* @__PURE__ */ jsx(AlertDialogOverlay, {}),
+  /* @__PURE__ */ jsx(
+    AlertDialogPrimitive.Content,
+    {
+      ref,
+      className: cn$4(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-neutral-200 bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg dark:border-neutral-800 dark:bg-neutral-950",
+        className
+      ),
+      ...props
+    }
+  )
+] }));
+AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
+const AlertDialogHeader = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn$4(
+      "flex flex-col space-y-2 text-center sm:text-left",
+      className
+    ),
+    ...props
+  }
+);
+AlertDialogHeader.displayName = "AlertDialogHeader";
+const AlertDialogFooter = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn$4(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    ),
+    ...props
+  }
+);
+AlertDialogFooter.displayName = "AlertDialogFooter";
+const AlertDialogTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Title,
+  {
+    ref,
+    className: cn$4("text-lg font-semibold", className),
+    ...props
+  }
+));
+AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
+const AlertDialogDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Description,
+  {
+    ref,
+    className: cn$4("text-sm text-neutral-500 dark:text-neutral-400", className),
+    ...props
+  }
+));
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
+const AlertDialogAction = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("button", { ref, className: cn$4(buttonVariants(), className), ...props }));
+AlertDialogAction.displayName = "AlertDialogAction";
+const AlertDialogCancel = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Cancel,
+  {
+    ref,
+    className: cn$4(
+      buttonVariants({ variant: "outline" }),
+      "mt-2 sm:mt-0",
+      className
+    ),
+    ...props
+  }
+));
+AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
+function EtfTransactionPanel({ symbol, price }) {
+  const { isLoaded, user } = useUser();
+  const [investType, setInvestType] = React.useState(
+    "shares"
+  );
+  const [amount, setAmount] = React.useState("");
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
+  const [transactionStatus, setTransactionStatus] = React.useState(null);
+  const fetcher = useFetcher();
+  const estimatedCost = React.useMemo(() => {
+    if (!amount) return 0;
+    return investType === "shares" ? Number(amount) * price : Number(amount);
+  }, [amount, investType, price]);
+  const estimatedShares = React.useMemo(() => {
+    if (!amount) return 0;
+    return investType === "shares" ? Number(amount) : Number(amount) / price;
+  }, [amount, investType, price]);
+  const handleInvestTypeChange = (value) => {
+    setInvestType(value);
+    setAmount("");
   };
-}
-async function fetchChartData(ticker2, apiKey, timeframe = "1D") {
-  const config2 = getTimeframeConfig(timeframe);
-  const url = new URL(
-    `https://api.polygon.io/v2/aggs/ticker/${ticker2}/range/${config2.multiplier}/${config2.timespan}/${config2.fromDate}/${config2.toDate}`
-  );
-  url.searchParams.append("adjusted", "false");
-  url.searchParams.append("sort", "asc");
-  url.searchParams.append("apiKey", apiKey);
-  const response = await fetch(url.toString());
-  return response.json();
-}
-async function fetchTickerData(ticker2, apiKey) {
-  const url = new URL(`https://api.polygon.io/v3/reference/tickers/${ticker2}`);
-  url.searchParams.append("apiKey", apiKey);
-  const response = await fetch(url.toString());
-  return response.json();
-}
-const CHART_COLORS = {
-  POSITIVE: "#22c55e",
-  // Tailwind green-500
-  NEGATIVE: "#ef4444"
-  // Tailwind red-500
-};
-function getChartColor(percentage) {
-  return percentage >= 0 ? CHART_COLORS.POSITIVE : CHART_COLORS.NEGATIVE;
-}
-function getChartColorClass(percentage) {
-  return percentage >= 0 ? "text-green-500" : "text-red-500";
-}
-function PriceChangeDisplay({ percentage }) {
-  const formattedPercentage = percentage.toFixed(2);
-  const isPositive = percentage >= 0;
-  const colorClass = getChartColorClass(percentage);
-  const sign2 = isPositive ? "+" : "";
-  return /* @__PURE__ */ jsxs("span", { className: `${colorClass} font-semibold ml-2`, children: [
-    sign2,
-    formattedPercentage,
-    "%"
+  const handleBuyClick = (e3) => {
+    e3.preventDefault();
+    setShowConfirmDialog(true);
+  };
+  const handleConfirmTransaction = () => {
+    setTransactionStatus("pending");
+    fetcher.submit(
+      {
+        ticker: symbol,
+        type: "BUY",
+        shares: estimatedShares,
+        pricePerShare: price,
+        totalAmount: estimatedCost
+      },
+      { method: "POST", action: "/api/transaction" }
+    );
+  };
+  React.useEffect(() => {
+    if (fetcher.data && fetcher.state === "idle") {
+      setTransactionStatus("success");
+    }
+  }, [fetcher.data, fetcher.state]);
+  return /* @__PURE__ */ jsxs(Card, { className: "w-[450px] bg-zinc-900 text-white border-zinc-800", children: [
+    /* @__PURE__ */ jsx(CardHeader, { className: "border-b border-zinc-800", children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs("span", { children: [
+        "Buy ",
+        symbol
+      ] }),
+      /* @__PURE__ */ jsx(Button, { variant: "ghost", size: "icon", children: /* @__PURE__ */ jsx(Share2, { className: "h-4 w-4" }) })
+    ] }) }),
+    /* @__PURE__ */ jsxs("form", { onSubmit: (e3) => e3.preventDefault(), children: [
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4 pt-6", children: [
+        /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsx(Label, { htmlFor: "investType", children: "Invest In" }),
+          /* @__PURE__ */ jsxs(Select, { value: investType, onValueChange: handleInvestTypeChange, children: [
+            /* @__PURE__ */ jsx(
+              SelectTrigger,
+              {
+                id: "investType",
+                className: "bg-zinc-900 border-zinc-700",
+                children: /* @__PURE__ */ jsx(SelectValue, {})
+              }
+            ),
+            /* @__PURE__ */ jsxs(SelectContent, { className: "bg-zinc-900 border-zinc-700", children: [
+              /* @__PURE__ */ jsx(SelectItem, { value: "shares", children: "Shares" }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "dollars", children: "Dollars" })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsx(Label, { htmlFor: "amount", children: investType === "shares" ? "Shares" : "Amount" }),
+          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+            /* @__PURE__ */ jsx(
+              Input,
+              {
+                id: "amount",
+                type: "number",
+                placeholder: "0",
+                value: amount,
+                onChange: (e3) => setAmount(e3.target.value),
+                className: "bg-zinc-900 border-zinc-700 pr-10"
+              }
+            ),
+            investType === "dollars" && /* @__PURE__ */ jsx(DollarSign, { className: "absolute right-3 top-2.5 h-4 w-4 text-zinc-400" })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "flex justify-between py-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-zinc-400", children: "Market Price" }),
+          /* @__PURE__ */ jsxs("span", { children: [
+            "$",
+            price.toFixed(2)
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "flex justify-between py-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-zinc-400", children: "Commissions" }),
+          /* @__PURE__ */ jsx("span", { children: "$0.00" })
+        ] }),
+        /* @__PURE__ */ jsx(Separator, {}),
+        /* @__PURE__ */ jsxs("div", { className: "flex justify-between py-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-zinc-400", children: investType === "shares" ? "Estimated Cost" : "Est. Quantity" }),
+          /* @__PURE__ */ jsx("span", { children: investType === "shares" ? `$${formatPrice(estimatedCost)}` : estimatedShares.toFixed(4) })
+        ] }),
+        isLoaded && user ? /* @__PURE__ */ jsx(
+          Button,
+          {
+            className: "w-full bg-neutral-900 hover:bg-neutral-900/90 dark:bg-neutral-50 dark:hover:bg-neutral-50/90",
+            size: "lg",
+            onClick: handleBuyClick,
+            children: "Buy"
+          }
+        ) : /* @__PURE__ */ jsxs("div", { className: "text-sm text-zinc-400", children: [
+          "Sign up for a Chrono brokerage account to buy or sell ",
+          symbol,
+          " ",
+          "shares commission-free. Other fees may apply. See our",
+          " ",
+          /* @__PURE__ */ jsx(
+            Button,
+            {
+              variant: "link",
+              className: "h-auto p-0 text-sm text-neutral-900 dark:text-neutral-50",
+              children: "fee schedule"
+            }
+          ),
+          " ",
+          "to learn more."
+        ] })
+      ] }),
+      /* @__PURE__ */ jsx(CardFooter, { className: "flex flex-col items-center", children: !isLoaded || !user ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(
+          Button,
+          {
+            className: "w-full bg-neutral-900 hover:bg-neutral-900/90 dark:bg-neutral-50 dark:hover:bg-neutral-50/90",
+            size: "lg",
+            asChild: true,
+            children: /* @__PURE__ */ jsx(Link, { to: "/sign-up", children: "Sign Up to Buy" })
+          }
+        ),
+        /* @__PURE__ */ jsx("div", { className: "text-center text-xs mt-2", children: /* @__PURE__ */ jsx(
+          Link,
+          {
+            to: "/sign-in",
+            className: "underline text-gray-400 hover:text-gray-500",
+            children: "Already have a Chrono account?"
+          }
+        ) })
+      ] }) : null })
+    ] }),
+    /* @__PURE__ */ jsx(AlertDialog, { open: showConfirmDialog, onOpenChange: setShowConfirmDialog, children: /* @__PURE__ */ jsx(AlertDialogContent, { children: transactionStatus === "success" ? /* @__PURE__ */ jsxs(Fragment, { children: [
+      /* @__PURE__ */ jsxs(AlertDialogHeader, { children: [
+        /* @__PURE__ */ jsx(AlertDialogTitle, { children: "Transaction Successful!" }),
+        /* @__PURE__ */ jsxs(AlertDialogDescription, { children: [
+          "Your purchase of ",
+          estimatedShares.toFixed(4),
+          " shares of",
+          " ",
+          symbol,
+          " has been completed."
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs(AlertDialogFooter, { children: [
+        /* @__PURE__ */ jsx(AlertDialogCancel, { onClick: () => setShowConfirmDialog(false), children: "Close" }),
+        /* @__PURE__ */ jsx(Link, { to: "/portfolio", className: buttonVariants(), children: "View Portfolio" })
+      ] })
+    ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+      /* @__PURE__ */ jsxs(AlertDialogHeader, { children: [
+        /* @__PURE__ */ jsx(AlertDialogTitle, { children: "Confirm Transaction" }),
+        /* @__PURE__ */ jsxs(AlertDialogDescription, { children: [
+          "You are about to purchase ",
+          estimatedShares.toFixed(4),
+          " shares of ",
+          symbol,
+          " for $",
+          formatPrice(estimatedCost),
+          ". This action cannot be undone."
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs(AlertDialogFooter, { children: [
+        /* @__PURE__ */ jsx(AlertDialogCancel, { children: "Cancel" }),
+        /* @__PURE__ */ jsx(
+          AlertDialogAction,
+          {
+            onClick: handleConfirmTransaction,
+            disabled: transactionStatus === "pending",
+            children: transactionStatus === "pending" ? "Processing..." : "Confirm Purchase"
+          }
+        )
+      ] })
+    ] }) }) })
   ] });
 }
-const loader = async ({ request }) => {
+const loader$1 = async ({ request }) => {
   const url = new URL(request.url);
-  const ticker2 = url.searchParams.get("ticker");
+  const ticker2 = url.searchParams.get("ticker") || "SPY";
   const timeframe = url.searchParams.get("timeframe") || "1D";
-  if (!ticker2) {
-    return json({ chartData: null, tickerData: null });
-  }
   const apiKey = process.env.POLY_API_KEY;
   if (!apiKey) {
     throw new Error("API key is not configured");
   }
-  const [chartData, tickerData] = await Promise.all([
-    fetchChartData(ticker2, apiKey, timeframe),
-    fetchTickerData(ticker2, apiKey)
-  ]);
-  return json({ chartData, tickerData, timeframe });
+  let cachedData = await getCachedETFData(ticker2, timeframe);
+  const isStale = await isCacheStale(ticker2, timeframe);
+  let chartData2, tickerData;
+  if (!cachedData || isStale) {
+    console.log(`Making API query for ${ticker2}`);
+    [chartData2, tickerData] = await Promise.all([
+      fetchChartData(ticker2, apiKey, timeframe),
+      getETFByTicker(ticker2)
+    ]);
+    const { chartLines, priceChange } = transformData(chartData2, timeframe);
+    await upsertETFCacheData(
+      ticker2,
+      priceChange.endPrice,
+      priceChange.percentage,
+      chartLines,
+      timeframe
+    );
+    cachedData = {
+      ticker: ticker2,
+      name: tickerData == null ? void 0 : tickerData.name,
+      last_price: priceChange.endPrice,
+      price_change_percentage: priceChange.percentage,
+      chart_data: chartLines
+    };
+  }
+  return json({
+    ticker: cachedData.ticker,
+    name: cachedData.name,
+    endPrice: cachedData.last_price,
+    priceChangePercentage: cachedData.price_change_percentage,
+    chartLines: cachedData.chart_data,
+    timeframe
+  });
 };
-function TickerTest() {
-  var _a;
-  const { chartData, tickerData, timeframe } = useLoaderData();
+function ETF() {
+  const {
+    ticker: ticker2,
+    name,
+    endPrice,
+    priceChangePercentage,
+    chartLines,
+    timeframe
+  } = useLoaderData();
   const submit = useSubmit();
-  const { chartLines, priceChange } = chartData ? transformData(chartData, timeframe) : {
-    chartLines: [],
-    priceChange: { percentage: 0, startPrice: 0, endPrice: 0 }
-  };
-  const lineColor = getChartColor(priceChange.percentage);
+  const lineColor = getChartColor(priceChangePercentage);
   const handleTimeframeChange = (newTimeframe) => {
     const formData = new FormData();
-    if (chartData == null ? void 0 : chartData.ticker) {
-      formData.append("ticker", chartData.ticker);
-    }
+    formData.append("ticker", ticker2);
     formData.append("timeframe", newTimeframe);
     submit(formData, { method: "get" });
   };
-  return /* @__PURE__ */ jsxs("div", { className: "bg-slate-900 p-5", children: [
-    /* @__PURE__ */ jsx("div", { className: "flex flex-col items-center", children: /* @__PURE__ */ jsx("h1", { className: "my-5 text-2xl font-bold", children: "Index data retriever" }) }),
-    /* @__PURE__ */ jsx("div", { className: "mt-5", children: chartLines.length > 0 ? /* @__PURE__ */ jsxs("div", { id: "container", className: "h-auto", children: [
-      /* @__PURE__ */ jsxs(
-        "div",
-        {
-          id: "chart_header",
-          className: "flex flex-row justify-between items-end my-3",
-          children: [
-            /* @__PURE__ */ jsxs("div", { id: "titles", className: "", children: [
-              /* @__PURE__ */ jsx("h2", { className: "text-white font-semibold text-xl", children: chartData == null ? void 0 : chartData.ticker }),
-              /* @__PURE__ */ jsx("h3", { className: "text-white font-semibold text-m", children: (_a = tickerData == null ? void 0 : tickerData.results) == null ? void 0 : _a.name }),
-              /* @__PURE__ */ jsx(PriceChangeDisplay, { percentage: priceChange.percentage })
-            ] }),
-            /* @__PURE__ */ jsx(
-              "div",
-              {
-                id: "chart_time",
-                className: "flex items-center space-x-1 text-sm",
-                children: Object.keys(TIMEFRAMES).map((key) => /* @__PURE__ */ jsxs(Fragment, { children: [
+  return /* @__PURE__ */ jsx("div", { className: "bg-slate-900 p-5", children: /* @__PURE__ */ jsx("div", { className: "mt-5", children: chartLines.length > 0 ? /* @__PURE__ */ jsxs(
+    "div",
+    {
+      id: "container",
+      className: "\r\n          h-auto flex flex-row justify-between space-x-8\r\n          ",
+      children: [
+        /* @__PURE__ */ jsxs("div", { id: "etf_info", className: "w-full", children: [
+          /* @__PURE__ */ jsxs(
+            "div",
+            {
+              id: "chart_header",
+              className: "flex flex-row justify-between items-end my-3",
+              children: [
+                /* @__PURE__ */ jsxs("div", { id: "titles", className: "", children: [
+                  /* @__PURE__ */ jsx("h2", { className: "text-white font-semibold text-xl", children: ticker2 }),
+                  /* @__PURE__ */ jsx("h3", { className: "text-white font-semibold text-m", children: name }),
                   /* @__PURE__ */ jsx(
-                    Button,
+                    PriceWithDiff,
                     {
-                      variant: timeframe === key ? "default" : "outline",
-                      onClick: () => handleTimeframeChange(key),
-                      children: key
+                      value: endPrice,
+                      diff: priceChangePercentage / 100
                     }
-                  ),
-                  key !== "1Y" && /* @__PURE__ */ jsx(Separator, { orientation: "vertical" })
-                ] }, key))
-              }
-            )
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsx("div", { id: "chart", style: { height: "35vh" }, children: /* @__PURE__ */ jsx(
-        pe,
-        {
-          data: chartLines,
-          margin: { top: 20, right: 20, bottom: 20, left: 20 },
-          xScale: { type: "point" },
-          yScale: {
-            type: "linear",
-            min: "auto",
-            max: "auto",
-            stacked: true,
-            reverse: false
-          },
-          axisTop: null,
-          axisRight: null,
-          axisBottom: null,
-          axisLeft: null,
-          colors: [lineColor],
-          theme: {
-            ...nivoTheme,
-            crosshair: {
-              line: {
-                stroke: lineColor,
-                strokeWidth: 1,
-                strokeOpacity: 0.35
-              }
+                  )
+                ] }),
+                /* @__PURE__ */ jsx(
+                  "div",
+                  {
+                    id: "chart_time",
+                    className: "flex items-center space-x-1 text-sm",
+                    children: Object.keys(TIMEFRAMES).map((key) => /* @__PURE__ */ jsxs(Fragment, { children: [
+                      /* @__PURE__ */ jsx(
+                        Button,
+                        {
+                          variant: timeframe === key ? "default" : "outline",
+                          onClick: () => handleTimeframeChange(key),
+                          children: key
+                        }
+                      ),
+                      key !== "1Y" && /* @__PURE__ */ jsx(Separator, { orientation: "vertical" })
+                    ] }, key))
+                  }
+                )
+              ]
             }
-          },
-          pointSize: 10,
-          pointColor: { theme: "background" },
-          pointBorderWidth: 2,
-          pointBorderColor: { from: "serieColor" },
-          pointLabelYOffset: -12,
-          useMesh: true,
-          enablePoints: false,
-          enableGridX: false,
-          enableGridY: false,
-          isInteractive: true,
-          enableSlices: "x",
-          enableCrosshair: true,
-          enableTouchCrosshair: true,
-          animate: false,
-          sliceTooltip: ({ slice }) => {
-            return /* @__PURE__ */ jsxs(
-              "div",
-              {
-                style: {
-                  background: "transparent",
-                  color: "#333333",
-                  padding: "5px",
-                  border: "1px solid #ccc"
-                },
-                children: [
-                  /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("p", { style: { fontSize: "0.8rem", color: "white" }, children: slice.points[0].data.xFormatted }) }),
-                  /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("strong", { style: { fontSize: "1rem", color: "white" }, children: slice.points[0].data.yFormatted }) })
-                ]
-              }
-            );
-          },
-          layers: [
-            "grid",
-            "axes",
-            "areas",
-            "lines",
-            "crosshair",
-            "slices",
-            "mesh",
-            "legends",
-            ActivePoint
-          ]
-        }
-      ) })
-    ] }) : /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("p", { className: "text-center", children: "Please use the search field above to retrieve ETF information." }) }) })
-  ] });
+          ),
+          /* @__PURE__ */ jsx("div", { id: "chart", style: { height: "35vh" }, children: /* @__PURE__ */ jsx(
+            pe,
+            {
+              data: chartLines,
+              margin: { top: 20, right: 20, bottom: 20, left: 20 },
+              xScale: { type: "point" },
+              yScale: {
+                type: "linear",
+                min: "auto",
+                max: "auto",
+                stacked: true,
+                reverse: false
+              },
+              axisTop: null,
+              axisRight: null,
+              axisBottom: null,
+              axisLeft: null,
+              colors: [lineColor],
+              theme: {
+                ...nivoTheme,
+                crosshair: {
+                  line: {
+                    stroke: lineColor,
+                    strokeWidth: 1,
+                    strokeOpacity: 0.35
+                  }
+                }
+              },
+              pointSize: 10,
+              pointColor: { theme: "background" },
+              pointBorderWidth: 2,
+              pointBorderColor: { from: "serieColor" },
+              pointLabelYOffset: -12,
+              useMesh: true,
+              enablePoints: false,
+              enableGridX: false,
+              enableGridY: false,
+              isInteractive: true,
+              enableSlices: "x",
+              enableCrosshair: true,
+              enableTouchCrosshair: true,
+              animate: false,
+              sliceTooltip: ({ slice }) => {
+                return /* @__PURE__ */ jsxs(
+                  "div",
+                  {
+                    style: {
+                      background: "transparent",
+                      color: "#333333",
+                      padding: "5px",
+                      border: "1px solid #ccc"
+                    },
+                    children: [
+                      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("p", { style: { fontSize: "0.8rem", color: "white" }, children: slice.points[0].data.xFormatted }) }),
+                      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("strong", { style: { fontSize: "1rem", color: "white" }, children: formatPrice(slice.points[0].data.yFormatted) }) })
+                    ]
+                  }
+                );
+              },
+              layers: [
+                "grid",
+                "axes",
+                "areas",
+                "lines",
+                "crosshair",
+                "slices",
+                "mesh",
+                "legends",
+                ActivePoint
+              ]
+            }
+          ) })
+        ] }),
+        /* @__PURE__ */ jsx(EtfTransactionPanel, { symbol: ticker2, price: Number(endPrice) })
+      ]
+    }
+  ) : /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("p", { className: "text-center", children: "Please use the search field above to retrieve ETF information." }) }) }) });
 }
-const route3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const route12 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: TickerTest,
+  default: ETF,
+  loader: loader$1
+}, Symbol.toStringTag, { value: "Module" }));
+const loader = async (args) => {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return json({ message: "Unauthorized" }, { status: 401 });
+  }
+  const reportData = await generateReportData(userId);
+  return json({ reportData });
+};
+function PDFPreview() {
+  const { reportData } = useLoaderData();
+  const [PDFViewer, setPDFViewer] = useState(null);
+  useEffect(() => {
+    import("@react-pdf/renderer").then((module) => {
+      setPDFViewer(() => module.PDFViewer);
+    });
+  }, []);
+  if (!PDFViewer) {
+    return /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-screen", children: /* @__PURE__ */ jsx("div", { className: "text-lg", children: "Loading PDF viewer..." }) });
+  }
+  return /* @__PURE__ */ jsx("div", { className: "w-full h-screen", children: /* @__PURE__ */ jsx(PDFViewer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsx(PortfolioReport, { data: reportData }) }) });
+}
+const route13 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: PDFPreview,
   loader
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-2zmrzn99.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-DhufAra7.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js", "/assets/utils-BM_CldAA.js"], "css": ["/assets/root-DSX_0Mrb.css"] }, "routes/cache_test": { "id": "routes/cache_test", "parentId": "root", "path": "cache_test", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/cache_test-DTwDIdJv.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-Ca6-kmAs.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js"], "css": [] }, "routes/test": { "id": "routes/test", "parentId": "root", "path": "test", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/test-DJk-sE4A.js", "imports": ["/assets/jsx-runtime-BqcGwIPo.js", "/assets/components-9jzzj_z8.js", "/assets/utils-BM_CldAA.js"], "css": [] } }, "url": "/assets/manifest-81906982.js", "version": "81906982" };
+const serverManifest = { "entry": { "module": "/assets/entry.client-DqVKwQAH.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/root-Dpm_al_X.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/browser-CpFPM1uB.js", "/assets/input-DubpVVAp.js", "/assets/index-BPsMxvU-.js", "/assets/utils-BM_CldAA.js"], "css": ["/assets/root-ClnlRumu.css"] }, "routes/api.report.$userId": { "id": "routes/api.report.$userId", "parentId": "root", "path": "api/report/:userId", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/api.report._userId-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/api.webhook.clerk": { "id": "routes/api.webhook.clerk", "parentId": "root", "path": "api/webhook/clerk", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/api.webhook.clerk-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/api.user.$userId": { "id": "routes/api.user.$userId", "parentId": "root", "path": "api/user/:userId", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/api.user._userId-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/api.transaction": { "id": "routes/api.transaction", "parentId": "root", "path": "api/transaction", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/api.transaction-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/portfolio": { "id": "routes/portfolio", "parentId": "root", "path": "portfolio", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/portfolio-BGRlpsF_.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/button-CIXCo6r4.js", "/assets/format-AvGu2lEH.js", "/assets/utils-BM_CldAA.js", "/assets/PortfolioReport-BulEoNs9.js", "/assets/createLucideIcon-tJWFBsYP.js", "/assets/index-CTGCmpmz.js", "/assets/isEqual-DXEuLGZN.js"], "css": [] }, "routes/sign-in.$": { "id": "routes/sign-in.$", "parentId": "root", "path": "sign-in/*", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/sign-in._-UpFAtNPS.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/index-BPsMxvU-.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes/sign-up.$": { "id": "routes/sign-up.$", "parentId": "root", "path": "sign-up/*", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/sign-up._-aalkrQOw.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/index-BPsMxvU-.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes/compound": { "id": "routes/compound", "parentId": "root", "path": "compound", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/compound-Dxk0Ryl0.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/index-CTGCmpmz.js", "/assets/utils-BM_CldAA.js", "/assets/select-tmrOMQMk.js", "/assets/input-DubpVVAp.js", "/assets/button-CIXCo6r4.js", "/assets/format-AvGu2lEH.js", "/assets/nivo-line.es-Cm019bgU.js", "/assets/ChartTheme-e3M-0zx7.js", "/assets/createLucideIcon-tJWFBsYP.js", "/assets/index-BMCWBtwY.js", "/assets/isEqual-DXEuLGZN.js"], "css": [] }, "routes/overview": { "id": "routes/overview", "parentId": "root", "path": "overview", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/overview-BAa7etLq.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/format-AvGu2lEH.js", "/assets/nivo-line.es-Cm019bgU.js", "/assets/index-BdIMjnOM.js", "/assets/isEqual-DXEuLGZN.js", "/assets/index-BMCWBtwY.js", "/assets/index-CTGCmpmz.js", "/assets/utils-BM_CldAA.js"], "css": [] }, "routes/profile": { "id": "routes/profile", "parentId": "root", "path": "profile", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/profile-DQFOyx5o.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/index-BPsMxvU-.js", "/assets/select-tmrOMQMk.js", "/assets/index-BMCWBtwY.js", "/assets/index-CTGCmpmz.js", "/assets/utils-BM_CldAA.js", "/assets/createLucideIcon-tJWFBsYP.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/_index-D2h5np_5.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/index-BPsMxvU-.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes/etf": { "id": "routes/etf", "parentId": "root", "path": "etf", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/etf-CEpDkMir.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/nivo-line.es-Cm019bgU.js", "/assets/ChartTheme-e3M-0zx7.js", "/assets/button-CIXCo6r4.js", "/assets/index-BMCWBtwY.js", "/assets/utils-BM_CldAA.js", "/assets/index-BdIMjnOM.js", "/assets/format-AvGu2lEH.js", "/assets/createLucideIcon-tJWFBsYP.js", "/assets/input-DubpVVAp.js", "/assets/select-tmrOMQMk.js", "/assets/index-BPsMxvU-.js", "/assets/index-CTGCmpmz.js", "/assets/isEqual-DXEuLGZN.js", "/assets/browser-CpFPM1uB.js"], "css": [] }, "routes/pdf": { "id": "routes/pdf", "parentId": "root", "path": "pdf", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/pdf-DQOxRp1z.js", "imports": ["/assets/components-BKT8Awtw.js", "/assets/PortfolioReport-BulEoNs9.js", "/assets/isEqual-DXEuLGZN.js"], "css": [] } }, "url": "/assets/manifest-ea870846.js", "version": "ea870846" };
 const mode = "production";
 const assetsBuildDirectory = "build\\client";
 const basename = "/";
-const future = { "v3_fetcherPersist": true, "v3_relativeSplatPath": true, "v3_throwAbortReason": true, "unstable_singleFetch": false, "unstable_lazyRouteDiscovery": false, "unstable_optimizeDeps": false };
+const future = { "v3_fetcherPersist": true, "v3_relativeSplatPath": true, "v3_throwAbortReason": true, "v3_routeConfig": false, "v3_singleFetch": false, "v3_lazyRouteDiscovery": false, "unstable_optimizeDeps": false };
 const isSpaMode = false;
 const publicPath = "/";
 const entry = { module: entryServer };
@@ -6803,13 +10907,85 @@ const routes = {
     caseSensitive: void 0,
     module: route0
   },
-  "routes/cache_test": {
-    id: "routes/cache_test",
+  "routes/api.report.$userId": {
+    id: "routes/api.report.$userId",
     parentId: "root",
-    path: "cache_test",
+    path: "api/report/:userId",
     index: void 0,
     caseSensitive: void 0,
     module: route1
+  },
+  "routes/api.webhook.clerk": {
+    id: "routes/api.webhook.clerk",
+    parentId: "root",
+    path: "api/webhook/clerk",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route2
+  },
+  "routes/api.user.$userId": {
+    id: "routes/api.user.$userId",
+    parentId: "root",
+    path: "api/user/:userId",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route3
+  },
+  "routes/api.transaction": {
+    id: "routes/api.transaction",
+    parentId: "root",
+    path: "api/transaction",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route4
+  },
+  "routes/portfolio": {
+    id: "routes/portfolio",
+    parentId: "root",
+    path: "portfolio",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route5
+  },
+  "routes/sign-in.$": {
+    id: "routes/sign-in.$",
+    parentId: "root",
+    path: "sign-in/*",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route6
+  },
+  "routes/sign-up.$": {
+    id: "routes/sign-up.$",
+    parentId: "root",
+    path: "sign-up/*",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route7
+  },
+  "routes/compound": {
+    id: "routes/compound",
+    parentId: "root",
+    path: "compound",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route8
+  },
+  "routes/overview": {
+    id: "routes/overview",
+    parentId: "root",
+    path: "overview",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route9
+  },
+  "routes/profile": {
+    id: "routes/profile",
+    parentId: "root",
+    path: "profile",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route10
   },
   "routes/_index": {
     id: "routes/_index",
@@ -6817,15 +10993,23 @@ const routes = {
     path: void 0,
     index: true,
     caseSensitive: void 0,
-    module: route2
+    module: route11
   },
-  "routes/test": {
-    id: "routes/test",
+  "routes/etf": {
+    id: "routes/etf",
     parentId: "root",
-    path: "test",
+    path: "etf",
     index: void 0,
     caseSensitive: void 0,
-    module: route3
+    module: route12
+  },
+  "routes/pdf": {
+    id: "routes/pdf",
+    parentId: "root",
+    path: "pdf",
+    index: void 0,
+    caseSensitive: void 0,
+    module: route13
   }
 };
 export {

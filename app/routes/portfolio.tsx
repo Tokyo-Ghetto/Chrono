@@ -28,8 +28,10 @@ import {
   ArrowDownRight,
   LineChart,
   TrendingUp,
+  FileDown,
 } from "lucide-react";
-
+import { pdf } from "@react-pdf/renderer";
+import { PortfolioReport } from "~/components/pdf/PortfolioReport";
 interface LoaderData {
   holdings: PortfolioHolding[];
   summary: {
@@ -37,6 +39,7 @@ interface LoaderData {
     total_gain_loss: number;
     total_gain_loss_percentage: number;
   };
+  userId: string;
 }
 
 export const loader: LoaderFunction = async (args) => {
@@ -51,11 +54,37 @@ export const loader: LoaderFunction = async (args) => {
     getPortfolioSummary(userId),
   ]);
 
-  return json({ holdings, summary });
+  return json({ holdings, summary, userId });
 };
 
 export default function Portfolio() {
-  const { holdings, summary } = useLoaderData<LoaderData>();
+  const { holdings, summary, userId } = useLoaderData<LoaderData>();
+
+  const handleDownloadReport = async () => {
+    try {
+      const response = await fetch(`/api/report/${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch report data");
+      }
+      const reportData = await response.json();
+
+      const doc = <PortfolioReport data={reportData} />;
+      const blob = await pdf(doc).toBlob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `portfolio-report-${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
+  };
 
   if (holdings.length === 0) {
     return (
@@ -139,10 +168,22 @@ export default function Portfolio() {
       {/* Holdings Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Holdings</CardTitle>
-          <CardDescription>
-            A detailed view of your ETF investments
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Your Holdings</CardTitle>
+              <CardDescription>
+                A detailed view of your ETF investments
+              </CardDescription>
+            </div>
+            <Button
+              onClick={handleDownloadReport}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              Download Report
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

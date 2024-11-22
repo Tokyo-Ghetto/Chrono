@@ -1,19 +1,31 @@
 import { pool } from "~/db/index.server";
 import type { UserSettings } from "~/types/user";
 
-export async function createUser(userId: string, email: string) {
+export async function createUser(
+  userId: string,
+  firstName: string,
+  lastName: string,
+  email: string
+) {
   const client = await pool.connect();
   try {
     const query = `
-      INSERT INTO users (user_id, email)
-      VALUES ($1, $2)
+      INSERT INTO users (user_id, first_name, last_name, email)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (user_id) 
       DO UPDATE SET
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
         email = EXCLUDED.email
       RETURNING *;
     `;
 
-    const result = await client.query(query, [userId, email]);
+    const result = await client.query(query, [
+      userId,
+      firstName,
+      lastName,
+      email,
+    ]);
     return result.rows[0];
   } catch (error) {
     console.error("Error creating user:", error);
