@@ -1,4 +1,4 @@
-import { json, LoaderFunction } from "@remix-run/node";
+import { LoaderFunction, redirect } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
 import { getAuth } from "@clerk/remix/ssr.server";
 import {
@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { PortfolioReport } from "~/components/pdf/PortfolioReport";
+
 interface LoaderData {
   holdings: PortfolioHolding[];
   summary: {
@@ -46,7 +47,7 @@ export const loader: LoaderFunction = async (args) => {
   const { userId } = await getAuth(args);
 
   if (!userId) {
-    return json({ message: "Unauthorized" }, { status: 401 });
+    return redirect("/sign-in");
   }
 
   const [holdings, summary] = await Promise.all([
@@ -54,7 +55,7 @@ export const loader: LoaderFunction = async (args) => {
     getPortfolioSummary(userId),
   ]);
 
-  return json({ holdings, summary, userId });
+  return Response.json({ holdings, summary, userId });
 };
 
 export default function Portfolio() {
@@ -108,8 +109,8 @@ export default function Portfolio() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
-      <div className="grid gap-4 md:grid-cols-3">
+    <div className="container mx-auto px-4 py-6 space-y-8">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -165,10 +166,10 @@ export default function Portfolio() {
         </Card>
       </div>
 
-      {/* Holdings Table */}
+      {/* Holdings Table Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Your Holdings</CardTitle>
               <CardDescription>
@@ -178,25 +179,37 @@ export default function Portfolio() {
             <Button
               onClick={handleDownloadReport}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <FileDown className="h-4 w-4" />
               Download Report
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Symbol</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="text-right">Shares</TableHead>
-                <TableHead className="text-right">Avg Cost</TableHead>
-                <TableHead className="text-right">Current Price</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-                <TableHead className="text-right">Gain/Loss</TableHead>
-                <TableHead className="text-right">Return</TableHead>
+                <TableHead className="whitespace-nowrap">Symbol</TableHead>
+                <TableHead className="whitespace-nowrap">Name</TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Shares
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Avg Cost
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Current Price
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Total Value
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Gain/Loss
+                </TableHead>
+                <TableHead className="text-right whitespace-nowrap">
+                  Return
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

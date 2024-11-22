@@ -219,26 +219,44 @@ export default function Overview() {
   const { categories } = useLoaderData() as LoaderData;
 
   return (
-    <div>
+    <div className="flex flex-col space-y-8 py-6">
       {Object.entries(categories).map(([key, category]) => (
-        <div key={key}>
-          <div className="p-5 py-2">
-            <h1 className="my-1 text-2xl font-bold">{category.title}</h1>
+        <div key={key} className="flex flex-col space-y-4">
+          <div className="px-4 sm:px-6">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+              {category.title}
+            </h1>
           </div>
-          <ScrollArea className="w-full whitespace-nowrap pb-1">
-            <div className="flex w-max space-x-4 p-4">
-              {category.etfs?.map((etf) => (
-                <ETFCard
-                  key={etf.ticker}
-                  ticker={etf.ticker}
-                  name={etf.name}
-                  endPrice={Number(etf.endPrice)}
-                  priceChangePercentage={Number(etf.priceChangePercentage)}
-                  chartLines={etf.chartLines}
-                />
-              ))}
+
+          <ScrollArea className="w-full">
+            <div className="px-4 sm:px-6 pb-4">
+              <div className="flex snap-x snap-mandatory overflow-x-auto">
+                {category.etfs?.map((etf, index) => (
+                  <div
+                    key={etf.ticker}
+                    className={`
+                      flex-none 
+                      w-[calc(100vw-32px)] 
+                      sm:w-[340px] 
+                      ${index === 0 ? "" : "sm:ml-6"} 
+                      snap-center
+                    `}
+                  >
+                    <ETFCard
+                      ticker={etf.ticker}
+                      name={etf.name}
+                      endPrice={Number(etf.endPrice)}
+                      priceChangePercentage={Number(etf.priceChangePercentage)}
+                      chartLines={etf.chartLines}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <ScrollBar orientation="horizontal" className="mb-1 px-4" />
+            <ScrollBar
+              orientation="horizontal"
+              className="hidden sm:flex px-4 sm:px-6"
+            />
           </ScrollArea>
         </div>
       ))}

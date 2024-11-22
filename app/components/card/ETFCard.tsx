@@ -28,8 +28,11 @@ const ETFCard: React.FC<ETFCardProps> = ({
         <Card className="w-[350px] !bg-zinc-800 cursor-pointer">
           <CardHeader className="flex flex-row justify-between align-items: flex-start">
             <div>
+              {/* If the ticker name in the card description is longer than 30 characters, truncate it */}
               <CardTitle>{ticker}</CardTitle>
-              <CardDescription>{name}</CardDescription>
+              <CardDescription className="truncate">
+                {name.length > 30 ? `${name.substring(0, 30)}...` : name}
+              </CardDescription>
             </div>
             <div className="!mt-0">
               <CardTitle>{formatPrice(endPrice)}</CardTitle>
