@@ -55,7 +55,7 @@ export const loader: LoaderFunction = async (args) => {
     getPortfolioSummary(userId),
   ]);
 
-  return Response.json({ holdings, summary, userId });
+  return { holdings, summary, userId };
 };
 
 export default function Portfolio() {
