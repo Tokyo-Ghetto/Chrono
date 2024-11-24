@@ -92,21 +92,28 @@ export default function ETF() {
   };
 
   return (
-    <div className="bg-slate-900 p-5">
-      <div className="mt-5">
+    <div className="bg-slate-900 p-3 sm:p-5">
+      <div className="mt-3 sm:mt-5">
         {chartLines.length > 0 ? (
           <div
             id="container"
             className="
-          h-auto flex flex-row justify-between space-x-8
-          "
+              flex flex-col lg:flex-row 
+              lg:justify-between lg:space-x-8
+              space-y-6 lg:space-y-0
+            "
           >
-            <div id="etf_info" className="w-full">
+            <div id="etf_info" className="w-full lg:flex-1">
               <div
                 id="chart_header"
-                className="flex flex-row justify-between items-end my-3"
+                className="
+                  flex flex-col sm:flex-row 
+                  sm:justify-between sm:items-end 
+                  space-y-4 sm:space-y-0
+                  my-3
+                "
               >
-                <div id="titles" className="">
+                <div id="titles">
                   <h2 className="text-white font-semibold text-xl">{ticker}</h2>
                   <h3 className="text-white font-semibold text-m">{name}</h3>
                   <PriceWithDiff
@@ -116,13 +123,18 @@ export default function ETF() {
                 </div>
                 <div
                   id="chart_time"
-                  className="flex items-center space-x-1 text-sm"
+                  className="
+                    flex items-center space-x-1 text-sm
+                    w-full sm:w-auto
+                    overflow-x-auto pb-2 sm:pb-0
+                  "
                 >
                   {(Object.keys(TIMEFRAMES) as TimeframeKey[]).map((key) => (
                     <Fragment key={key}>
                       <Button
                         variant={timeframe === key ? "default" : "outline"}
                         onClick={() => handleTimeframeChange(key)}
+                        className="flex-shrink-0"
                       >
                         {key}
                       </Button>
@@ -131,10 +143,15 @@ export default function ETF() {
                   ))}
                 </div>
               </div>
-              <div id="chart" style={{ height: "35vh" }}>
+              <div id="chart" className="h-[300px] sm:h-[35vh]">
                 <ResponsiveLine
                   data={chartLines}
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  margin={{
+                    top: 20,
+                    right: 20,
+                    bottom: 20,
+                    left: 20,
+                  }}
                   xScale={{ type: "point" }}
                   yScale={{
                     type: "linear",
@@ -211,7 +228,9 @@ export default function ETF() {
                 />
               </div>
             </div>
-            <EtfTransactionPanel symbol={ticker} price={Number(endPrice)} />
+            <div className="w-full lg:w-[450px]">
+              <EtfTransactionPanel symbol={ticker} price={Number(endPrice)} />
+            </div>
           </div>
         ) : (
           <div>

@@ -90,7 +90,7 @@ export function EtfTransactionPanel({ symbol, price }: TransactionPanelProps) {
   }, [fetcher.data, fetcher.state]);
 
   return (
-    <Card className="w-[450px] bg-zinc-900 text-white border-zinc-800">
+    <Card className="w-full bg-zinc-900 text-white border-zinc-800">
       <CardHeader className="border-b border-zinc-800">
         <CardTitle className="flex items-center justify-between">
           <span>Buy {symbol}</span>
@@ -205,7 +205,7 @@ export function EtfTransactionPanel({ symbol, price }: TransactionPanelProps) {
       </form>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-[425px]">
           {transactionStatus === "success" ? (
             <>
               <AlertDialogHeader>

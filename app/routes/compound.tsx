@@ -191,17 +191,22 @@ export default function Compound() {
   }, [etfTickers, navigate]);
 
   return (
-    <div className="flex m-8 p-4 space-x-4">
+    <div className="flex flex-col lg:flex-row m-4 sm:m-8 p-2 sm:p-4 space-y-6 lg:space-y-0 lg:space-x-4">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="bg-stone-600 rounded-xl w-2/5 space-y-8 p-4"
+          className="
+            bg-stone-600 rounded-xl 
+            w-full lg:w-2/5 
+            space-y-6 sm:space-y-8 
+            p-3 sm:p-4
+          "
         >
           <FormField
             control={form.control}
             name="initialDeposit"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2 sm:space-y-3">
                 <FormLabel>Initial Deposit</FormLabel>
                 <FormControl>
                   <FocusableInput
@@ -221,7 +226,7 @@ export default function Compound() {
             control={form.control}
             name="monthlyDeposit"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2 sm:space-y-3">
                 <FormLabel>Monthly Deposit Amount</FormLabel>
                 <FormControl>
                   <FocusableInput
@@ -241,7 +246,7 @@ export default function Compound() {
             control={form.control}
             name="timePeriod"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2 sm:space-y-3">
                 <FormLabel>Years to Grow</FormLabel>
                 <FormControl>
                   <Input
@@ -259,7 +264,7 @@ export default function Compound() {
             control={form.control}
             name="userInterest"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2 sm:space-y-3">
                 <FormLabel>Interest Rate</FormLabel>
                 <FormControl>
                   <FocusableInput
@@ -279,7 +284,7 @@ export default function Compound() {
             control={form.control}
             name="compFrequency"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2 sm:space-y-3">
                 <FormLabel>Compound Frequency</FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -313,7 +318,7 @@ export default function Compound() {
             )}
 
             {showEtfInput ? (
-              <div className="flex gap-2 w-full">
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
                 <Input
                   value={currentEtf}
                   onChange={(e) => setCurrentEtf(e.target.value)}
@@ -326,48 +331,66 @@ export default function Compound() {
                   placeholder="Enter ETF ticker"
                   className="w-full"
                 />
-                <Button type="button" onClick={addEtf}>
-                  Add
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowEtfInput(false)}
-                >
-                  Cancel
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={addEtf}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEtfInput(false)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowEtfInput(true)}
+                className="w-full sm:w-auto"
               >
                 Add ETF
               </Button>
             )}
           </div>
 
-          <Button type="submit">Submit</Button>
+          <Button type="submit" className="w-full">
+            Submit
+          </Button>
         </form>
       </Form>
 
-      <div className="flex flex-col items-center justify-start h-96 w-3/5">
+      <div className="flex flex-col items-center justify-start w-full lg:w-3/5">
         {submitted && (
           <>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-xl sm:text-2xl font-bold text-white text-center">
               Compound Calculator
             </div>
-            <div className="text-stone-300">
+            <div className="text-stone-300 text-center px-4">
               You can find the results of your compound interest calculation
               below.
             </div>
 
-            <Card className="w-full p-4 mt-4">
-              <div className="h-[400px]">
+            <Card className="w-full p-2 sm:p-4 mt-4">
+              <div className="h-[300px] sm:h-[400px]">
                 <ResponsiveLine
                   data={generateChartData()}
-                  margin={{ top: 50, right: 110, bottom: 50, left: 80 }}
+                  margin={{
+                    top: 50,
+                    right: 20,
+                    bottom: 50,
+                    left: 60,
+                    ...(window.innerWidth > 640
+                      ? { right: 110, left: 80 }
+                      : {}),
+                  }}
                   xScale={{ type: "point" }}
                   yScale={{
                     type: "linear",
@@ -397,16 +420,18 @@ export default function Compound() {
                     tickPadding: 5,
                     tickRotation: 0,
                     legend: "US Dollars ($)",
-                    legendOffset: -70,
+                    legendOffset: -50,
                     legendPosition: "middle",
                     format: (value) =>
-                      `$${Number(value).toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}`,
+                      window.innerWidth > 640
+                        ? `$${Number(value).toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}`
+                        : `$${Number(value / 1000).toLocaleString()}K`,
                   }}
                   enablePoints={true}
-                  pointSize={10}
+                  pointSize={window.innerWidth > 640 ? 10 : 6}
                   pointColor={{ theme: "background" }}
                   pointBorderWidth={2}
                   pointBorderColor={{ from: "serieColor" }}
@@ -415,11 +440,12 @@ export default function Compound() {
                   theme={nivoTheme}
                   legends={[
                     {
-                      anchor: "bottom-right",
+                      anchor:
+                        window.innerWidth > 640 ? "bottom-right" : "bottom",
                       direction: "column",
                       justify: false,
-                      translateX: 195,
-                      translateY: 0,
+                      translateX: window.innerWidth > 640 ? 195 : 0,
+                      translateY: window.innerWidth > 640 ? 0 : 50,
                       itemsSpacing: 0,
                       itemDirection: "left-to-right",
                       itemWidth: 180,

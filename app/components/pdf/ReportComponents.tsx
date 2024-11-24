@@ -1,10 +1,6 @@
 import { Text, View, StyleSheet, Line, Svg } from "@react-pdf/renderer";
 import ReactPDFChart from "react-pdf-charts";
-import {
-  Pie,
-  PieChart,
-  // Legend
-} from "recharts";
+import { Pie, PieChart } from "recharts";
 
 const formatPricePDF = (price: number) => {
   return new Intl.NumberFormat("en-US", {
@@ -171,14 +167,11 @@ type HoldingType = {
   gainLossPercentage: number;
 };
 
-// Add this type for our chart data
 type ChartDataItem = {
   name: string;
   value: number;
   fill: string;
 };
-
-// Add an array of colors to cycle through for the chart segments
 const chartColors = [
   "#8884d8",
   "#82ca9d",
@@ -254,7 +247,6 @@ export const HoldingsSection = ({ holdings }: { holdings: HoldingType[] }) => (
   </View>
 );
 
-// Update ChartSection to receive and use holdings data
 export const ChartSection = ({
   holdings,
   summary,

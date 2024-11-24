@@ -52,8 +52,14 @@ export function Header() {
             <>
               <SignedIn>
                 <UserButton
-                  userProfileMode="navigation"
-                  userProfileUrl="/profile"
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      userButtonBox: "flex items-center",
+                      userButtonTrigger: "focus:shadow-none",
+                      userButtonPopoverCard: "z-50",
+                    },
+                  }}
                 />
               </SignedIn>
               <SignedOut>
@@ -102,14 +108,36 @@ export function Header() {
               Portfolio
             </a>
             {isLoaded && (
-              <SignedOut>
-                <Link to="/sign-in" className="text-white hover:text-gray-300">
-                  Login
-                </Link>
-                <Link to="/sign-up" className="text-white hover:text-gray-300">
-                  Sign Up
-                </Link>
-              </SignedOut>
+              <>
+                <SignedIn>
+                  <div className="py-2">
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          userButtonBox: "flex items-center",
+                          userButtonTrigger: "focus:shadow-none",
+                          userButtonPopoverCard: "z-50",
+                        },
+                      }}
+                    />
+                  </div>
+                </SignedIn>
+                <SignedOut>
+                  <Link
+                    to="/sign-in"
+                    className="text-white hover:text-gray-300"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/sign-up"
+                    className="text-white hover:text-gray-300"
+                  >
+                    Sign Up
+                  </Link>
+                </SignedOut>
+              </>
             )}
           </nav>
         </div>
